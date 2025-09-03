@@ -88,7 +88,7 @@ router.post('/register',
 
             // Handle post-registration actions
             const { action, joinCode } = req.body;
-            let redirectTo = '/dashboard';
+            let redirectTo = '/start';
             
             if (action === 'create-league') {
                 redirectTo = '/leagues/create';

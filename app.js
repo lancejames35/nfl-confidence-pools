@@ -211,15 +211,12 @@ class Application {
     }
 
     configureRoutes() {
-        // Root route
+        // Root route - redirect to login
         this.app.get('/', (req, res) => {
             if (req.user) {
                 return res.redirect('/dashboard');
             }
-            res.render('index', {
-                title: 'NFL Confidence Pools',
-                layout: 'layouts/public'
-            });
+            return res.redirect('/auth/login');
         });
 
         // Direct join route that bypasses the leagues page
@@ -278,8 +275,8 @@ class Application {
             });
         });
 
-        // Choose action page (landing page for join codes and ads)
-        this.app.get('/start', authMiddleware.requireGuest, (req, res) => {
+        // Choose action page (landing page for join codes and ads) - accessible to all users
+        this.app.get('/start', (req, res) => {
             res.render('choose-action', {
                 title: 'Get Started',
                 appName: 'NFL Pools',

@@ -1,0 +1,247 @@
+<!-- Dynamic Welcome Message Based on Action -->
+<div class="text-center mb-4">
+    <% if (locals.action === 'create-league') { %>
+        <h2 class="card-title mb-3">
+            <i class="fas fa-rocket text-primary me-2"></i>
+            Create Your Account
+        </h2>
+        <p class="text-muted">Sign up to create your NFL confidence pool</p>
+    <% } else if (locals.action === 'join-league') { %>
+        <h2 class="card-title mb-3">
+            <i class="fas fa-users text-primary me-2"></i>
+            Join the League!
+        </h2>
+        <% if (locals.leagueName) { %>
+            <div class="alert alert-info d-flex align-items-center mb-4">
+                <i class="fas fa-trophy me-3 text-warning"></i>
+                <div>
+                    <strong>You're joining:</strong><br>
+                    <span class="h5 mb-0"><%= locals.leagueName %></span>
+                </div>
+            </div>
+        <% } else { %>
+            <p class="text-muted">Create your account to join the league!</p>
+        <% } %>
+    <% } else { %>
+        <h2 class="card-title mb-3">
+            <i class="fas fa-user-plus text-primary me-2"></i>Create Account
+        </h2>
+        <p class="text-muted">Join the best NFL confidence pool platform</p>
+    <% } %>
+</div>
+
+<form method="POST" action="/auth/register" id="registerForm">
+    <!-- Hidden fields to preserve action and join code -->
+    <% if (locals.action) { %>
+        <input type="hidden" name="action" value="<%= action %>">
+    <% } %>
+    <% if (locals.joinCode) { %>
+        <input type="hidden" name="joinCode" value="<%= joinCode %>">
+    <% } %>
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-user"></i>
+            </span>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="username" 
+                name="username" 
+                required
+                minlength="3"
+                maxlength="50"
+                pattern="[a-zA-Z0-9_-]+"
+                placeholder="Choose a username"
+            >
+            <div class="invalid-feedback"></div>
+        </div>
+        <div class="form-text">3-50 characters, letters, numbers, underscores and hyphens only</div>
+    </div>
+    
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-envelope"></i>
+            </span>
+            <input 
+                type="email" 
+                class="form-control" 
+                id="email" 
+                name="email" 
+                required
+                placeholder="your@email.com"
+            >
+            <div class="invalid-feedback"></div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="firstName" class="form-label">First Name</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="firstName" 
+                    name="firstName" 
+                    maxlength="100"
+                    placeholder="Optional"
+                >
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Last Name</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="lastName" 
+                    name="lastName" 
+                    maxlength="100"
+                    placeholder="Optional"
+                >
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-lock"></i>
+            </span>
+            <input 
+                type="password" 
+                class="form-control" 
+                id="password" 
+                name="password" 
+                required
+                minlength="8"
+                placeholder="Create a strong password"
+                autocomplete="new-password"
+            >
+            <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                id="togglePassword"
+                onclick="togglePasswordVisibility('password')"
+            >
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        <div class="form-text">
+            At least 8 characters with uppercase, lowercase, and number
+        </div>
+        <div class="invalid-feedback"></div>
+    </div>
+    
+    <div class="mb-3">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-lock"></i>
+            </span>
+            <input 
+                type="password" 
+                class="form-control" 
+                id="confirmPassword" 
+                name="confirmPassword" 
+                required
+                placeholder="Confirm your password"
+                autocomplete="new-password"
+            >
+            <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                id="toggleConfirmPassword"
+                onclick="togglePasswordVisibility('confirmPassword')"
+            >
+                <i class="fas fa-eye"></i>
+            </button>
+            <div class="invalid-feedback"></div>
+        </div>
+    </div>
+    
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Create Account
+        </button>
+    </div>
+</form>
+
+<div class="text-center mt-3">
+    <p class="mb-0">Already have an account?</p>
+    <a href="/auth/login<% if (locals.action) { %>?action=<%= action %><% if (locals.joinCode) { %>&code=<%= joinCode %><% } %><% if (locals.leagueName) { %>&league=<%= encodeURIComponent(leagueName) %><% } %><% } %>" class="text-decoration-none">
+        <i class="fas fa-sign-in-alt me-1"></i>Sign in here
+    </a>
+</div>
+
+<script>
+// Real-time validation feedback
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        document.getElementById('confirmPassword').classList.add('is-invalid');
+        document.querySelector('#confirmPassword + .invalid-feedback').textContent = 'Passwords do not match';
+    }
+});
+
+// Check username availability
+let usernameTimeout;
+document.getElementById('username').addEventListener('input', function() {
+    clearTimeout(usernameTimeout);
+    const username = this.value;
+    
+    if (username.length >= 3) {
+        usernameTimeout = setTimeout(() => {
+            checkUsernameAvailability(username);
+        }, 500);
+    }
+});
+
+async function checkUsernameAvailability(username) {
+    try {
+        const response = await fetch('/auth/api/check-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+        });
+        
+        const data = await response.json();
+        const usernameInput = document.getElementById('username');
+        const feedback = usernameInput.parentElement.querySelector('.invalid-feedback');
+        
+        if (data.available) {
+            usernameInput.classList.remove('is-invalid');
+            usernameInput.classList.add('is-valid');
+        } else {
+            usernameInput.classList.remove('is-valid');
+            usernameInput.classList.add('is-invalid');
+            feedback.textContent = data.message;
+        }
+    } catch (error) {
+        console.error('Username check error:', error);
+    }
+}
+
+function togglePasswordVisibility(fieldId) {
+    const field = document.getElementById(fieldId);
+    const button = field.parentElement.querySelector('button i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        button.className = 'fas fa-eye-slash';
+    } else {
+        field.type = 'password';
+        button.className = 'fas fa-eye';
+    }
+}
+</script>

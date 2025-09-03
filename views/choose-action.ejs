@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | League Station Pools</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS removed to prevent conflicts -->
+</head>
+<body class="landing-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <!-- Logo/Brand -->
+                <div class="text-center mb-4 pt-5">
+                    <div class="nfl-logo-container mb-3">
+                        <i class="fas fa-football-ball nfl-logo"></i>
+                    </div>
+                    <h1 class="nfl-brand-title text-white mb-2">
+                        LEAGUE STATION POOLS
+                    </h1>
+                    <p class="tagline text-white-50">Pick. Rank. Win.</p>
+                </div>
+                
+                <!-- Auth Form Card -->
+                <div class="card auth-card shadow-lg">
+                    <div class="card-body p-4">
+                        <!-- Welcome Header -->
+                        <div class="text-center mb-4">
+                            <h2 class="auth-title mb-3">
+                                Welcome to League Station Pools
+                            </h2>
+                        </div>
+
+                        <!-- Action Cards -->
+                        <div class="row g-4 mb-4">
+                            <!-- Create New League -->
+                            <div class="col-md-6">
+                                <div class="action-card create-league-card h-100 d-flex flex-column">
+                                    <div class="card-body text-center p-4 flex-grow-1 d-flex flex-column">
+                                        <div class="action-icon mb-3">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </div>
+                                        <h3 class="h5 mb-3">Create New League</h3>
+                                        <p class="text-muted mb-4 small">
+                                            Start your own NFL confidence pool and invite friends, family, or coworkers.
+                                        </p>
+                                        <ul class="list-unstyled text-start mb-4 small">
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                Set custom rules and scoring
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                Manage league settings
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                Send invitations easily
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                Commissioner dashboard
+                                            </li>
+                                        </ul>
+                                        <div class="mt-auto">
+                                            <button class="btn btn-nfl-primary w-100" data-bs-toggle="modal" data-bs-target="#createLeagueModal">
+                                                <i class="fas fa-rocket me-2"></i>Create League
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Join Existing League -->
+                            <div class="col-md-6">
+                                <div class="action-card join-league-card h-100 d-flex flex-column">
+                                    <div class="card-body text-center p-4 flex-grow-1 d-flex flex-column">
+                                        <div class="action-icon mb-3">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <h3 class="h5 mb-3">Join Existing League</h3>
+                                        <p class="text-muted mb-4 small">
+                                            Got an invitation? Join a league that's already set up.
+                                        </p>
+                                        <ul class="list-unstyled text-start mb-4 small">
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-primary me-2"></i>
+                                                Use invitation code or link
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-primary me-2"></i>
+                                                Start making picks immediately
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-primary me-2"></i>
+                                                Connect with existing players
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-primary me-2"></i>
+                                                Jump right into the action
+                                            </li>
+                                        </ul>
+                                        <div class="mt-auto">
+                                            <button class="btn btn-nfl-secondary w-100" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
+                                                <i class="fas fa-sign-in-alt me-2"></i>Join League
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sign In Section -->
+                        <div class="text-center mt-4 mb-4">
+                            <p class="text-muted mb-2">Already have an account?</p>
+                            <a href="/auth/login" class="sign-in-link text-decoration-none">
+                                <i class="fas fa-sign-in-alt me-1"></i>Sign In Here
+                            </a>
+                        </div>
+
+                        <!-- Join Code Input (Initially Hidden) -->
+                        <div id="joinCodeSection" class="d-none">
+                            <hr class="my-4">
+                            <div class="text-center mb-3">
+                                <h4 class="h5">Enter Your Join Code</h4>
+                                <p class="text-muted small">Enter the invitation code provided by your league commissioner</p>
+                            </div>
+                            <form id="joinCodeForm">
+                                <div class="mb-3">
+                                    <label for="joinCode" class="form-label">League Join Code</label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg text-center" 
+                                           id="joinCode" 
+                                           placeholder="Enter 8-character code (e.g., ABC12345)"
+                                           maxlength="8"
+                                           style="letter-spacing: 2px; font-weight: bold; text-transform: uppercase;">
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-arrow-right me-2"></i>Continue with This League
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="hideJoinCodeSection()">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Options
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Info Section -->
+                        <div class="text-center mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                New to NFL Confidence Pools? 
+                                <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#howItWorksModal">
+                                    Learn how it works
+                                </a>
+                            </small>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Modal -->
+    <div class="modal fade" id="howItWorksModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-question-circle text-primary me-2"></i>
+                        How NFL Confidence Pools Work
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="how-it-works-step">
+                                <div class="step-number">1</div>
+                                <h6>Rank the Games</h6>
+                                <p class="text-muted">Each week, rank all NFL games by confidence from 1-16 points based on how confident you are in your pick.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="how-it-works-step">
+                                <div class="step-number">2</div>
+                                <h6>Earn Points</h6>
+                                <p class="text-muted">When your team wins, you earn the confidence points you assigned. Higher confidence = more points when correct!</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="how-it-works-step">
+                                <div class="step-number">3</div>
+                                <h6>Compete Weekly</h6>
+                                <p class="text-muted">See how you rank each week against other league members. Consistency is key to winning overall.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="how-it-works-step">
+                                <div class="step-number">4</div>
+                                <h6>Win the Season</h6>
+                                <p class="text-muted">The player with the most total points at the end of the regular season wins the league!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <div class="alert alert-primary">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Strategy Tip:</strong> Don't put all your high confidence on early games - save some big points for games you're most sure about!
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        Got It! Let's Get Started
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create League Modal -->
+    <div class="modal fade" id="createLeagueModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content create-league-modal">
+                <div class="modal-header create-league-header">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-icon me-3">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0">Create Your League</h5>
+                            <small class="text-muted">Configure your league settings before signing up</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="createLeagueForm">
+                        <!-- Basic Information Section -->
+                        <div class="settings-section">
+                            <div class="section-header">
+                                <div class="section-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <h6 class="section-title">Basic Information</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label for="leagueName" class="form-label">League Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="leagueName" placeholder="Enter league name" maxlength="50" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="seasonYear" class="form-label">Season</label>
+                                    <select class="form-select" id="seasonYear">
+                                        <option value="2025">2025 NFL Season</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="leagueDescription" class="form-label">Description (Optional)</label>
+                                    <textarea class="form-control" id="leagueDescription" rows="2" maxlength="500" placeholder="Add a description for your league members"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- League Settings Section -->
+                        <div class="settings-section">
+                            <div class="section-header">
+                                <div class="section-icon">
+                                    <i class="fas fa-cogs"></i>
+                                </div>
+                                <h6 class="section-title">League Settings</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="privacy" class="form-label">Privacy</label>
+                                    <select class="form-select" id="privacy">
+                                        <option value="private" selected>Private (Join code required)</option>
+                                        <option value="invite_only">Invite Only</option>
+                                        <option value="public">Public (Anyone can find)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="maxParticipants" class="form-label">Max Participants</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="maxParticipants" value="50" min="2" max="500" disabled>
+                                        <div class="input-group-text">
+                                            <input class="form-check-input mt-0" type="checkbox" id="unlimitedParticipants" checked>
+                                            <label class="form-check-label ms-1" for="unlimitedParticipants">Unlimited</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="maxEntries" class="form-label">Max Entries per User</label>
+                                    <select class="form-select" id="maxEntries">
+                                        <option value="1" selected>1 Entry</option>
+                                        <option value="2">2 Entries</option>
+                                        <option value="3">3 Entries</option>
+                                        <option value="4">4 Entries</option>
+                                        <option value="5">5 Entries</option>
+                                        <option value="999">Unlimited</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entry Fee Section -->
+                        <div class="settings-section">
+                            <div class="section-header">
+                                <div class="section-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <h6 class="section-title">Entry Fees</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="entryFee" class="form-label">Entry Fee ($)</label>
+                                    <input type="number" class="form-control" id="entryFee" placeholder="0.00" min="0" max="1000" step="0.01">
+                                    <div class="form-text">Set to 0 for free leagues</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="enableMultiTier">
+                                        <label class="form-check-label" for="enableMultiTier">
+                                            Enable Multiple Entry Levels
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Allow different participation levels with different fees</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Multi-Tier Settings (Initially Hidden) -->
+                            <div id="multiTierSettings" class="mt-3" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-layer-group me-2 text-primary"></i>
+                                            Entry Level Tiers
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-info mb-3">
+                                            <i class="fas fa-lightbulb me-2"></i>
+                                            <strong>Example:</strong> Offer a "Weekly Winner" tier ($10) for weekly payouts and a "Season Champion" tier ($25) that includes weekly payouts plus the grand prize pool.
+                                        </div>
+                                        
+                                        <div id="tiersContainer">
+                                            <!-- Tier 1 -->
+                                            <div class="tier-row border rounded p-3 mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 text-primary">Tier 1</h6>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-tier" style="display: none;">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Tier Name <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="tierName[]" placeholder="e.g., Weekly Winner" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Entry Fee ($) <span class="text-danger">*</span></label>
+                                                        <input type="number" class="form-control" name="tierFee[]" placeholder="10.00" min="0" step="0.01" required>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label">Description <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="tierDescription[]" placeholder="Weekly payouts only" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Tier 2 -->
+                                            <div class="tier-row border rounded p-3 mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 text-primary">Tier 2</h6>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-tier">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Tier Name <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="tierName[]" placeholder="e.g., Season Champion" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Entry Fee ($) <span class="text-danger">*</span></label>
+                                                        <input type="number" class="form-control" name="tierFee[]" placeholder="25.00" min="0" step="0.01" required>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label">Description <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="tierDescription[]" placeholder="Weekly + season payouts" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-sm btn-success" id="addTierBtn">
+                                            <i class="fas fa-plus me-1"></i>Add Another Tier
+                                        </button>
+                                        
+                                        <div class="alert alert-success mt-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Tip:</strong> Users can choose their participation level when joining. Higher tiers typically include all benefits of lower tiers plus additional prize pools.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confidence Pool Settings Section -->
+                        <div class="settings-section">
+                            <div class="section-header">
+                                <div class="section-icon">
+                                    <i class="fas fa-football"></i>
+                                </div>
+                                <h6 class="section-title">Confidence Pool Settings</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="pickMethod" class="form-label">Pick Method</label>
+                                    <select class="form-select" id="pickMethod">
+                                        <option value="straight_up" selected>Straight Up (Pick winners)</option>
+                                        <option value="against_spread">Against the Spread</option>
+                                    </select>
+                                    <div class="form-text">Straight up picks team to win. Spread picks team to cover the point spread.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="pointSystem" class="form-label">Point System</label>
+                                    <select class="form-select" id="pointSystem">
+                                        <option value="standard" selected>Standard (1, 2, 3, 4... points)</option>
+                                        <option value="multiplier">Multiplier (confidence × multiplier)</option>
+                                    </select>
+                                    <div class="form-text">Higher confidence picks are worth more points if correct.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="deadlineType" class="form-label">Pick Deadline</label>
+                                    <select class="form-select" id="deadlineType">
+                                        <option value="per_game" selected>Per Game (locks when each game starts)</option>
+                                        <option value="league_wide">League-wide (all picks lock at same time)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6" id="weeklyDeadlineSection" style="display: none;">
+                                    <label for="weeklyDeadline" class="form-label">Weekly Deadline</label>
+                                    <select class="form-select" id="weeklyDeadline">
+                                        <option value="first_game" selected>Before 1st Game Kickoff</option>
+                                        <option value="thursday_night">Thursday Night Game</option>
+                                        <option value="sunday_early">Sunday Early Games (1:00 PM ET)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Point Multiplier Settings -->
+                            <div class="row g-3 mt-2" id="multiplierSettings" style="display: none;">
+                                <div class="col-md-4">
+                                    <label for="pointMultiplier" class="form-label">Point Multiplier</label>
+                                    <input type="number" class="form-control" id="pointMultiplier" value="2" min="1" max="10" step="0.5">
+                                    <div class="form-text">×2 = (2, 4, 6...), ×5 = (5, 10, 15...)</div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label text-muted">Point Preview</label>
+                                    <div class="border rounded p-2 bg-light">
+                                        <small class="text-muted" id="pointPreview">Confidence 1 = 2 pts, Confidence 2 = 4 pts, Confidence 16 = 32 pts</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer create-league-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary btn-create-league" onclick="proceedToCreateLeague()">
+                        <i class="fas fa-arrow-right me-2"></i>Continue & Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join League Modal -->
+    <div class="modal fade" id="joinLeagueModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content join-league-modal">
+                <div class="modal-header join-league-header">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-icon me-3">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0">Join Existing League</h5>
+                            <small class="text-muted">Enter your invitation code to get started</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="joinLeagueForm">
+                        <div class="text-center mb-4">
+                            <div class="join-code-icon mb-3">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <h6 class="mb-2">League Join Code</h6>
+                            <p class="text-muted">Enter the 8-character code provided by your league commissioner</p>
+                        </div>
+                        
+                        <div class="join-code-input-container">
+                            <input type="text" 
+                                   class="form-control form-control-lg text-center join-code-input" 
+                                   id="joinCodeModal" 
+                                   placeholder="ABC12345"
+                                   maxlength="8"
+                                   required>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <i class="fas fa-rocket"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <h6>Quick Start</h6>
+                                        <p class="small text-muted">Join instantly and start making picks right away</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <h6>Secure Access</h6>
+                                        <p class="small text-muted">Only members with the code can join the league</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info-custom mt-3">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Don't have a join code?</strong> Ask your league commissioner to send you an invitation or check your email for the code.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer join-league-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success btn-join-league" id="continueSignUpBtn">
+                        <i class="fas fa-arrow-right me-2"></i>Continue & Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    /* Landing page styles - force override */
+    body.landing-page {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        background: linear-gradient(135deg, #013369 0%, #000000 100%) !important;
+        min-height: 100vh !important;
+        font-feature-settings: 'liga' 1, 'kern' 1;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Remove any pseudo elements that might be adding backgrounds */
+    body.landing-page::before,
+    body.landing-page::after {
+        display: none !important;
+    }
+
+    /* NFL Logo Animation */
+    .nfl-logo-container {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #D50A0A;
+        border-radius: 50%;
+        box-shadow: 0 4px 20px rgba(213, 10, 10, 0.3);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .nfl-logo {
+        font-size: 2.5rem;
+        color: #FFFFFF;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 4px 20px rgba(213, 10, 10, 0.3);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(213, 10, 10, 0.5);
+        }
+    }
+
+    /* NFL Brand Title */
+    .nfl-brand-title {
+        font-size: 3.5rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        background: linear-gradient(45deg, #ffffff, #f1f5f9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Tagline */
+    .tagline {
+        font-size: 1.1rem;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        font-weight: 400;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Auth Card */
+    .auth-card {
+        background: rgba(255, 255, 255, 0.92);
+        border: none;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+
+    .auth-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #013369, #D50A0A, #013369);
+        background-size: 200% 100%;
+        animation: gradient 3s ease infinite;
+    }
+
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Auth Title */
+    .auth-title {
+        color: #013369;
+        font-weight: 800;
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .create-league-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(213, 10, 10, 0.2);
+        border-color: #D50A0A;
+    }
+
+    .join-league-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(1, 51, 105, 0.2);
+        border-color: #013369;
+    }
+
+    .action-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .create-league-card .action-icon {
+        background: linear-gradient(135deg, #D50A0A, #B8090A);
+    }
+
+    .join-league-card .action-icon {
+        background: linear-gradient(135deg, #013369, #000000);
+    }
+
+    .how-it-works-step {
+        text-align: center;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #013369, #000000);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin: 0 auto 1rem auto;
+        border: 2px solid #D50A0A;
+    }
+
+    #joinCode {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    #joinCode:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        background: white;
+    }
+
+    /* Enhanced Modal Styling */
+    .create-league-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .create-league-header {
+        background: linear-gradient(135deg, #013369 0%, #000000 100%);
+        color: white;
+        border: none;
+        padding: 1.5rem 2rem;
+        border-bottom: 3px solid #D50A0A;
+    }
+
+    .create-league-header .modal-icon {
+        width: 50px;
+        height: 50px;
+        background: #D50A0A;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(213, 10, 10, 0.3);
+    }
+
+    .create-league-header .modal-title {
+        color: white;
+        font-weight: 700;
+    }
+
+    .create-league-header small {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .create-league-footer {
+        border: none;
+        background: #f8f9fa;
+        padding: 1.5rem 2rem;
+    }
+
+    .btn-create-league {
+        background: linear-gradient(135deg, #D50A0A, #B8090A);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        color: white;
+    }
+
+    .btn-create-league:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(213, 10, 10, 0.3);
+        background: linear-gradient(135deg, #B8090A, #A00808);
+        color: white;
+    }
+
+    /* Settings Sections */
+    .settings-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border-left: 4px solid #013369;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #013369, #000000);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        font-size: 0.9rem;
+        border: 2px solid #D50A0A;
+    }
+
+    .section-title {
+        margin: 0;
+        color: #333;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    /* Join League Modal Styling */
+    .join-league-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .join-league-header {
+        background: linear-gradient(135deg, #013369 0%, #000000 100%);
+        color: white;
+        border: none;
+        padding: 1.5rem 2rem;
+        border-bottom: 3px solid #D50A0A;
+    }
+
+    .join-league-header .modal-icon {
+        width: 50px;
+        height: 50px;
+        background: #D50A0A;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(213, 10, 10, 0.3);
+    }
+
+    .join-league-header .modal-title {
+        color: white;
+        font-weight: 700;
+    }
+
+    .join-league-header small {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .join-league-footer {
+        border: none;
+        background: #f8f9fa;
+        padding: 1.5rem 2rem;
+    }
+
+    .btn-join-league {
+        background: linear-gradient(135deg, #D50A0A, #B8090A);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        color: white;
+    }
+
+    .btn-join-league:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(213, 10, 10, 0.3);
+        background: linear-gradient(135deg, #B8090A, #A00808);
+        color: white;
+    }
+
+    /* Join Code Styling */
+    .join-code-icon {
+        width: 80px;
+        height: 80px;
+        background: #D50A0A;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto;
+        animation: pulse 2s ease-in-out infinite;
+        box-shadow: 0 4px 20px rgba(213, 10, 10, 0.3);
+    }
+
+    .join-code-input-container {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .join-code-input {
+        font-size: 1.75rem;
+        font-weight: bold;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        background: #f8f9fa;
+        border: 3px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .join-code-input:focus {
+        background: white;
+        border-color: #013369;
+        box-shadow: 0 0 0 0.2rem rgba(1, 51, 105, 0.15);
+        transform: scale(1.02);
+    }
+
+    /* Info Cards */
+    .info-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .info-card:hover {
+        border-color: #013369;
+        box-shadow: 0 4px 12px rgba(1, 51, 105, 0.1);
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #013369, #000000);
+        color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+        border: 1px solid #D50A0A;
+    }
+
+    .info-content h6 {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .info-content p {
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .alert-info-custom {
+        background: rgba(1, 51, 105, 0.1);
+        border: 1px solid rgba(1, 51, 105, 0.2);
+        color: #013369;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Form Styling */
+    .create-league-modal .form-control,
+    .create-league-modal .form-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .create-league-modal .form-control:focus,
+    .create-league-modal .form-select:focus {
+        border-color: #013369;
+        box-shadow: 0 0 0 0.2rem rgba(1, 51, 105, 0.15);
+    }
+
+    .create-league-modal .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .create-league-modal .form-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .modal-xl {
+            margin: 0.5rem;
+        }
+        
+        .settings-section {
+            padding: 1rem;
+        }
+        
+        .create-league-header,
+        .create-league-footer,
+        .join-league-header,
+        .join-league-footer {
+            padding: 1rem;
+        }
+        
+        .join-code-input {
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+        }
+    }
+
+    /* Custom NFL-themed buttons for action cards */
+    .btn-nfl-primary {
+        background: linear-gradient(135deg, #D50A0A, #B8090A);
+        border: none;
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-nfl-primary:hover {
+        background: linear-gradient(135deg, #B8090A, #A00808);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(213, 10, 10, 0.3);
+        color: white;
+    }
+
+    .btn-nfl-secondary {
+        background: linear-gradient(135deg, #013369, #000000);
+        border: none;
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-nfl-secondary:hover {
+        background: linear-gradient(135deg, #000000, #012040);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(1, 51, 105, 0.3);
+        color: white;
+    }
+
+    /* Sign-in link styling */
+    .sign-in-link {
+        color: #D50A0A;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+    .sign-in-link:hover {
+        color: #B8090A;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+    </style>
+
+    <script>
+    // Handle URL parameters for join codes
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const joinCode = urlParams.get('code') || urlParams.get('join_code');
+        const hash = window.location.hash;
+        
+        if (joinCode) {
+            // Auto-open join league modal and pre-fill the code
+            const joinLeagueModal = new bootstrap.Modal(document.getElementById('joinLeagueModal'));
+            joinLeagueModal.show();
+            
+            // Pre-fill the join code in the modal
+            const joinCodeModalInput = document.getElementById('joinCodeModal');
+            if (joinCodeModalInput) {
+                joinCodeModalInput.value = joinCode.toUpperCase();
+            }
+        } else if (hash === '#join') {
+            // Auto-open join league modal without pre-filled code
+            const joinLeagueModal = new bootstrap.Modal(document.getElementById('joinLeagueModal'));
+            joinLeagueModal.show();
+        }
+
+        // Add event listener for Continue & Sign Up button
+        const continueSignUpBtn = document.getElementById('continueSignUpBtn');
+        if (continueSignUpBtn) {
+            continueSignUpBtn.addEventListener('click', proceedToJoinLeague);
+        }
+    });
+
+    function proceedToCreateLeague() {
+        // Validate form
+        const leagueName = document.getElementById('leagueName').value.trim();
+        if (!leagueName) {
+            alert('Please enter a league name');
+            return;
+        }
+        
+        // Get max participants value
+        const unlimitedParticipants = document.getElementById('unlimitedParticipants').checked;
+        const maxParticipants = unlimitedParticipants ? 999 : document.getElementById('maxParticipants').value || 50;
+        
+        // Get tier data if multi-tier is enabled
+        const enableMultiTier = document.getElementById('enableMultiTier').checked;
+        let tierData = [];
+        if (enableMultiTier) {
+            const tierRows = document.querySelectorAll('.tier-row');
+            tierRows.forEach((row, index) => {
+                const tierName = row.querySelector('input[name="tierName[]"]').value;
+                const tierFee = row.querySelector('input[name="tierFee[]"]').value;
+                const tierDescription = row.querySelector('input[name="tierDescription[]"]').value;
+                
+                if (tierName && tierFee && tierDescription) {
+                    tierData.push({
+                        name: tierName,
+                        fee: tierFee,
+                        description: tierDescription
+                    });
+                }
+            });
+        }
+        
+        // Store comprehensive league settings in sessionStorage
+        const leagueSettings = {
+            // Basic Information
+            name: leagueName,
+            seasonYear: document.getElementById('seasonYear').value,
+            description: document.getElementById('leagueDescription').value,
+            
+            // League Settings
+            privacy: document.getElementById('privacy').value,
+            maxParticipants: maxParticipants,
+            maxEntries: document.getElementById('maxEntries').value,
+            
+            // Entry Fees
+            entryFee: document.getElementById('entryFee').value || 0,
+            enableMultiTier: enableMultiTier,
+            tiers: tierData,
+            
+            // Confidence Pool Settings
+            pickMethod: document.getElementById('pickMethod').value,
+            pointSystem: document.getElementById('pointSystem').value,
+            pointMultiplier: document.getElementById('pointMultiplier').value,
+            deadlineType: document.getElementById('deadlineType').value,
+            weeklyDeadline: document.getElementById('weeklyDeadline').value,
+            
+            // Fixed pool type for now
+            poolType: 'confidence'
+        };
+        
+        sessionStorage.setItem('leagueSettings', JSON.stringify(leagueSettings));
+        sessionStorage.setItem('postLoginAction', 'create-league');
+        
+        // Redirect to register/login with league context
+        window.location.href = '/auth/login?action=create-league';
+    }
+
+    function proceedToJoinLeague() {
+        const joinCodeInput = document.getElementById('joinCodeModal');
+        const joinCode = joinCodeInput ? joinCodeInput.value.trim().toUpperCase() : '';
+        
+        if (!joinCode) {
+            alert('Please enter a join code');
+            if (joinCodeInput) joinCodeInput.focus();
+            return;
+        }
+        
+        if (joinCode.length !== 8) {
+            alert('Join codes are 8 characters long');
+            if (joinCodeInput) joinCodeInput.focus();
+            return;
+        }
+        
+        // Add visual feedback
+        const button = document.querySelector('.btn-join-league');
+        if (button) {
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
+            button.disabled = true;
+        }
+        
+        // Store join code and action for after login
+        sessionStorage.setItem('postLoginAction', 'join-league');
+        sessionStorage.setItem('joinCode', joinCode);
+        
+        // Redirect to registration with join code (new users likely need to sign up)
+        window.location.href = `/auth/register?action=join-league&code=${joinCode}`;
+    }
+    
+    // Helper functions for multi-tier management
+    function addNewTier() {
+        const container = document.getElementById('tiersContainer');
+        const tierCount = container.querySelectorAll('.tier-row').length + 1;
+        
+        const newTier = document.createElement('div');
+        newTier.className = 'tier-row border rounded p-3 mb-3';
+        newTier.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0 text-primary">Tier ${tierCount}</h6>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-tier">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tier Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="tierName[]" placeholder="e.g., Premium League" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Entry Fee ($) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" name="tierFee[]" placeholder="50.00" min="0" step="0.01" required>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Description <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="tierDescription[]" placeholder="All payouts + bonus prizes" required>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(newTier);
+        updateTierNumbers();
+    }
+    
+    function updateTierNumbers() {
+        const tierRows = document.querySelectorAll('.tier-row');
+        tierRows.forEach((row, index) => {
+            const tierHeader = row.querySelector('h6');
+            if (tierHeader) {
+                tierHeader.textContent = `Tier ${index + 1}`;
+            }
+            
+            // Show/hide remove button (first tier can't be removed if it's the only one)
+            const removeBtn = row.querySelector('.remove-tier');
+            if (removeBtn) {
+                if (tierRows.length === 1 || index === 0) {
+                    removeBtn.style.display = index === 0 && tierRows.length === 1 ? 'none' : 'inline-block';
+                } else {
+                    removeBtn.style.display = 'inline-block';
+                }
+            }
+        });
+    }
+
+    function showJoinCodeSection() {
+        const joinCodeSection = document.getElementById('joinCodeSection');
+        const joinCodeInput = document.getElementById('joinCode');
+        
+        if (joinCodeSection) {
+            joinCodeSection.classList.remove('d-none');
+        }
+        if (joinCodeInput) {
+            joinCodeInput.focus();
+        }
+    }
+
+    function hideJoinCodeSection() {
+        const joinCodeSection = document.getElementById('joinCodeSection');
+        const joinCodeInput = document.getElementById('joinCode');
+        
+        if (joinCodeSection) {
+            joinCodeSection.classList.add('d-none');
+        }
+        if (joinCodeInput) {
+            joinCodeInput.value = '';
+        }
+    }
+
+    // Handle join code form submission
+    const joinCodeForm = document.getElementById('joinCodeForm');
+    if (joinCodeForm) {
+        joinCodeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const joinCode = document.getElementById('joinCode').value.trim().toUpperCase();
+            
+            if (!joinCode) {
+                alert('Please enter a join code');
+                return;
+            }
+            
+            if (joinCode.length !== 8) {
+                alert('Join codes are 8 characters long');
+                return;
+            }
+            
+            // Store join code and action for after login
+            sessionStorage.setItem('postLoginAction', 'join-league');
+            sessionStorage.setItem('joinCode', joinCode);
+            
+            // Redirect to login with join code
+            window.location.href = `/auth/login?action=join-league&code=${joinCode}`;
+        });
+    }
+
+    // Enhanced modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle unlimited participants checkbox
+        const unlimitedParticipants = document.getElementById('unlimitedParticipants');
+        const maxParticipantsInput = document.getElementById('maxParticipants');
+        
+        if (unlimitedParticipants && maxParticipantsInput) {
+            // Set initial state for unlimited (checked by default)
+            maxParticipantsInput.placeholder = 'Unlimited';
+            maxParticipantsInput.value = '';
+            
+            unlimitedParticipants.addEventListener('change', function() {
+                maxParticipantsInput.disabled = this.checked;
+                if (this.checked) {
+                    maxParticipantsInput.value = '';
+                    maxParticipantsInput.placeholder = 'Unlimited';
+                } else {
+                    maxParticipantsInput.value = '50';
+                    maxParticipantsInput.placeholder = '';
+                }
+            });
+        }
+        
+        // Handle point system selection
+        const pointSystem = document.getElementById('pointSystem');
+        const multiplierSettings = document.getElementById('multiplierSettings');
+        
+        if (pointSystem && multiplierSettings) {
+            pointSystem.addEventListener('change', function() {
+                if (this.value === 'multiplier') {
+                    multiplierSettings.style.display = 'block';
+                    updatePointPreview();
+                } else {
+                    multiplierSettings.style.display = 'none';
+                }
+            });
+        }
+        
+        // Handle deadline type selection
+        const deadlineType = document.getElementById('deadlineType');
+        const weeklyDeadlineSection = document.getElementById('weeklyDeadlineSection');
+        
+        if (deadlineType && weeklyDeadlineSection) {
+            deadlineType.addEventListener('change', function() {
+                if (this.value === 'league_wide') {
+                    weeklyDeadlineSection.style.display = 'block';
+                } else {
+                    weeklyDeadlineSection.style.display = 'none';
+                }
+            });
+        }
+        
+        // Handle point multiplier changes
+        const pointMultiplier = document.getElementById('pointMultiplier');
+        if (pointMultiplier) {
+            pointMultiplier.addEventListener('input', updatePointPreview);
+        }
+        
+        // Handle multi-tier expansion
+        const enableMultiTier = document.getElementById('enableMultiTier');
+        const multiTierSettings = document.getElementById('multiTierSettings');
+        
+        if (enableMultiTier && multiTierSettings) {
+            enableMultiTier.addEventListener('change', function() {
+                if (this.checked) {
+                    multiTierSettings.style.display = 'block';
+                } else {
+                    multiTierSettings.style.display = 'none';
+                }
+            });
+        }
+        
+        // Handle add tier button
+        const addTierBtn = document.getElementById('addTierBtn');
+        if (addTierBtn) {
+            addTierBtn.addEventListener('click', function() {
+                addNewTier();
+            });
+        }
+        
+        // Handle remove tier buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-tier')) {
+                e.target.closest('.tier-row').remove();
+                updateTierNumbers();
+            }
+        });
+    });
+    
+    function updatePointPreview() {
+        const multiplier = document.getElementById('pointMultiplier').value || 2;
+        const preview = document.getElementById('pointPreview');
+        if (preview) {
+            const conf1 = 1 * multiplier;
+            const conf2 = 2 * multiplier;
+            const conf16 = 16 * multiplier;
+            preview.textContent = `Confidence 1 = ${conf1} pts, Confidence 2 = ${conf2} pts, Confidence 16 = ${conf16} pts`;
+        }
+    }
+
+    // Format join code inputs
+    const joinCodeInput = document.getElementById('joinCode');
+    const joinCodeModalInput = document.getElementById('joinCodeModal');
+    
+    [joinCodeInput, joinCodeModalInput].forEach(input => {
+        if (input) {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (value.length > 8) value = value.substr(0, 8);
+                e.target.value = value;
+            });
+
+            // Auto-submit when 8 characters entered (only for modal)
+            if (input.id === 'joinCodeModal') {
+                input.addEventListener('input', function(e) {
+                    if (e.target.value.length === 8) {
+                        setTimeout(() => {
+                            proceedToJoinLeague();
+                        }, 500);
+                    }
+                });
+            }
+        }
+    });
+    
+    // Format join code input (original)
+    if (joinCodeInput) {
+        joinCodeInput.addEventListener('input', function(e) {
+            if (e.target.value.length === 8) {
+                setTimeout(() => {
+                    const form = document.getElementById('joinCodeForm');
+                    if (form) {
+                        form.dispatchEvent(new Event('submit'));
+                    }
+                }, 500);
+            }
+        });
+    }
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="/js/main.js"></script>
+</body>
+</html>

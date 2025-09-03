@@ -1,0 +1,324 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="display-5 mb-0">
+                    <i class="fas fa-cogs text-primary me-3"></i>
+                    Admin Dashboard
+                </h1>
+                <p class="text-muted mb-0">Manage games, results, and system settings</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Quick Actions -->
+<div class="row g-4">
+    <!-- Games Management -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-football-ball me-2"></i>
+                    Games Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Manage game schedules, update scores, and process results.</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Update game results</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Bulk score processing</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Real-time updates</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Pick validation</li>
+                </ul>
+                <div class="mt-auto">
+                    <a href="/admin/games" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Manage Games
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Health -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-heartbeat me-2"></i>
+                    System Health
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Monitor system performance and health metrics.</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Database status</li>
+                    <li><i class="fas fa-check text-success me-2"></i>API endpoints</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Real-time connections</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Performance metrics</li>
+                </ul>
+                <div class="mt-auto">
+                    <a href="/health" class="btn btn-success" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i> View Health
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- League Overview -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    League Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">View all leagues and user activity across the platform.</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Active leagues</li>
+                    <li><i class="fas fa-check text-success me-2"></i>User statistics</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Pick activity</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Performance trends</li>
+                </ul>
+                <div class="mt-auto">
+                    <a href="/leagues" class="btn btn-info">
+                        <i class="fas fa-arrow-right me-1"></i> View Leagues
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Development Tools -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>
+                    Development Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Development and testing utilities for the platform.</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-flask text-warning me-2"></i>Test data generation</li>
+                    <li><i class="fas fa-flask text-warning me-2"></i>API testing</li>
+                    <li><i class="fas fa-flask text-warning me-2"></i>Debug tools</li>
+                    <li><i class="fas fa-flask text-warning me-2"></i>Performance profiling</li>
+                </ul>
+                <div class="mt-auto">
+                    <button class="btn btn-warning" disabled>
+                        <i class="fas fa-lock me-1"></i> Dev Tools
+                    </button>
+                    <small class="text-muted d-block mt-1">Coming Soon</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Management -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-cog me-2"></i>
+                    User Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Manage user accounts, permissions, and access controls.</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-user-plus text-secondary me-2"></i>User registration</li>
+                    <li><i class="fas fa-user-edit text-secondary me-2"></i>Profile management</li>
+                    <li><i class="fas fa-user-shield text-secondary me-2"></i>Role assignments</li>
+                    <li><i class="fas fa-user-times text-secondary me-2"></i>Access control</li>
+                </ul>
+                <div class="mt-auto">
+                    <button class="btn btn-secondary" disabled>
+                        <i class="fas fa-lock me-1"></i> User Admin
+                    </button>
+                    <small class="text-muted d-block mt-1">Coming Soon</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analytics -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-dark">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Comprehensive analytics and reporting dashboard.</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-chart-line text-dark me-2"></i>Performance metrics</li>
+                    <li><i class="fas fa-chart-pie text-dark me-2"></i>Usage statistics</li>
+                    <li><i class="fas fa-chart-area text-dark me-2"></i>Trend analysis</li>
+                    <li><i class="fas fa-download text-dark me-2"></i>Export reports</li>
+                </ul>
+                <div class="mt-auto">
+                    <button class="btn btn-dark" disabled>
+                        <i class="fas fa-lock me-1"></i> Analytics
+                    </button>
+                    <small class="text-muted d-block mt-1">Coming Soon</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Status Overview -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="status-indicator bg-success"></div>
+                            <h6 class="mt-2">Database</h6>
+                            <small class="text-success">Connected</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="status-indicator bg-success"></div>
+                            <h6 class="mt-2">WebSocket</h6>
+                            <small class="text-success">Active</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="status-indicator bg-warning"></div>
+                            <h6 class="mt-2">NFL API</h6>
+                            <small class="text-warning">Limited</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="status-indicator bg-info"></div>
+                            <h6 class="mt-2">Cache</h6>
+                            <small class="text-info">Optimal</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent System Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">System Started</h6>
+                            <p class="mb-1">NFL Confidence Pools platform initialized successfully</p>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Database Connected</h6>
+                            <p class="mb-1">Successfully connected to MySQL database with 25 tables</p>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">WebSocket Server Ready</h6>
+                            <p class="mb-1">Real-time communication server is active and ready for connections</p>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin: 0 auto;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 20px;
+    width: 2px;
+    height: 100%;
+    background-color: var(--bs-border-color);
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -26px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--bs-border-color);
+}
+
+.timeline-content h6 {
+    color: var(--bs-dark);
+    font-weight: 600;
+}
+
+.timeline-content p {
+    color: var(--bs-secondary);
+    margin-bottom: 4px;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+</style>

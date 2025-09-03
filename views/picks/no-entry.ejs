@@ -1,0 +1,23 @@
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-ticket-alt fa-4x text-muted mb-3"></i>
+                    <h3>Entry Required</h3>
+                    <p class="text-muted mb-4"><%= message %></p>
+                    <% if (league && league.league_name) { %>
+                        <p class="mb-4">League: <strong><%= league.league_name %></strong></p>
+                        <a href="/leagues/<%= league.league_id %>" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Entry
+                        </a>
+                    <% } else { %>
+                        <a href="/leagues" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Leagues
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

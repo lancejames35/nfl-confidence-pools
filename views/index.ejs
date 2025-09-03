@@ -1,0 +1,337 @@
+<%- contentFor('bodyClass', 'landing-page') %>
+<%- contentFor('layout', 'layouts/public') %>
+
+<!-- Hero Section -->
+<section class="hero-section bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    <i class="fas fa-football-ball me-3"></i>
+                    NFL Confidence Pools Platform
+                </h1>
+                <p class="lead mb-4">
+                    The most advanced platform for NFL confidence pools, survivor leagues, and squares games. 
+                    Built mobile-first with real-time features and professional-grade security.
+                </p>
+                <div class="d-flex flex-column flex-sm-row gap-3">
+                    <a href="/auth/register" class="btn btn-light btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Get Started Free
+                    </a>
+                    <a href="/auth/login" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="hero-image">
+                    <i class="fas fa-mobile-alt fa-10x text-light opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 mb-3">Why Choose Our Platform?</h2>
+                <p class="lead text-muted">
+                    Built by NFL fans, for NFL fans. Professional-grade features meet intuitive design.
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4>Mobile-First Design</h4>
+                    <p class="text-muted">
+                        Optimized for phones with large touch targets and thumb-friendly navigation. 
+                        Make picks on the go during game day.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-bolt fa-3x text-warning"></i>
+                    </div>
+                    <h4>Real-Time Features</h4>
+                    <p class="text-muted">
+                        Live chat, auto-saving picks, instant score updates, and real-time standings. 
+                        Stay connected with your league.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-palette fa-3x text-info"></i>
+                    </div>
+                    <h4>Custom Themes</h4>
+                    <p class="text-muted">
+                        Each league gets its own visual identity with 4 professional themes to choose from. 
+                        Make your league unique.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-hand-rock fa-3x text-success"></i>
+                    </div>
+                    <h4>Drag & Drop Picks</h4>
+                    <p class="text-muted">
+                        Intuitive confidence point assignment with smooth drag and drop. 
+                        Making picks has never been this easy.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-users fa-3x text-primary"></i>
+                    </div>
+                    <h4>Multiple Pool Types</h4>
+                    <p class="text-muted">
+                        Start with confidence pools, expand to survivor leagues and squares games. 
+                        All in one platform.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-shield-alt fa-3x text-danger"></i>
+                    </div>
+                    <h4>Enterprise Security</h4>
+                    <p class="text-muted">
+                        Bank-grade security with encrypted passwords, secure sessions, and comprehensive 
+                        audit logging.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pool Types Section -->
+<section class="pool-types-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 mb-3">Pool Types</h2>
+                <p class="lead text-muted">
+                    Multiple ways to compete with friends and family
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-sort-numeric-up me-2"></i>
+                            Confidence Pools
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Rank games by confidence (1-16 points). More confident picks earn more points when correct.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Straight up or against spread</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Drag & drop interface</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Advanced tiebreakers</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Season-long competition</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <span class="badge bg-success">Available Now</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-skull me-2"></i>
+                            Survivor Leagues
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Pick one team to win each week. Use each team only once. Last person standing wins!
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-clock text-warning me-2"></i>Single/double/triple elimination</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>Team reuse restrictions</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>Rebuy options</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>Elimination tracking</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <span class="badge bg-warning text-dark">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-th me-2"></i>
+                            Squares Pools
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Buy squares in a 10x10 grid. Win based on final score digits of each quarter.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-clock text-info me-2"></i>10x10 or 5x5 grids</li>
+                            <li><i class="fas fa-clock text-info me-2"></i>Quarterly payouts</li>
+                            <li><i class="fas fa-clock text-info me-2"></i>Random number assignment</li>
+                            <li><i class="fas fa-clock text-info me-2"></i>Automated payouts</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <span class="badge bg-info">Phase 3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Technology Section -->
+<section class="tech-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2 class="display-6 mb-4">Built for Performance</h2>
+                <p class="lead mb-4">
+                    Enterprise-grade architecture designed to handle hundreds of leagues with thousands of users.
+                </p>
+                
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="tech-stat text-center p-3">
+                            <h3 class="text-primary mb-1">25</h3>
+                            <small class="text-muted">Database Tables</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="tech-stat text-center p-3">
+                            <h3 class="text-success mb-1">4</h3>
+                            <small class="text-muted">Custom Themes</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="tech-stat text-center p-3">
+                            <h3 class="text-warning mb-1">Real-time</h3>
+                            <small class="text-muted">Updates</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="tech-stat text-center p-3">
+                            <h3 class="text-info mb-1">Mobile</h3>
+                            <small class="text-muted">Optimized</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="tech-stack">
+                    <h4 class="mb-3">Technology Stack</h4>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-primary fs-6">Node.js</span>
+                        <span class="badge bg-success fs-6">Express.js</span>
+                        <span class="badge bg-warning text-dark fs-6">MySQL</span>
+                        <span class="badge bg-info fs-6">Socket.io</span>
+                        <span class="badge bg-danger fs-6">Bootstrap 5</span>
+                        <span class="badge bg-secondary fs-6">JWT Auth</span>
+                        <span class="badge bg-dark fs-6">EJS</span>
+                        <span class="badge bg-primary fs-6">bcrypt</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h2 class="display-5 mb-3">Ready to Start Your League?</h2>
+        <p class="lead mb-4">
+            Join the most advanced NFL confidence pools platform. Free to start, built to scale.
+        </p>
+        <a href="/auth/register" class="btn btn-light btn-lg me-3">
+            <i class="fas fa-rocket me-2"></i>Get Started Now
+        </a>
+        <a href="#features" class="btn btn-outline-light btn-lg">
+            <i class="fas fa-info-circle me-2"></i>Learn More
+        </a>
+    </div>
+</section>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+    min-height: 60vh;
+}
+
+.feature-card {
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.tech-stat {
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.pool-types-section .card {
+    transition: transform 0.3s ease;
+}
+
+.pool-types-section .card:hover {
+    transform: translateY(-5px);
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 50vh;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .display-5 {
+        font-size: 1.75rem;
+    }
+}
+</style>

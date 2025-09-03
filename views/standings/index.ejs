@@ -1,0 +1,866 @@
+<div class="standings-container">
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item">
+                            <a href="/dashboard" class="text-decoration-none">Dashboard</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="/leagues/<%= league.league_id %>" class="text-decoration-none">
+                                <%= league.league_name %>
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Standings</li>
+                    </ol>
+                </nav>
+                <h1 class="display-5 mb-0">
+                    <i class="fas fa-trophy text-warning me-3"></i>
+                    Standings - UPDATED TEST
+                </h1>
+            </div>
+            
+            <!-- View Toggle -->
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="viewToggle" id="overallView" <%= view === 'overall' ? 'checked' : '' %>>
+                <label class="btn btn-outline-primary" for="overallView" data-view="overall">
+                    <i class="fas fa-chart-line me-1"></i>Overall
+                </label>
+                
+                <input type="radio" class="btn-check" name="viewToggle" id="weeklyView" <%= view === 'weekly' ? 'checked' : '' %>>
+                <label class="btn btn-outline-success" for="weeklyView" data-view="weekly">
+                    <i class="fas fa-calendar-week me-1"></i>Week <%= currentWeek %>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DEBUG: Tier Info Check -->
+<div style="background: #f8f9fa; padding: 1rem; margin: 1rem 0; border-radius: 8px; font-size: 0.8rem;">
+    <strong>Debug Info:</strong><br>
+    league.enable_multi_tier: <%= league.enable_multi_tier %><br>
+    tierInfo exists: <%= tierInfo ? 'yes' : 'no' %><br>
+    tierInfo length: <%= tierInfo ? tierInfo.length : 'N/A' %><br>
+    <% if (tierInfo && tierInfo.length > 0) { %>
+        First tier: <%= JSON.stringify(tierInfo[0]) %>
+    <% } %>
+</div>
+
+<!-- Elegant Collapsible Tier Filter -->
+<% if (league.enable_multi_tier && tierInfo && tierInfo.length > 0) { %>
+<div class="tier-filter-elegant" style="background: rgba(248, 249, 250, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; transition: all 0.3s ease;">
+    
+    <!-- Collapsed Header (Always Visible) -->
+    <div class="tier-header d-flex align-items-center justify-content-between" style="padding: 0.75rem 1rem; cursor: pointer; user-select: none;" id="tier-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fas fa-layer-group text-primary" style="font-size: 0.9rem;"></i>
+            <span style="font-weight: 600; font-size: 0.9rem; color: #495057;">Filter by Tier</span>
+            
+            <!-- Desktop: Show more tier names inline with perfect vertical alignment -->
+            <div class="d-none d-md-flex align-items-center gap-2" style="opacity: 0.8;">
+                <% 
+                    const softColors = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899'];
+                %>
+                <% tierInfo.slice(0, 6).forEach((tier, index) => { %>
+                    <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem; color: #6c757d; line-height: 1;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: <%= softColors[index] || '#6c757d' %>; flex-shrink: 0;"></span>
+                        <span style="white-space: nowrap;"><%= tier.tier_name %></span>
+                    </div>
+                    <% if (index < Math.min(tierInfo.length - 1, 5)) { %>
+                        <span style="color: #dee2e6; font-size: 0.6rem; line-height: 1;">•</span>
+                    <% } %>
+                <% }); %>
+                <% if (tierInfo.length > 6) { %>
+                    <span style="color: #6c757d; font-size: 0.7rem; line-height: 1;">+<%= tierInfo.length - 6 %> more</span>
+                <% } %>
+            </div>
+            
+            <!-- Mobile: Show longer tier names -->
+            <div class="d-md-none d-flex align-items-center gap-1 flex-wrap" style="opacity: 0.8; max-width: calc(100vw - 180px);">
+                <% tierInfo.forEach((tier, index) => { %>
+                    <div class="d-flex align-items-center gap-1" style="font-size: 0.7rem; color: #6c757d; line-height: 1;">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: <%= softColors[index] || '#6c757d' %>; flex-shrink: 0;"></span>
+                        <span style="white-space: nowrap;"><%= tier.tier_name.length > 7 ? tier.tier_name.substring(0, 7) : tier.tier_name %></span>
+                    </div>
+                    <% if (index < tierInfo.length - 1) { %>
+                        <span style="color: #dee2e6; font-size: 0.5rem; line-height: 1;">•</span>
+                    <% } %>
+                <% }); %>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <i class="fas fa-chevron-down transition-transform" id="tier-chevron" style="font-size: 0.7rem; color: #6c757d; transition: transform 0.2s ease;"></i>
+        </div>
+    </div>
+    
+    <!-- Expanded Content (Hidden by Default) -->
+    <div class="tier-content" id="tier-content" style="display: none; border-top: 1px solid rgba(0,0,0,0.08); background: white;">
+        
+        <!-- Desktop: Horizontal Pills -->
+        <div class="d-none d-md-block" style="padding: 1rem;">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button class="tier-pill active" data-tier="all" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; background: #0d6efd; color: white; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease;">
+                    <i class="fas fa-users" style="font-size: 0.75rem;"></i>
+                    All Players
+                    <span style="background: rgba(255,255,255,0.2); padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.25rem;"><%= standings.length %></span>
+                </button>
+                <% tierInfo.forEach((tier, index) => { %>
+                    <button class="tier-pill" data-tier="<%= tier.tier_id %>" title="<%= tier.tier_name %><% if (tier.tier_description) { %> - <%= tier.tier_description %><% } %>" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; background: white; color: #495057; border: 2px solid <%= softColors[index] || '#6c757d' %>20; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: <%= softColors[index] || '#6c757d' %>; flex-shrink: 0;"></span>
+                        <%= tier.tier_name %>
+                        <span style="background: <%= softColors[index] || '#6c757d' %>15; color: <%= softColors[index] || '#6c757d' %>; padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.25rem;"><%= tier.participant_count %></span>
+                    </button>
+                <% }); %>
+            </div>
+        </div>
+        
+        <!-- Mobile: Clean Single Column Layout -->
+        <div class="d-md-none" style="padding: 1rem;">
+            <!-- All Players Button -->
+            <button class="tier-mobile-card active w-100 mb-3" data-tier="all" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #0d6efd; color: white; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fas fa-users" style="font-size: 1rem;"></i>
+                    <span>All Players</span>
+                </div>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;"><%= standings.length %></span>
+            </button>
+            
+            <!-- Tier Buttons in Single Column -->
+            <div class="d-flex flex-column gap-2">
+                <% tierInfo.forEach((tier, index) => { %>
+                    <button class="tier-mobile-card w-100" data-tier="<%= tier.tier_id %>" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: white; color: #495057; border: 2px solid <%= softColors[index] || '#6c757d' %>30; border-radius: 12px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                        <div class="d-flex align-items-center gap-3">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: <%= softColors[index] || '#6c757d' %>; flex-shrink: 0;"></span>
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 0.125rem;"><%= tier.tier_name %></div>
+                                <% if (tier.tier_description) { %>
+                                    <div style="font-size: 0.75rem; color: #6c757d; line-height: 1.2;"><%= tier.tier_description.length > 40 ? tier.tier_description.substring(0, 40) + '...' : tier.tier_description %></div>
+                                <% } %>
+                            </div>
+                        </div>
+                        <span style="background: <%= softColors[index] || '#6c757d' %>15; color: <%= softColors[index] || '#6c757d' %>; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;"><%= tier.participant_count %></span>
+                    </button>
+                <% }); %>
+            </div>
+        </div>
+        
+    </div>
+</div>
+<% } %>
+
+<!-- Quick Stats Cards -->
+<% if (view === 'weekly' && weeklyStats) { %>
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weeklyStats.total_entries %></h5>
+                <p class="card-text mb-0">Active Entries</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-bullseye fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weeklyStats.accuracy %>%</h5>
+                <p class="card-text mb-0">League Accuracy</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-star fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weeklyStats.avg_points_per_entry %></h5>
+                <p class="card-text mb-0">Avg Points</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-fire fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weeklyStats.highest_single_pick %></h5>
+                <p class="card-text mb-0">Best Pick</p>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<div class="row">
+    <!-- Main Standings Table -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <% if (view === 'weekly') { %>
+                        <i class="fas fa-calendar-week me-2"></i>
+                        Week <%= currentWeek %> Standings
+                    <% } else { %>
+                        <i class="fas fa-crown me-2"></i>
+                        Season Leaderboard
+                    <% } %>
+                </h5>
+                
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-action="exportToCsv">
+                            <i class="fas fa-file-csv me-1"></i>Export CSV
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" data-action="sharePage">
+                            <i class="fas fa-share me-1"></i>Share Link
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="standingsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="60">#</th>
+                                <th>Player</th>
+                                <% if (view === 'weekly') { %>
+                                    <th width="80" class="text-center">W <%= currentWeek %></th>
+                                    <th width="100" class="text-center">Accuracy</th>
+                                    <th width="80" class="text-center">Best</th>
+                                    <th width="120" class="text-center">Season Total</th>
+                                <% } else { %>
+                                    <th width="100" class="text-center">Points</th>
+                                    <th width="80" class="text-center">Record</th>
+                                    <th width="100" class="text-center">Accuracy</th>
+                                    <th width="80" class="text-center">Trend</th>
+                                <% } %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- DEBUG: First Entry Info -->
+                            <% if (standings.length > 0) { %>
+                                <tr style="background: #fff3cd;">
+                                    <td colspan="100%" style="font-size: 0.7rem; padding: 0.5rem;">
+                                        <strong>DEBUG First Entry:</strong> 
+                                        tier_id: <%= standings[0].tier_id || 'null' %>, 
+                                        tier_name: <%= standings[0].tier_name || 'null' %>, 
+                                        username: <%= standings[0].username %>
+                                    </td>
+                                </tr>
+                            <% } %>
+                            
+                            <% standings.forEach((entry, index) => { %>
+                                <tr class="<%= index < 3 ? 'table-' + (index === 0 ? 'warning' : index === 1 ? 'light' : 'secondary') : '' %> <%= entry.user_id === user?.user_id ? 'current-user-row' : '' %>" 
+                                    data-tier-id="<%= entry.tier_id || '' %>"
+                                    data-tier-name="<%= entry.tier_name || 'Standard' %>"
+                                    data-user-id="<%= entry.user_id %>"
+                                    data-is-current-user="<%= entry.user_id === user?.user_id ? 'true' : 'false' %>">
+                                    <td class="text-center fw-bold rank-cell">
+                                        <% if (index === 0) { %>
+                                            <i class="fas fa-crown text-warning"></i>
+                                        <% } else if (index === 1) { %>
+                                            <i class="fas fa-medal text-secondary"></i>
+                                        <% } else if (index === 2) { %>
+                                            <i class="fas fa-award text-warning"></i>
+                                        <% } else { %>
+                                            <%= entry.position %>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td class="player-cell" data-tier-id="<%= entry.tier_id || '' %>" title="<%= entry.tier_id && tierInfo ? (tierInfo.find(t => t.tier_id === entry.tier_id)?.tier_name + ' - ') : '' %><%= entry.username %>" style="background: red !important; color: white !important;">
+                                        <!-- DEBUG INFO -->
+                                        <div style="background: red; color: white; font-size: 10px; padding: 2px; margin: 1px 0;">
+                                            DEBUG: tier_id=<%= entry.tier_id || 'null' %>, tierInfo=<%= tierInfo ? 'exists' : 'null' %>
+                                        </div>
+                                        <% 
+                                            const isCurrentUser = entry.user_id === user?.user_id;
+                                            let tierColor = null;
+                                            let hasTier = false;
+                                            if (entry.tier_id && tierInfo) {
+                                                const tierIndex = tierInfo.findIndex(t => t.tier_id === entry.tier_id);
+                                                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316'];
+                                                tierColor = colors[tierIndex] || '#6c757d';
+                                                hasTier = true;
+                                            }
+                                        %>
+                                        <div style="background: yellow; color: black; font-size: 10px; padding: 2px; margin: 1px 0;">
+                                            DEBUG: hasTier=<%= hasTier %>, tierColor=<%= tierColor || 'null' %>, isCurrentUser=<%= isCurrentUser %>
+                                        </div>
+                                        <div class="<%= isCurrentUser ? 'current-user' : '' %>" style="<% if (hasTier) { %>background: linear-gradient(135deg, <%= tierColor %>28 0%, <%= tierColor %>18 40%, transparent 100%) !important; border: 1px solid <%= tierColor %>35 !important; border-radius: 6px !important; padding: 0.4rem 0.6rem !important; position: relative !important;<% } else { %>padding: 0.4rem 0 !important;<% } %>">
+                                            <% if (hasTier) { %>
+                                                <div style="position: absolute !important; top: 2px !important; right: 2px !important; width: 8px !important; height: 8px !important; background: <%= tierColor %> !important; border-radius: 50% !important; box-shadow: 0 1px 3px <%= tierColor %>50 !important;"></div>
+                                            <% } %>
+                                            <div style="font-weight: <% if (isCurrentUser) { %>800<% } else { %>600<% } %> !important; font-size: 0.8rem !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; <% if (isCurrentUser) { %>color: #0066cc !important;<% } %>">
+                                                <%= entry.username %>
+                                            </div>
+                                            <div style="background: green; color: white; font-size: 10px; padding: 2px;">
+                                                DEBUG: Applied tier styling with !important
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <% if (view === 'weekly') { %>
+                                        <td class="text-center">
+                                            <span class="fs-5 fw-bold text-primary">
+                                                <%= entry.week_points || 0 %>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div>
+                                                <span class="badge bg-<%= parseFloat(entry.week_accuracy) >= 60 ? 'success' : parseFloat(entry.week_accuracy) >= 40 ? 'warning' : 'danger' %>">
+                                                    <%= entry.week_accuracy || 0 %>%
+                                                </span>
+                                            </div>
+                                            <small class="text-muted">
+                                                <%= entry.week_correct || 0 %>/<%= entry.week_picks || 0 %>
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <% if (entry.best_pick) { %>
+                                                <span class="badge bg-success">
+                                                    <%= entry.best_pick %>
+                                                </span>
+                                            <% } else { %>
+                                                <span class="text-muted">-</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="fw-bold">
+                                                <%= entry.season_total || 0 %>
+                                            </div>
+                                            <small class="text-muted">
+                                                <%= entry.season_accuracy || 0 %>%
+                                            </small>
+                                        </td>
+                                    <% } else { %>
+                                        <td class="text-center">
+                                            <span class="fs-4 fw-bold text-primary">
+                                                <%= entry.total_points || 0 %>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="fw-semibold">
+                                                <%= entry.correct_picks || 0 %>-<%= (entry.total_picks - entry.correct_picks) || 0 %>
+                                            </div>
+                                            <small class="text-muted">
+                                                <%= entry.total_picks || 0 %> picks
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-<%= parseFloat(entry.accuracy) >= 60 ? 'success' : parseFloat(entry.accuracy) >= 40 ? 'warning' : 'danger' %>">
+                                                <%= entry.accuracy || 0 %>%
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <% if (entry.recent_avg_points) { %>
+                                                <div class="d-flex align-items-center justify-content-center">
+                                                    <% 
+                                                    const trend = parseFloat(entry.recent_avg_points) - parseFloat(entry.avg_weekly_points);
+                                                    const trendClass = trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-muted';
+                                                    const trendIcon = trend > 0 ? 'fa-arrow-up' : trend < 0 ? 'fa-arrow-down' : 'fa-minus';
+                                                    %>
+                                                    <i class="fas <%= trendIcon %> <%= trendClass %>"></i>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <%= parseFloat(entry.recent_avg_points).toFixed(1) %>
+                                                </small>
+                                            <% } else { %>
+                                                <span class="text-muted">-</span>
+                                            <% } %>
+                                        </td>
+                                    <% } %>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <% if (standings.length === 0) { %>
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No standings data available</h5>
+                    <p class="text-muted">Standings will appear once picks are submitted and games are scored.</p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Week Navigation -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-calendar me-2"></i>
+                    Week Navigation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <% for (let w = 1; w <= 18; w++) { %>
+                        <div class="col-3">
+                            <button 
+                                type="button" 
+                                class="btn <%= w == currentWeek ? 'btn-primary' : 'btn-outline-secondary' %> btn-sm w-100"
+                                data-week="<%= w %>"
+                            >
+                                W<%= w %>
+                            </button>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <% if (recentActivity && recentActivity.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Activity
+                </h6>
+                <small class="text-muted">Last 10</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <% recentActivity.forEach(activity => { %>
+                        <div class="list-group-item border-0 py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-xs bg-<%= activity.is_correct ? 'success' : 'danger' %> text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                    <i class="fas fa-<%= activity.is_correct ? 'check' : 'times' %> fa-xs"></i>
+                                </div>
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="text-truncate">
+                                        <strong><%= activity.username %></strong>
+                                        <span class="<%= activity.is_correct ? 'text-success' : 'text-danger' %>">
+                                            <%= activity.is_correct ? 'won' : 'lost' %>
+                                        </span>
+                                        <%= activity.confidence_points %> on <%= activity.selected_team %>
+                                    </div>
+                                    <small class="text-muted">
+                                        <%= activity.away_team %> @ <%= activity.home_team %>
+                                        • <%= activity.is_correct ? '+' + activity.points_earned : '0' %> pts
+                                    </small>
+                                </div>
+                                <small class="text-muted">
+                                    W<%= activity.week %>
+                                </small>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/picks/<%= league.league_id %>" class="btn btn-outline-success">
+                        <i class="fas fa-hand-point-right me-2"></i>
+                        Make Picks
+                    </a>
+                    <a href="/leagues/<%= league.league_id %>" class="btn btn-outline-primary">
+                        <i class="fas fa-users me-2"></i>
+                        League Home
+                    </a>
+                    <button type="button" class="btn btn-outline-info" id="refreshStandings">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container max-width to match results page */
+.standings-container {
+    max-width: 1600px;  /* Increased to match results page */
+    margin: 0 auto;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.avatar-xs {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+}
+
+.min-width-0 {
+    min-width: 0;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Top 3 highlighting */
+.table-warning {
+    --bs-table-bg: rgb(255, 243, 205);
+}
+
+/* Auto-refresh indicator */
+.refresh-indicator {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Current User Highlighting */
+.current-user-row {
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.08) 0%, rgba(13, 110, 253, 0.04) 50%, rgba(13, 110, 253, 0.08) 100%) !important;
+    border-left: 4px solid #0d6efd !important;
+    box-shadow: inset 0 0 0 1px rgba(13, 110, 253, 0.1) !important;
+}
+
+/* Enhanced tier indicators for current user */
+.current-user-row .current-user {
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.3), 0 2px 8px rgba(13, 110, 253, 0.2) !important;
+    border-color: #0d6efd !important;
+}
+
+/* Keep top 3 highlighting but make it work with current user */
+.current-user-row.table-warning {
+    background: linear-gradient(90deg, rgba(255, 193, 7, 0.15) 0%, rgba(13, 110, 253, 0.08) 50%, rgba(255, 193, 7, 0.15) 100%) !important;
+}
+
+.current-user-row.table-light {
+    background: linear-gradient(90deg, rgba(248, 249, 250, 0.8) 0%, rgba(13, 110, 253, 0.08) 50%, rgba(248, 249, 250, 0.8) 100%) !important;
+}
+
+.current-user-row.table-secondary {
+    background: linear-gradient(90deg, rgba(108, 117, 125, 0.15) 0%, rgba(13, 110, 253, 0.08) 50%, rgba(108, 117, 125, 0.15) 100%) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .fs-4 {
+        font-size: 1.1rem !important;
+    }
+    
+    .fs-5 {
+        font-size: 1rem !important;
+    }
+    
+    .current-user-row {
+        border-left: 3px solid #0d6efd !important;
+    }
+}
+
+/* Sticky positioning for rank and player columns */
+.rank-cell {
+    position: sticky;
+    left: 0;
+    width: 60px;
+    min-width: 60px;
+    background: white !important;
+    z-index: 14;
+    text-align: center;
+    border-right: 2px solid #dee2e6;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.player-cell {
+    position: sticky;
+    left: 60px;
+    width: 200px;
+    min-width: 200px;
+    background: white !important;
+    z-index: 14;
+    border-right: 2px solid #dee2e6;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    padding: 2px 4px !important;
+}
+</style>
+
+<script>
+function switchView(viewType) {
+    const url = new URL(window.location);
+    url.searchParams.set('view', viewType);
+    window.location.href = url.toString();
+}
+
+function goToWeek(week) {
+    const url = new URL(window.location);
+    url.searchParams.set('week', week);
+    if (url.searchParams.get('view') !== 'weekly') {
+        url.searchParams.set('view', 'weekly');
+    }
+    window.location.href = url.toString();
+}
+
+function refreshStandings() {
+    const button = document.getElementById('refreshStandings');
+    const icon = button.querySelector('i');
+    
+    // Add loading state
+    icon.classList.add('refresh-indicator');
+    button.disabled = true;
+    
+    // Reload page after brief delay for visual feedback
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+function exportToCsv() {
+    const table = document.getElementById('standingsTable');
+    let csv = [];
+    
+    // Get headers
+    const headers = [];
+    table.querySelectorAll('thead th').forEach(th => {
+        headers.push(th.textContent.trim());
+    });
+    csv.push(headers.join(','));
+    
+    // Get data rows
+    table.querySelectorAll('tbody tr').forEach(tr => {
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => {
+            // Clean text content
+            const text = td.textContent.trim().replace(/\s+/g, ' ').replace(/,/g, ';');
+            row.push(text);
+        });
+        csv.push(row.join(','));
+    });
+    
+    // Download CSV
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `<%= league.league_name %>_standings_week<%= currentWeek %>.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function sharePage() {
+    if (navigator.share) {
+        navigator.share({
+            title: '<%= league.league_name %> Standings',
+            text: 'Check out the current standings for <%= league.league_name %>!',
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    }
+}
+
+// Auto-refresh every 5 minutes if on current week
+<% if (view === 'weekly' && currentWeek <= 18) { %>
+setInterval(() => {
+    // Only refresh if the page is visible
+    if (!document.hidden) {
+        fetch('/standings/api/<%= league.league_id %>?type=weekly&week=<%= currentWeek %>')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Subtle indication that data was refreshed
+                    document.title = '🔄 ' + document.title.replace('🔄 ', '');
+                    setTimeout(() => {
+                        document.title = document.title.replace('🔄 ', '');
+                    }, 2000);
+                }
+            })
+            .catch(console.error);
+    }
+}, 300000); // 5 minutes
+<% } %>
+
+// Fix CSP violation - add event listeners
+document.querySelectorAll('[data-view]').forEach(label => {
+    label.addEventListener('click', function(e) {
+        const view = this.getAttribute('data-view');
+        switchView(view);
+    });
+});
+
+document.querySelectorAll('[data-action]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const action = this.getAttribute('data-action');
+        if (action === 'exportToCsv') {
+            exportToCsv();
+        } else if (action === 'sharePage') {
+            sharePage();
+        }
+    });
+});
+
+document.querySelectorAll('[data-week]').forEach(button => {
+    button.addEventListener('click', function() {
+        const week = parseInt(this.getAttribute('data-week'));
+        goToWeek(week);
+    });
+});
+
+<% if (league.enable_multi_tier && tierInfo && tierInfo.length > 0) { %>
+// Elegant Tier Filter Toggle Function
+function toggleTierFilter() {
+    const content = document.getElementById('tier-content');
+    const chevron = document.getElementById('tier-chevron');
+    const header = document.getElementById('tier-header');
+    
+    if (content.style.display === 'none' || !content.style.display) {
+        // Expand
+        content.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+        header.style.background = 'rgba(13, 110, 253, 0.05)';
+    } else {
+        // Collapse
+        content.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+        header.style.background = 'transparent';
+    }
+}
+
+function filterByTier(tierId) {
+    // Get all table rows with tier data
+    const tableRows = document.querySelectorAll('#standingsTable tbody tr[data-tier-id]');
+    
+    // Show/hide rows
+    tableRows.forEach(row => {
+        const rowTierId = row.getAttribute('data-tier-id');
+        
+        if (tierId === 'all' || rowTierId === tierId) {
+            row.style.display = '';
+            row.classList.remove('tier-filtered');
+        } else {
+            row.style.display = 'none';
+            row.classList.add('tier-filtered');
+        }
+    });
+}
+
+// Initialize tier functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handler for the tier header toggle
+    const tierHeader = document.getElementById('tier-header');
+    if (tierHeader) {
+        tierHeader.addEventListener('click', toggleTierFilter);
+    }
+    
+    // Handle both desktop pills and mobile cards
+    const tierButtons = document.querySelectorAll('.tier-pill, .tier-mobile-card');
+    
+    if (tierButtons.length > 0) {        
+        // Add click handlers for tier filter buttons
+        tierButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tierId = this.dataset.tier;
+                
+                // Update active button styling
+                tierButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.classList.contains('tier-pill')) {
+                        // Desktop pills
+                        if (btn.dataset.tier === 'all') {
+                            btn.style.background = '#0d6efd';
+                            btn.style.color = 'white';
+                            btn.style.border = 'none';
+                        } else {
+                            btn.style.background = 'white';
+                            btn.style.color = '#495057';
+                            btn.style.border = '2px solid rgba(108, 117, 125, 0.2)';
+                        }
+                    } else if (btn.classList.contains('tier-mobile-card')) {
+                        // Mobile cards
+                        if (btn.dataset.tier === 'all') {
+                            btn.style.background = '#0d6efd';
+                            btn.style.color = 'white';
+                        } else {
+                            btn.style.background = 'white';
+                            btn.style.color = '#495057';
+                            btn.style.border = '2px solid rgba(108, 117, 125, 0.2)';
+                        }
+                    }
+                });
+                
+                // Set active button styling
+                this.classList.add('active');
+                if (tierId === 'all') {
+                    this.style.background = '#0d6efd';
+                    this.style.color = 'white';
+                    this.style.border = 'none';
+                } else {
+                    // Get the tier color from the button's existing border/color
+                    const tierIndex = Array.from(tierButtons).filter(b => b.dataset.tier !== 'all').indexOf(this);
+                    const softColors = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899'];
+                    const tierColor = softColors[tierIndex] || '#6c757d';
+                    
+                    this.style.background = tierColor;
+                    this.style.color = 'white';
+                    this.style.border = `2px solid ${tierColor}`;
+                }
+                
+                // Filter table rows
+                filterByTier(tierId);
+            });
+            
+            // Add hover effects
+            button.addEventListener('mouseenter', function() {
+                if (!this.classList.contains('active')) {
+                    this.style.transform = 'translateY(-1px)';
+                    this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('active')) {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                }
+            });
+        });
+    }
+});
+<% } %>
+
+</script>
+
+<!-- Tier Styles -->
+<% if (league.enable_multi_tier) { %>
+<link rel="stylesheet" href="/css/tiers.css">
+<% } %>
+</div> <!-- End standings-container -->

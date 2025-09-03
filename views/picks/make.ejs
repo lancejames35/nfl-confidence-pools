@@ -1,0 +1,2426 @@
+<div class="row">
+    <div class="col-12">
+        
+        <!-- Enhanced Header Section with League Switcher -->
+        <div class="results-header-enhanced mb-4">
+            <div class="header-background"></div>
+            <div class="header-content">
+                <div class="header-single-row d-flex justify-content-between align-items-center">
+                    <!-- Left: League Switcher and Title -->
+                    <div class="header-left d-flex align-items-center gap-3">
+                        <!-- League Switcher Dropdown -->
+                        <% if (locals.userLeagues && locals.userLeagues.length > 1) { %>
+                            <div class="league-switcher">
+                                <select class="form-select" id="league-switcher">
+                                    <% locals.userLeagues.forEach(l => { %>
+                                        <option value="<%= l.league_id %>/<%= l.entry_id || 'new' %>" 
+                                                <%= l.league_id === league.league_id ? 'selected' : '' %>
+                                                data-league-id="<%= l.league_id %>"
+                                                data-entry-id="<%= l.entry_id || 'new' %>">
+                                            <%= l.league_name %> 
+                                            <% if (!l.entry_id) { %>(No Entry)<% } %>
+                                        </option>
+                                    <% }) %>
+                                </select>
+                            </div>
+                        <% } %>
+                        <div class="title-main">
+                            <i class="fas fa-edit me-2"></i>
+                            Week <%= week %> Picks
+                            <% if (locals.userLeagues && locals.userLeagues.length <= 1) { %>
+                                <small class="text-muted d-block" style="font-size: 0.8em; font-weight: normal;">
+                                    <%= league.league_name %>
+                                </small>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- Center: Status -->
+                    <div class="header-center d-flex gap-3">
+                        <div class="stat-card">
+                            <div class="stat-value" data-status="<%= canEdit ? 'open' : 'closed' %>"><%= canEdit ? 'OPEN' : 'CLOSED' %></div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value"><%= week %></div>
+                            <div class="stat-label">Week</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Week Navigation -->
+                    <div class="header-right">
+                        <div class="week-navigation d-flex align-items-center gap-3">
+                            <select class="form-select" id="week-selector">
+                                <% for(let i = 1; i <= 18; i++) { %>
+                                    <option value="<%= i %>" <%= week == i ? 'selected' : '' %>>
+                                        Week <%= i %>
+                                    </option>
+                                <% } %>
+                            </select>
+                            
+                            <div class="d-flex gap-2">
+                                <% if (week > 1) { %>
+                                    <% 
+                                        let prevWeek = parseInt(week) - 1;
+                                        let prevUrl = `?week=${prevWeek}`;
+                                    %>
+                                    <a href="<%= prevUrl %>" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                <% } else { %>
+                                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                <% } %>
+                                
+                                <% if (week < 18) { %>
+                                    <% 
+                                        let nextWeek = parseInt(week) + 1;
+                                        let nextUrl = `?week=${nextWeek}`;
+                                    %>
+                                    <a href="<%= nextUrl %>" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                <% } else { %>
+                                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <% if (!canEdit) { %>
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-eye me-2"></i>
+                <strong>Viewing Your Picks:</strong> The pick deadline has passed. You can view your picks below but cannot make changes.
+            </div>
+        <% } %>
+
+        <div class="row">
+            <!-- Games List for Picking -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-football me-2"></i>
+                                Week <%= week %> Games
+                            </h5>
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <small class="text-muted fw-bold">Bulk Picks:</small>
+                                <% if (canEdit) { %>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary" id="select-all-home" title="Select all home teams">
+                                            <i class="fas fa-home me-1"></i>Home
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="select-all-away" title="Select all away teams">
+                                            <i class="fas fa-plane me-1"></i>Away
+                                        </button>
+                                        <% if (league.pick_method === 'against_spread' && games && games.some(game => game.point_spread)) { %>
+                                            <button type="button" class="btn btn-outline-success" id="select-all-favorites" title="Select all favorites">
+                                                <i class="fas fa-star me-1"></i>Favs
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning" id="select-all-underdogs" title="Select all underdogs">
+                                                <i class="fas fa-underline me-1"></i>Dogs
+                                            </button>
+                                        <% } %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <form id="picks-form" action="/picks/<%= league.league_id %>/<%= entry_id %>" method="POST">
+                            <input type="hidden" name="_method" value="PUT">
+                            <input type="hidden" name="week" value="<%= week %>">
+                            
+                            <div id="sortable-picks" class="list-group list-group-flush">
+                                <% if (games && games.length > 0) { %>
+                                    <% games.forEach((game, index) => { 
+                                        const existingPick = existingPicks.find(p => p.game_id === game.game_id);
+                                        const draftPick = draftPicks && draftPicks.picks ? draftPicks.picks.find(p => p.game_id === game.game_id) : null;
+                                        const selectedTeam = existingPick ? existingPick.selected_team : (draftPick ? draftPick.selected_team : '');
+                                        const confidencePoints = existingPick ? existingPick.confidence_points : (draftPick ? draftPick.confidence_points : games.length - index);
+                                    %>
+                                        <div class="list-group-item pick-item<%= (gameEditStatus && gameEditStatus[game.game_id] === false) ? ' locked' : '' %>" 
+                                             data-game-id="<%= game.game_id %>" 
+                                             data-confidence="<%= confidencePoints %>"
+                                             data-locked="<%= (gameEditStatus && gameEditStatus[game.game_id] === false) ? 'true' : 'false' %>"
+                                             draggable="false">
+                                            <div class="row align-items-center">
+                                                <!-- Drag Indicator -->
+                                                <div class="col-auto drag-indicator">
+                                                    <i class="fas fa-grip-vertical text-muted"></i>
+                                                </div>
+                                                
+                                                <!-- Confidence Points -->
+                                                <div class="col-2 col-md-1">
+                                                    <div class="confidence-dropdown-container">
+                                                        <select class="confidence-dropdown" data-game-id="<%= game.game_id %>" <%= !canEdit || (gameEditStatus && gameEditStatus[game.game_id] === false) ? 'disabled' : '' %>>
+                                                            <% for(let i = games.length; i >= 1; i--) { %>
+                                                                <option value="<%= i %>" <%= confidencePoints == i ? 'selected' : '' %>><%= i %></option>
+                                                            <% } %>
+                                                        </select>
+                                                    </div>
+                                                    <input type="hidden" name="picks[<%= index %>][confidence_points]" value="<%= confidencePoints %>" class="confidence-input">
+                                                    <input type="hidden" name="picks[<%= index %>][game_id]" value="<%= game.game_id %>">
+                                                    <input type="hidden" name="picks[<%= index %>][pick_type]" value="confidence">
+                                                </div>
+
+                                                <!-- Game Info & Team Selection -->
+                                                <div class="col teams-section">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-8">
+                                                            <div class="game-info">
+                                                                <!-- Mobile Game Time (appears above teams on mobile) -->
+                                                                <div class="mobile-game-time d-md-none text-center mb-2 position-relative">
+                                                                    <div class="game-time-mobile">
+                                                                        <i class="fas fa-clock me-1"></i>
+                                                                        <%= new Date(game.kickoff_timestamp).toLocaleString('en-US', {
+                                                                            weekday: 'short',
+                                                                            month: 'short', 
+                                                                            day: 'numeric',
+                                                                            hour: 'numeric',
+                                                                            minute: '2-digit',
+                                                                            timeZoneName: 'short'
+                                                                        }) %>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div class="teams-container">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <!-- Away Team -->
+                                                                        <div class="team-option flex-fill <%= selectedTeam === game.away_team ? 'selected' : '' %> <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %>" 
+                                                                             data-team="<%= game.away_team %>">
+                                                                            <input type="radio" 
+                                                                                   name="picks[<%= index %>][selected_team]" 
+                                                                                   value="<%= game.away_team %>" 
+                                                                                   id="away_<%= game.game_id %>"
+                                                                                   <%= selectedTeam === game.away_team ? 'checked' : '' %>
+                                                                                   <%= !canEdit || (gameEditStatus && gameEditStatus[game.game_id] === false) ? 'disabled' : '' %>>
+                                                                            <label for="away_<%= game.game_id %>" class="team-label <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %>">
+                                                                                <div class="team-content">
+                                                                                    <% if (game.away_logo) { %>
+                                                                                        <img src="<%= game.away_logo %>" alt="<%= game.away_team %>" class="team-logo me-2">
+                                                                                    <% } %>
+                                                                                    <div class="team-info-container">
+                                                                                        <div class="team-name-line">
+                                                                                            <span class="team-name"><%= game.away_team_name || game.away_team %></span>
+                                                                                            <span class="team-abbr"><%= game.away_team %></span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <% if (game.point_spread && league.pick_method === 'against_spread') { %>
+                                                                                    <div class="spread-edge <%= game.favored_team === game.away_team ? 'favorite' : 'underdog' %>">
+                                                                                        <% if (game.favored_team === game.away_team) { %>
+                                                                                            -<%= game.spread_amount %>
+                                                                                        <% } else { %>
+                                                                                            +<%= game.spread_amount %>
+                                                                                        <% } %>
+                                                                                    </div>
+                                                                                <% } %>
+                                                                            </label>
+                                                                        </div>
+                                                                        
+                                                                        <!-- @ Symbol -->
+                                                                        <div class="at-symbol mx-2 text-muted">@</div>
+                                                                        
+                                                                        <!-- Home Team -->
+                                                                        <div class="team-option flex-fill <%= selectedTeam === game.home_team ? 'selected' : '' %> <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %>" 
+                                                                             data-team="<%= game.home_team %>">
+                                                                            <input type="radio" 
+                                                                                   name="picks[<%= index %>][selected_team]" 
+                                                                                   value="<%= game.home_team %>" 
+                                                                                   id="home_<%= game.game_id %>"
+                                                                                   <%= selectedTeam === game.home_team ? 'checked' : '' %>
+                                                                                   <%= !canEdit || (gameEditStatus && gameEditStatus[game.game_id] === false) ? 'disabled' : '' %>>
+                                                                            <label for="home_<%= game.game_id %>" class="team-label <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %>">
+                                                                                <div class="team-content">
+                                                                                    <% if (game.home_logo) { %>
+                                                                                        <img src="<%= game.home_logo %>" alt="<%= game.home_team %>" class="team-logo me-2">
+                                                                                    <% } %>
+                                                                                    <div class="team-info-container">
+                                                                                        <div class="team-name-line">
+                                                                                            <span class="team-name"><%= game.home_team_name || game.home_team %></span>
+                                                                                            <span class="team-abbr"><%= game.home_team %></span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <% if (game.point_spread && league.pick_method === 'against_spread') { %>
+                                                                                    <div class="spread-edge <%= game.favored_team === game.home_team ? 'favorite' : 'underdog' %>">
+                                                                                        <% if (game.favored_team === game.home_team) { %>
+                                                                                            -<%= game.spread_amount %>
+                                                                                        <% } else { %>
+                                                                                            +<%= game.spread_amount %>
+                                                                                        <% } %>
+                                                                                    </div>
+                                                                                <% } %>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Game Details (Desktop Only) -->
+                                                        <div class="col-md-4 text-end d-none d-md-block">
+                                                            <div class="game-details position-relative">
+                                                                <div class="game-time">
+                                                                    <i class="fas fa-clock me-1"></i>
+                                                                    <%= new Date(game.kickoff_timestamp).toLocaleString('en-US', {
+                                                                        weekday: 'short',
+                                                                        month: 'short', 
+                                                                        day: 'numeric',
+                                                                        hour: 'numeric',
+                                                                        minute: '2-digit',
+                                                                        timeZoneName: 'short'
+                                                                    }) %>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                <% } else { %>
+                                    <div class="list-group-item">
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                            <p class="text-muted mb-0">No games available for Week <%= week %></p>
+                                        </div>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <% if (games && games.length > 0) { %>
+                                <% if (canEdit) { %>
+                                    <div class="card-footer">
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                            <div>
+                                                <button type="button" class="btn btn-outline-secondary" id="reset-picks">
+                                                    <i class="fas fa-undo me-2"></i>Reset
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted d-flex align-items-center">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                <span>Your picks are automatically saved as you make changes.</span>
+                                                <span id="save-status" class="ms-2" style="display: none;">
+                                                    <i class="fas fa-spinner fa-spin text-primary me-1"></i>
+                                                    <span class="text-primary">Saving...</span>
+                                                </span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="card-footer">
+                                        <small class="text-muted d-flex align-items-center">
+                                            <i class="fas fa-eye me-1"></i>
+                                            <span>Your picks have been submitted and are locked for this week.</span>
+                                        </small>
+                                    </div>
+                                <% } %>
+                            <% } %>
+                            
+                            <!-- Tiebreaker Section -->
+                            <% if (league.settings && (league.settings.primary_tiebreaker === 'mnf_total' || league.settings.secondary_tiebreaker === 'mnf_total')) { %>
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-balance-scale me-2"></i>
+                                            Tiebreaker
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <% 
+                                            // Find Monday Night Football game for this week
+                                            const mondayGame = games.find(game => {
+                                                const gameDate = new Date(game.kickoff_timestamp);
+                                                return gameDate.getDay() === 1; // Monday = 1
+                                            });
+                                        %>
+                                        
+                                        <% if (mondayGame) { %>
+                                            <div class="row align-items-center">
+                                                <div class="col-md-8">
+                                                    <h6 class="mb-2">Monday Night Football Total Points</h6>
+                                                    <p class="text-muted small mb-2">
+                                                        Predict the combined total points scored by both teams in the Monday Night Football game:
+                                                        <strong><%= mondayGame.away_team %> @ <%= mondayGame.home_team %></strong>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="tiebreaker_prediction" class="form-label">Total Points</label>
+                                                        <input 
+                                                            type="number" 
+                                                            class="form-control" 
+                                                            id="tiebreaker_prediction"
+                                                            name="tiebreaker_prediction"
+                                                            value="<%= locals.tiebreakerValue ? Math.round(locals.tiebreakerValue) : '' %>"
+                                                            min="0" 
+                                                            max="150"
+                                                            step="1"
+                                                            placeholder="e.g. 45"
+                                                            <%= !canEdit ? 'disabled' : '' %>
+                                                        >
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="text-center text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                No Monday Night Football game found for Week <%= week %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - Pick Summary & Stats -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- Pick Summary -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-list-ol me-2"></i>Pick Summary
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="picks-summary">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Make your picks to see summary
+                                </div>
+                            </div>
+                            <div class="progress mt-3">
+                                <div class="progress-bar" role="progressbar" style="width: 0%" id="completion-progress"></div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <span id="completed-picks">0</span> of <%= games ? games.length : 0 %> picks made
+                            </small>
+                        </div>
+                    </div>
+
+
+                    <!-- Quick Tips -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>Quick Tips
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0 small">
+                                <li class="mb-2">
+                                    <i class="fas fa-arrows-alt text-primary me-2"></i>
+                                    Drag games to reorder by confidence
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-star text-warning me-2"></i>
+                                    Higher confidence = more points if correct
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-info me-2"></i>
+                                    Picks lock when games start
+                                </li>
+                                <% if (league.pick_method === 'against_spread') { %>
+                                    <li class="mb-2">
+                                        <i class="fas fa-chart-line text-success me-2"></i>
+                                        <strong>Spread Betting:</strong>
+                                    </li>
+                                    <li class="mb-2 ms-3">
+                                        <span class="text-danger fw-bold">Red (-7)</span> = Team must win by 8+
+                                    </li>
+                                    <li class="mb-2 ms-3">
+                                        <span class="text-success fw-bold">Green (+7)</span> = Team gets 7 extra points
+                                    </li>
+                                <% } %>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS for picks interface -->
+<style>
+.pick-item {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 4px solid transparent;
+    cursor: grab;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    /* Fixed dimensions to match week 1 exactly */
+    min-height: 70px; /* Fixed height for all games */
+    padding: 8px 12px; /* Consistent padding */
+}
+
+.pick-item.sortable-chosen {
+    cursor: grabbing;
+}
+
+/* Drag indicator on the left */
+.drag-indicator {
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.pick-item:hover .drag-indicator {
+    opacity: 0.7;
+}
+
+/* Hide right-side drag handle */
+.drag-handle {
+    display: none;
+}
+
+.pick-item:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left-color: #007bff;
+    border-left-width: 5px;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+    transition: all 0.2s ease;
+}
+
+.pick-item.sortable-chosen {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left-color: #2196f3;
+    border-left-width: 6px;
+    cursor: grabbing;
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3), 0 0 0 2px rgba(33, 150, 243, 0.2);
+    z-index: 1000;
+    transition: all 0.2s ease;
+}
+
+.pick-item.sortable-ghost {
+    opacity: 0.3;
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 2px dashed #ff9800;
+    border-radius: 8px;
+    transform: scale(0.98);
+    box-shadow: inset 0 0 20px rgba(255, 152, 0, 0.1);
+}
+
+/* Interactive elements override drag cursor */
+.confidence-dropdown-container {
+    text-align: center;
+    position: relative;
+}
+
+/* Strong CSS specificity to override Bootstrap and SortableJS */
+.pick-item .confidence-dropdown {
+    /* Fixed dimensions - no responsive changes */
+    width: 60px !important;
+    height: 45px !important;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem !important;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    margin: 0 auto;
+    cursor: pointer !important;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* Use background image for arrow that moves with text */
+    background: #007bff url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M8 11L3 6h10z'/%3E%3C/svg%3E") no-repeat;
+    background-position: right 5px center;
+    background-size: 10px;
+    padding: 0 20px 0 8px;
+}
+
+
+.pick-item .confidence-dropdown:hover,
+.pick-item .confidence-dropdown:focus,
+.pick-item .confidence-dropdown:active {
+    cursor: pointer !important;
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
+}
+
+/* Interactive elements have pointer cursor */
+.pick-item .teams-container,
+.pick-item .teams-container *,
+.pick-item .confidence-dropdown-container,
+.pick-item .confidence-dropdown-container * {
+    cursor: pointer !important;
+}
+
+.confidence-dropdown:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    color: white;
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.confidence-dropdown option {
+    background: white;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Keep native dropdown appearance for better visibility */
+
+.teams-container .d-flex {
+    width: 100%;
+    display: flex !important;
+    gap: 8px;
+    min-height: 44px;
+    align-items: center;
+    /* Ensure proper flex behavior */
+    flex-wrap: nowrap; /* Never wrap team options */
+    justify-content: stretch; /* Distribute space evenly */
+}
+
+.teams-container .d-flex > .team-option {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.team-option {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background-color: #ffffff;
+    text-align: center;
+    /* Flexible but with minimum width to fit team abbreviations */
+    flex: 1 1 0;
+    min-width: 60px; /* Minimum width to fit 3-character team abbreviations */
+    max-width: none;
+    height: 44px; /* Keep consistent height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible; /* Allow text to be visible */
+}
+
+/* For pools without spreads (straight-up pools OR future weeks), center team names horizontally */
+.team-option:not(.has-spread) {
+    justify-content: center;
+}
+
+.team-option:not(.has-spread) .team-info-container {
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.team-option:not(.has-spread) .team-name-line {
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+}
+
+.team-option:not(.has-spread) .team-abbr,
+.team-option:not(.has-spread) .team-name {
+    text-align: center;
+    width: 100%;
+}
+
+.team-option:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.team-option.selected {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+}
+
+/* For selected teams, make spread edge fill to the border */
+.team-option.selected.has-spread {
+    background-color: transparent;
+}
+
+.team-option.selected.has-spread .spread-edge {
+    /* Fill all the way to the selected border */
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50px;
+    border-radius: 0 6px 6px 0; /* Match team-option border radius */
+}
+
+.team-option.selected.has-spread .team-content {
+    background-color: #e3f2fd; /* Keep selected background for text area */
+    border-radius: 6px 0 0 6px;
+}
+
+/* @ symbol between teams - make responsive */
+.at-symbol {
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    padding: 0 8px;
+    width: 30px;
+    text-align: center;
+    /* Shrink on very narrow containers */
+    min-width: 20px;
+}
+
+/* Dynamic team option sizing based on container constraints */
+.teams-container {
+    /* Ensure container uses available width efficiently */
+    width: 100%;
+    min-width: 0;
+}
+
+.team-option input[type="radio"] {
+    display: none;
+}
+
+.team-label {
+    cursor: pointer;
+    margin: 0;
+    width: 100%;
+}
+
+.team-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0; /* Don't let logo shrink */
+    /* On very narrow screens, make logo smaller to preserve text space */
+}
+
+/* Hide logos on extremely narrow containers to preserve abbreviation space */
+@media (max-width: 400px) {
+    .team-logo {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 320px) {
+    .team-logo {
+        display: none; /* Hide logos on very narrow screens */
+    }
+    
+    .team-content {
+        padding: 8px 6px; /* Reduce padding when no logos */
+    }
+}
+
+.team-name, .team-abbr {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.team-abbr {
+    /* Remove text truncation - abbreviations should always fit */
+    overflow: visible;
+    max-width: none;
+    display: inline-block;
+    /* Ensure text is never cut off */
+    white-space: nowrap;
+    flex-shrink: 0; /* Don't let text shrink */
+}
+
+.game-details {
+    font-size: 0.85rem;
+}
+
+/* Fixed dimensions override all responsive changes */
+@media (min-width: 1400px) {
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+    }
+}
+
+/* Simple: Always use abbreviations, never show full team names */
+.team-name {
+    display: none !important;
+}
+
+.team-abbr {
+    display: inline !important;
+}
+
+/* Simple responsive sizing - no fixed widths needed */
+@media (min-width: 1201px) {
+    /* Team options will naturally use available space */
+}
+
+/* Responsive styles - Medium screens */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+    }
+    
+    /* Team options will flex naturally - no fixed widths */
+}
+
+/* Responsive styles - Small tablets */
+@media (max-width: 991px) and (min-width: 768px) {
+    .team-option {
+        padding: 6px 10px;
+        /* No fixed min-width - flex naturally */
+    }
+    
+    .team-name, .team-abbr {
+        font-size: 0.9rem;
+    }
+    
+    .team-abbr {
+        /* No text truncation - ensure abbreviations are always visible */
+        overflow: visible;
+        max-width: none;
+    }
+}
+
+/* Mobile styles with enhanced drag feedback */
+@media (max-width: 767px) {
+    .pick-item {
+        font-size: 0.9rem;
+        cursor: default; /* Default cursor - only drag handle is draggable */
+        margin-bottom: 4px;
+    }
+    
+    /* Make drag indicator more prominent on mobile */
+    .drag-indicator {
+        cursor: grab;
+        opacity: 0.8;
+        padding: 8px 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        background: rgba(0, 123, 255, 0.1);
+        margin-right: 8px;
+    }
+    
+    .drag-indicator:hover {
+        opacity: 1;
+        background: rgba(0, 123, 255, 0.2);
+        transform: scale(1.1);
+    }
+    
+    /* Enhanced mobile drag states */
+    .pick-item.sortable-chosen {
+        transform: scale(1.05) rotate(2deg);
+        box-shadow: 0 12px 35px rgba(33, 150, 243, 0.4), 0 0 0 3px rgba(33, 150, 243, 0.3);
+        border-radius: 12px;
+    }
+    
+    .pick-item.sortable-ghost {
+        transform: scale(0.95) rotate(-1deg);
+        border-width: 3px;
+        border-radius: 12px;
+    }
+    
+    .pick-item:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.2);
+    }
+    
+    .team-option {
+        padding: 6px 8px;
+        /* No fixed min-width - flex to available space */
+        height: 40px; /* Slightly smaller height on mobile but still consistent */
+        white-space: nowrap; /* Keep nowrap since we use abbreviations */
+    }
+    
+    .team-abbr {
+        font-size: 0.9rem;
+        /* No text truncation - keep abbreviations fully visible */
+        overflow: visible;
+        max-width: none;
+    }
+    
+    /* Mobile uses abbreviations (same as all screen sizes) */
+    
+    .team-logo {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+        background-position: right 5px center !important;
+    }
+    
+    .at-symbol {
+        margin: 0 4px !important;
+        font-size: 1rem;
+        width: auto;
+        padding: 0 4px;
+    }
+    
+    .drag-indicator {
+        font-size: 1rem; /* Larger on mobile for better touch */
+    }
+    
+    /* Mobile drag indicator enhancement */
+    .pick-item.sortable-chosen .drag-indicator {
+        color: #2196f3;
+        font-size: 1.2rem;
+        background: rgba(33, 150, 243, 0.3);
+        animation: dragPulse 0.6s ease-in-out infinite alternate;
+    }
+    
+    @keyframes dragPulse {
+        0% { opacity: 0.8; transform: scale(1); }
+        100% { opacity: 1; transform: scale(1.3); }
+    }
+    
+    /* Make game details area larger for easier dragging on mobile */
+    .game-details {
+        padding: 10px 5px;
+        background: rgba(0,0,0,0.02);
+        border-radius: 4px;
+        margin-top: 8px;
+    }
+}
+
+/* Drag animation for confidence dropdown */
+.pick-item.sortable-chosen .confidence-dropdown {
+    animation: confidenceBounce 0.4s ease-in-out;
+    border-color: #2196f3;
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
+}
+
+@keyframes confidenceBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Team options glow during drag */
+.pick-item.sortable-chosen .team-option {
+    border-color: rgba(33, 150, 243, 0.3);
+    box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.1);
+}
+
+/* Very small mobile */
+@media (max-width: 480px) {
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+        background-position: right 5px center !important;
+    }
+    
+    .team-option {
+        /* No fixed min-width - use natural flex behavior */
+        padding: 4px 6px; /* Reduce padding to make more room */
+    }
+    
+    .team-abbr {
+        font-size: 0.8rem; /* Slightly smaller but still readable */
+        /* No text truncation - abbreviations must always be fully visible */
+        overflow: visible;
+        max-width: none;
+    }
+    
+    .team-logo {
+        width: 20px; /* Smaller logo on very small screens */
+        height: 20px;
+        margin-right: 4px; /* Reduce margin */
+    }
+    
+    .drag-indicator {
+        font-size: 0.8rem;
+    }
+    
+    /* Adjust spread edge for very small screens */
+    .spread-edge {
+        width: 35px; /* Smaller spread edge */
+        font-size: 0.7rem;
+        min-height: 36px; /* Match smaller team option height */
+    }
+    
+    .team-content {
+        padding: 4px 2px 4px 6px; /* Reduce padding */
+        max-width: calc(100% - 35px); /* Adjust for smaller spread edge */
+    }
+    
+    /* Even more pronounced effects on very small screens */
+    .pick-item.sortable-chosen {
+        transform: scale(1.08) rotate(3deg);
+        box-shadow: 0 15px 40px rgba(33, 150, 243, 0.5);
+    }
+}
+
+.game-time {
+    font-weight: 500;
+}
+
+/* Add spacing between dropdown and teams - responsive spacing */
+.teams-section {
+    padding-left: 20px;
+}
+
+/* More spacing on narrower desktop screens */
+@media (max-width: 1199px) and (min-width: 768px) {
+    .teams-section {
+        padding-left: 25px;
+    }
+}
+
+/* Even more spacing on tablets in landscape */
+@media (max-width: 991px) and (min-width: 768px) {
+    .teams-section {
+        padding-left: 30px;
+    }
+}
+
+/* Mobile Game Time Styling */
+.mobile-game-time {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.game-time-mobile {
+    font-weight: 500;
+    color: #495057;
+}
+
+.spread-mobile {
+    margin-top: 2px;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .confidence-badge {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .confidence-number {
+        font-size: 1rem;
+    }
+    
+    .team-name {
+        font-size: 0.8rem;
+    }
+}
+
+/* Spread betting specific styles */
+.team-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.team-name-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+/* New spread edge design - fills to team-option edge */
+.team-option.has-spread {
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Dynamic spread width based on available space */
+@media (max-width: 500px) {
+    .spread-edge {
+        width: 40px !important; /* Smaller on narrow screens */
+        font-size: 0.7rem !important;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 40px) !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .spread-edge {
+        width: 35px !important; /* Even smaller */
+        font-size: 0.65rem !important;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 35px) !important;
+        padding: 6px 4px !important;
+    }
+}
+
+@media (max-width: 320px) {
+    .spread-edge {
+        width: 30px !important; /* Minimum viable size */
+        font-size: 0.6rem !important;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 30px) !important;
+        padding: 4px 2px !important;
+    }
+}
+
+/* Make spread edge break out of team-label and position relative to team-option */
+.team-option.has-spread .spread-edge {
+    position: absolute;
+    /* Position relative to the team-option container (not team-label) */
+    top: 0;
+    right: 0; 
+    bottom: 0;
+    width: 50px;
+    border-radius: 0 6px 6px 0; /* Match team-option border radius */
+    /* Use fixed positioning to break out of team-label */
+    margin: 0;
+    z-index: 2;
+}
+
+.team-label.has-spread {
+    display: flex;
+    position: static; /* Remove relative positioning so spread-edge positions relative to team-option */
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    border-radius: inherit;
+    overflow: visible; /* Allow spread edge to extend beyond */
+    z-index: 1;
+}
+
+.team-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    padding: 10px 8px 10px 12px;
+    min-width: 0;
+    /* Use dynamic max-width calculation for spread teams */
+    max-width: calc(100% - 50px);
+    /* Allow text to be fully visible */
+    overflow: visible;
+    background: inherit;
+}
+
+.team-info-container {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.team-name-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    width: 100%;
+    min-width: 0; /* Allow shrinking */
+}
+
+.team-name, .team-abbr {
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* Clean team info container */
+.team-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    flex: 1; /* Allow it to grow and shrink */
+    overflow: visible; /* Allow text to be fully visible */
+}
+
+.spread-edge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    /* Positioning is handled by parent selectors above */
+}
+
+.spread-edge.favorite {
+    background-color: #dc3545;
+}
+
+.spread-edge.underdog {
+    background-color: #28a745;
+}
+
+/* Ensure team labels without spreads maintain normal padding and centering */
+.team-label:not(.has-spread) {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* Mobile spread adjustments */
+@media (max-width: 767px) {
+    .spread-edge {
+        width: 42px;
+        font-size: 0.75rem;
+        min-height: 40px;
+    }
+    
+    .team-content {
+        padding: 6px 4px 6px 8px;
+        max-width: calc(100% - 42px);
+    }
+    
+    .team-name-line {
+        gap: 4px;
+    }
+    
+    .team-option {
+        /* No fixed min-width - flex to available space */
+    }
+    
+    .team-abbr {
+        font-size: 0.85rem;
+        /* No text truncation - abbreviations must be fully visible */
+        overflow: visible;
+        max-width: none;
+    }
+}
+
+/* Responsive spread display */
+@media (max-width: 991px) {
+    .spread-edge {
+        width: 45px;
+        font-size: 0.8rem;
+        min-height: 42px;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 45px);
+    }
+}
+
+/* Disabled state styles for when picks are locked/closed */
+<% if (!canEdit) { %>
+.pick-item {
+    cursor: default !important;
+}
+
+.pick-item:hover {
+    background: inherit !important;
+    border-left-color: transparent !important;
+    border-left-width: 4px !important;
+    transform: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+}
+
+.drag-indicator {
+    cursor: default !important;
+    opacity: 0.2 !important;
+}
+
+.pick-item:hover .drag-indicator {
+    opacity: 0.2 !important;
+}
+
+.confidence-dropdown {
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+.confidence-dropdown:hover,
+.confidence-dropdown:focus,
+.confidence-dropdown:active {
+    cursor: default !important;
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+    box-shadow: none !important;
+}
+
+.team-option {
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+.team-option:hover {
+    border-color: #e9ecef !important;
+    background-color: #ffffff !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.team-label {
+    cursor: default !important;
+}
+
+.pick-item .teams-container,
+.pick-item .teams-container *,
+.pick-item .confidence-dropdown-container,
+.pick-item .confidence-dropdown-container * {
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+/* Keep selected states visible but not interactive */
+.team-option.selected {
+    border-color: #007bff !important;
+    background-color: #e3f2fd !important;
+    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25) !important;
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+.team-option.selected:hover {
+    border-color: #007bff !important;
+    background-color: #e3f2fd !important;
+}
+
+/* Disable sortable effects when locked */
+.pick-item.sortable-chosen,
+.pick-item.sortable-ghost {
+    background: inherit !important;
+    border-left-color: transparent !important;
+    cursor: default !important;
+    transform: none !important;
+    box-shadow: none !important;
+    z-index: auto !important;
+    animation: none !important;
+}
+
+/* Mobile disabled states */
+@media (max-width: 767px) {
+    .drag-indicator {
+        cursor: default !important;
+        opacity: 0.2 !important;
+        background: rgba(0, 123, 255, 0.05) !important;
+    }
+    
+    .drag-indicator:hover {
+        opacity: 0.2 !important;
+        background: rgba(0, 123, 255, 0.05) !important;
+        transform: none !important;
+    }
+    
+    .pick-item:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .pick-item.sortable-chosen {
+        transform: none !important;
+        box-shadow: none !important;
+        border-radius: 6px !important;
+        animation: none !important;
+    }
+    
+    .pick-item.sortable-ghost {
+        transform: none !important;
+        border-width: 4px !important;
+        border-radius: 6px !important;
+    }
+    
+    .pick-item.sortable-chosen .drag-indicator {
+        color: inherit !important;
+        font-size: 1rem !important;
+        background: rgba(0, 123, 255, 0.05) !important;
+        animation: none !important;
+    }
+}
+<% } %>
+
+/* Locked Pick Styles - Visual indicators and interaction prevention */
+.pick-item.locked {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-left: 4px solid #6c757d !important;
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important; /* Allow some interaction for display */
+}
+
+.pick-item.locked:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-left-color: #6c757d !important;
+    border-left-width: 4px !important;
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .drag-indicator {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    color: #6c757d !important;
+}
+
+.pick-item.locked .drag-indicator:hover {
+    opacity: 0.3 !important;
+    background: transparent !important;
+    transform: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .confidence-dropdown {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.pick-item.locked .team-option {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .teams-container {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+/* Add locked indicator */
+/* Add locked indicator positioned below game time */
+.pick-item.locked .game-details::after,
+.pick-item.locked .mobile-game-time::after {
+    content: "🔒 LOCKED";
+    position: absolute;
+    top: 100%;
+    right: 0;
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #6c757d;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* For mobile, position in top right corner of date/time and adjust text alignment */
+@media (max-width: 767px) {
+    .pick-item.locked .mobile-game-time::after {
+        top: 0;
+        right: 0;
+        margin-top: 0;
+    }
+    
+    .pick-item.locked .mobile-game-time {
+        text-align: left !important;
+        padding-right: 80px; /* Make room for the LOCKED indicator */
+    }
+}
+
+/* Mobile locked styles */
+@media (max-width: 767px) {
+    .pick-item.locked .drag-indicator {
+        cursor: not-allowed !important;
+        opacity: 0.3 !important;
+        background: rgba(108, 117, 125, 0.1) !important;
+        pointer-events: none !important;
+    }
+    
+    .pick-item.locked .drag-indicator:hover {
+        opacity: 0.3 !important;
+        background: rgba(108, 117, 125, 0.1) !important;
+        transform: none !important;
+    }
+}
+
+</style>
+
+<!-- Include SortableJS for drag & drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sortableEl = document.getElementById('sortable-picks');
+    const form = document.getElementById('picks-form');
+    let autoSaveTimeout;
+    
+    // Store selections globally to preserve during drag operations
+    let storedSelections = new Map();
+    
+    // Store original database order for reset functionality
+    let originalOrder = [];
+    
+    function storeAllSelections() {
+        storedSelections.clear();
+        sortableEl.querySelectorAll('.pick-item').forEach(item => {
+            const gameId = item.getAttribute('data-game-id');
+            const selectedRadio = item.querySelector('input[name*="[selected_team]"]:checked');
+            if (selectedRadio && gameId) {
+                storedSelections.set(gameId, selectedRadio.value);
+            }
+        });
+    }
+    
+    function restoreAllSelections() {
+        storedSelections.forEach((selectedTeam, gameId) => {
+            const item = sortableEl.querySelector(`[data-game-id="${gameId}"]`);
+            if (item) {
+                // Clear all selections for this item first
+                item.querySelectorAll('.team-option').forEach(opt => opt.classList.remove('selected'));
+                item.querySelectorAll('input[name*="[selected_team]"]').forEach(radio => radio.checked = false);
+                
+                // Find and set the correct selection
+                const targetRadio = item.querySelector(`input[value="${selectedTeam}"]`);
+                const targetOption = item.querySelector(`[data-team="${selectedTeam}"]`);
+                
+                if (targetRadio && targetOption) {
+                    targetRadio.checked = true;
+                    targetOption.classList.add('selected');
+                }
+            }
+        });
+    }
+    
+    // Initialize Sortable with mobile-specific drag handle configuration
+    const isMobile = window.innerWidth <= 767;
+    const sortable = new Sortable(sortableEl, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        disabled: <%= !canEdit ? 'true' : 'false' %>,
+        // On mobile: ONLY drag from the drag indicator
+        // On desktop: drag from anywhere except interactive elements
+        handle: isMobile ? '.drag-indicator' : null,
+        filter: isMobile 
+            ? '.locked' // Prevent dragging locked items on mobile
+            : '.confidence-dropdown, .confidence-dropdown-container, .team-option, .teams-container, .locked',
+        preventOnFilter: false, // Don't prevent events, just don't drag
+        forceFallback: true, // Force fallback to avoid browser drag conflicts
+        move: function(evt) {
+            // Prevent any movement that involves locked items
+            const draggedItem = evt.dragged;
+            const relatedItem = evt.related;
+            
+            // If dragged item is locked, don't allow it to move
+            if (draggedItem && (draggedItem.classList.contains('locked') || draggedItem.getAttribute('data-locked') === 'true')) {
+                return false;
+            }
+            
+            // If the item we're trying to move past/before is locked, don't allow it
+            if (relatedItem && (relatedItem.classList.contains('locked') || relatedItem.getAttribute('data-locked') === 'true')) {
+                return false;
+            }
+            
+            return true;
+        },
+        onStart: function(evt) {
+            storeAllSelections();
+            // Store original positions of locked items
+            window.originalLockedPositions = new Map();
+            const container = evt.from;
+            Array.from(container.children).forEach((child, index) => {
+                if (child.classList.contains('locked')) {
+                    window.originalLockedPositions.set(child.dataset.gameId, index);
+                }
+            });
+        },
+        onEnd: function(evt) {
+            // Check if any locked items changed position
+            const container = evt.to;
+            let lockedItemMoved = false;
+            
+            if (window.originalLockedPositions && window.originalLockedPositions.size > 0) {
+                Array.from(container.children).forEach((child, index) => {
+                    if (child.classList.contains('locked')) {
+                        const gameId = child.dataset.gameId;
+                        const originalPosition = window.originalLockedPositions.get(gameId);
+                        if (originalPosition !== undefined && originalPosition !== index) {
+                            lockedItemMoved = true;
+                        }
+                    }
+                });
+            }
+            
+            // If a locked item moved, revert the entire operation
+            if (lockedItemMoved) {
+                console.log('Locked item position changed - reverting move');
+                // Find the moved element and put it back
+                const movedElement = evt.item;
+                const oldIndex = evt.oldIndex;
+                const newIndex = evt.newIndex;
+                
+                if (oldIndex !== newIndex) {
+                    // Move the element back to its original position
+                    const items = Array.from(container.children);
+                    if (oldIndex < items.length) {
+                        if (oldIndex === 0) {
+                            container.insertBefore(movedElement, items[0]);
+                        } else if (oldIndex >= items.length - 1) {
+                            container.appendChild(movedElement);
+                        } else {
+                            container.insertBefore(movedElement, items[oldIndex]);
+                        }
+                    }
+                }
+                
+                // Clean up
+                window.originalLockedPositions = null;
+                return;
+            }
+            
+            updateConfidencePoints();
+            
+            // Use setTimeout to ensure DOM is settled before restoring
+            setTimeout(() => {
+                restoreAllSelections();
+                updatePicksSummary();
+                autoSave();
+            }, 100);
+            
+            // Clean up
+            window.originalLockedPositions = null;
+        }
+    });
+    
+    // Update confidence points after reordering
+    function updateConfidencePoints() {
+        const items = sortableEl.querySelectorAll('.pick-item');
+        const totalGames = items.length;
+        
+        // Simple approach: go through items and assign confidence from high to low, skipping locked games
+        let nextConfidence = totalGames;
+        
+        items.forEach((item, index) => {
+            // If this item is locked, keep its confidence unchanged
+            if (item.classList.contains('locked') || item.getAttribute('data-locked') === 'true') {
+                return;
+            }
+            
+            // Find the next available confidence value (skipping any taken by locked games)
+            while (nextConfidence > 0) {
+                // Check if any locked game is using this confidence value
+                const isConfidenceTaken = Array.from(items).some(otherItem => {
+                    return (otherItem.classList.contains('locked') || otherItem.getAttribute('data-locked') === 'true') &&
+                           parseInt(otherItem.getAttribute('data-confidence')) === nextConfidence;
+                });
+                
+                if (!isConfidenceTaken) {
+                    // This confidence value is available, use it
+                    break;
+                }
+                
+                nextConfidence--; // Try next lower value
+            }
+            
+            if (nextConfidence > 0) {
+                const dropdown = item.querySelector('.confidence-dropdown');
+                const input = item.querySelector('.confidence-input');
+                
+                // Update data attribute
+                item.setAttribute('data-confidence', nextConfidence);
+                
+                // Update hidden input
+                if (input) {
+                    input.value = nextConfidence;
+                }
+                
+                // Update dropdown
+                if (dropdown) {
+                    dropdown.value = nextConfidence;
+                }
+                
+                nextConfidence--; // Move to next confidence value for next unlocked game
+            }
+        });
+        
+        // Update dropdown options after confidence changes
+        updateDropdownOptions();
+    }
+    
+    // Update picks summary
+    function updatePicksSummary() {
+        try {
+            // Simple count of checked radio buttons
+            const picksWithTeams = document.querySelectorAll('input[name*="[selected_team]"]:checked').length;
+            const totalPicks = <%= games ? games.length : 0 %>;
+            const progressPercent = (picksWithTeams / totalPicks) * 100;
+            
+            
+            const completedPicksEl = document.getElementById('completed-picks');
+            const progressEl = document.getElementById('completion-progress');
+            
+            if (completedPicksEl) completedPicksEl.textContent = picksWithTeams;
+            if (progressEl) progressEl.style.width = progressPercent + '%';
+            
+            const summaryEl = document.getElementById('picks-summary');
+            if (!summaryEl) return;
+            
+            if (picksWithTeams > 0) {
+                // Show a simple completion status instead of redundant list
+                let summaryHTML = '<div class="small">';
+                
+                const canEdit = <%= canEdit ? 'true' : 'false' %>;
+                
+                if (picksWithTeams === totalPicks) {
+                    if (canEdit) {
+                        summaryHTML += `
+                            <div class="text-center">
+                                <div class="text-success mb-2">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>All picks complete!</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    Ready to submit when deadline arrives
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        summaryHTML += `
+                            <div class="text-center">
+                                <div class="text-info mb-2">
+                                    <i class="fas fa-lock me-2"></i>
+                                    <strong>All picks submitted!</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    Picks are locked for this week
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    const remaining = totalPicks - picksWithTeams;
+                    if (canEdit) {
+                        summaryHTML += `
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <i class="fas fa-clock me-2 text-warning"></i>
+                                    <strong>${remaining} pick${remaining === 1 ? '' : 's'} remaining</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    ${Math.round((picksWithTeams / totalPicks) * 100)}% complete
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        summaryHTML += `
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                                    <strong>Incomplete picks (${remaining} missing)</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    Deadline has passed - picks are locked
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                summaryHTML += '</div>';
+                summaryEl.innerHTML = summaryHTML;
+            } else {
+                summaryEl.innerHTML = '<div class="text-center text-muted"><i class="fas fa-arrow-left me-2"></i>Make your picks to see summary</div>';
+            }
+        } catch (error) {
+            // Silent error handling for picks summary
+        }
+    }
+    
+    // Auto-save functionality with improved debugging and reliability
+    function autoSave() {
+        console.log('AutoSave function called, canEdit:', <%= canEdit ? 'true' : 'false' %>);
+        if (!<%= canEdit ? 'true' : 'false' %>) {
+            console.log('AutoSave skipped - canEdit is false');
+            return;
+        }
+        
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            console.log('AutoSave timeout triggered');
+            
+            // Show saving indicator
+            const saveStatus = document.getElementById('save-status');
+            if (saveStatus) {
+                saveStatus.style.display = 'inline-flex';
+            }
+            
+            const picks = [];
+            
+            // Collect all pick data
+            sortableEl.querySelectorAll('.pick-item').forEach((item, index) => {
+                const gameId = item.getAttribute('data-game-id');
+                const confidenceInput = item.querySelector('.confidence-input');
+                const confidence = confidenceInput ? confidenceInput.value : item.getAttribute('data-confidence');
+                const selectedTeam = item.querySelector('input[name*="[selected_team]"]:checked');
+                
+                if (gameId && confidence) {
+                    const pickData = {
+                        game_id: parseInt(gameId),
+                        confidence_points: parseInt(confidence),
+                        pick_type: 'confidence'
+                    };
+                    
+                    if (selectedTeam) {
+                        pickData.selected_team = selectedTeam.value;
+                    }
+                    
+                    picks.push(pickData);
+                }
+            });
+            
+            
+            // Get tiebreaker prediction if it exists
+            const tiebreakerPrediction = document.getElementById('tiebreaker_prediction');
+            console.log('Tiebreaker element found:', !!tiebreakerPrediction, 'Value:', tiebreakerPrediction?.value);
+            
+            const saveData = {
+                week: <%= week %>,
+                picks: picks
+            };
+            
+            // Include tiebreaker if present
+            if (tiebreakerPrediction && tiebreakerPrediction.value) {
+                saveData.tiebreaker_prediction = tiebreakerPrediction.value;
+                console.log('Including tiebreaker in save data:', tiebreakerPrediction.value);
+            }
+
+            console.log('About to send autosave request:', saveData);
+
+            // Send auto-save request
+            fetch(`/picks/entry/<%= entry_id %>/autosave`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(saveData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show brief success indicator
+                    if (saveStatus) {
+                        saveStatus.innerHTML = '<i class="fas fa-check text-success me-1"></i><span class="text-success">Saved</span>';
+                        setTimeout(() => {
+                            saveStatus.style.display = 'none';
+                        }, 2000);
+                    }
+                } else {
+                    if (saveStatus) {
+                        saveStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i><span class="text-warning">Save failed</span>';
+                        setTimeout(() => {
+                            saveStatus.style.display = 'none';
+                        }, 3000);
+                    }
+                }
+            })
+            .catch(error => {
+                if (saveStatus) {
+                    saveStatus.innerHTML = '<i class="fas fa-times text-danger me-1"></i><span class="text-danger">Save error</span>';
+                    setTimeout(() => {
+                        saveStatus.style.display = 'none';
+                    }, 3000);
+                }
+            });
+        }, 1500); // Reduced from 2000ms to 1500ms for faster saves
+    }
+    
+    
+    // Team selection functionality
+    function attachTeamSelectionHandlers() {
+        document.querySelectorAll('.team-option').forEach(teamOption => {
+            // Remove existing listeners to prevent duplicates
+            const newOption = teamOption.cloneNode(true);
+            teamOption.parentNode.replaceChild(newOption, teamOption);
+            
+            newOption.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent any interference
+                if (!<%= canEdit ? 'true' : 'false' %>) return;
+                
+                const radio = this.querySelector('input[type="radio"]');
+                const pickItem = this.closest('.pick-item');
+                
+                // Check individual game editability for per-game leagues
+                if (pickItem) {
+                    const currentGameId = pickItem.getAttribute('data-game-id');
+                    const gameEditStatusData = <%- JSON.stringify(gameEditStatus || {}) %>;
+                    if (gameEditStatusData[currentGameId] === false) {
+                        return; // Individual game is locked
+                    }
+                }
+                
+                if (!radio || !pickItem) return;
+                
+                // Clear other selections in this game
+                pickItem.querySelectorAll('.team-option').forEach(opt => opt.classList.remove('selected'));
+                
+                // Select this option
+                this.classList.add('selected');
+                radio.checked = true;
+                
+                updatePicksSummary();
+                autoSave();
+            });
+        });
+    }
+    
+    // Initial attachment
+    attachTeamSelectionHandlers();
+    
+    // Define the confidence change handler function
+    function handleConfidenceChange(e) {
+        const dropdown = e.target;
+        
+        if (!<%= canEdit ? 'true' : 'false' %>) return;
+        
+        const pickItem = dropdown.closest('.pick-item');
+        
+        // Check individual game editability for per-game leagues
+        if (pickItem) {
+            const selectedGameId = pickItem.getAttribute('data-game-id');
+            const gameEditStatusMap = <%- JSON.stringify(gameEditStatus || {}) %>;
+            if (gameEditStatusMap[selectedGameId] === false) {
+                // Reset dropdown to original value and return
+                dropdown.value = pickItem.getAttribute('data-confidence');
+                return;
+            }
+        }
+        
+        const newConfidence = parseInt(dropdown.value);
+        const oldConfidence = parseInt(pickItem.getAttribute('data-confidence'));
+        
+        
+        // Get all items and their current confidence values
+        const allItems = Array.from(sortableEl.querySelectorAll('.pick-item'));
+        const totalGames = allItems.length;
+        
+        // Update this item's confidence first
+        pickItem.setAttribute('data-confidence', newConfidence);
+        const confidenceInput = pickItem.querySelector('.confidence-input');
+        if (confidenceInput) confidenceInput.value = newConfidence;
+        
+        // Force the dropdown to visually update immediately
+        dropdown.value = newConfidence;
+        dropdown.style.display = 'none';
+        dropdown.offsetHeight; // Force reflow
+        dropdown.style.display = '';
+        
+        // Now adjust all OTHER items based on the change
+        allItems.forEach(item => {
+            if (item === pickItem) return; // Skip the changed item
+            
+            const currentConf = parseInt(item.getAttribute('data-confidence'));
+            let newConf = currentConf;
+            
+            if (newConfidence > oldConfidence) {
+                // Moving up in confidence (lower position to higher position)
+                // All items between oldConfidence and newConfidence move down by 1
+                if (currentConf > oldConfidence && currentConf <= newConfidence) {
+                    newConf = currentConf - 1;
+                }
+            } else if (newConfidence < oldConfidence) {
+                // Moving down in confidence (higher position to lower position)  
+                // All items between newConfidence and oldConfidence move up by 1
+                if (currentConf >= newConfidence && currentConf < oldConfidence) {
+                    newConf = currentConf + 1;
+                }
+            }
+            
+            // Update the item if confidence changed
+            if (newConf !== currentConf) {
+                item.setAttribute('data-confidence', newConf);
+                const input = item.querySelector('.confidence-input');
+                const dropdown = item.querySelector('.confidence-dropdown');
+                if (input) input.value = newConf;
+                if (dropdown) {
+                    dropdown.value = newConf;
+                    // Force visual update
+                    dropdown.style.display = 'none';
+                    dropdown.offsetHeight;
+                    dropdown.style.display = '';
+                }
+            }
+        });
+        
+        // Reorder all items by their new confidence values
+        reorderItemsByConfidence();
+        
+        // Use the same update logic as drag and drop
+        updateConfidencePoints();
+        
+        updatePicksSummary();
+        autoSave();
+    }
+    
+    // Confidence dropdown handlers with proper logic
+    function attachConfidenceHandlers() {
+        document.querySelectorAll('.confidence-dropdown').forEach(dropdown => {
+            // Remove existing listeners to prevent duplicates
+            const newDropdown = dropdown.cloneNode(true);
+            dropdown.parentNode.replaceChild(newDropdown, dropdown);
+            
+            newDropdown.addEventListener('change', handleConfidenceChange);
+        });
+        
+        // Update dropdown options to disable locked values
+        updateDropdownOptions();
+    }
+    
+    // Update all dropdown options to disable values taken by locked games
+    function updateDropdownOptions() {
+        const items = sortableEl.querySelectorAll('.pick-item');
+        const totalGames = items.length;
+        
+        // Get confidence values taken by locked games
+        const lockedConfidenceValues = [];
+        items.forEach((item) => {
+            if (item.classList.contains('locked') || item.getAttribute('data-locked') === 'true') {
+                lockedConfidenceValues.push(parseInt(item.getAttribute('data-confidence')));
+            }
+        });
+        
+        // Update each unlocked dropdown
+        items.forEach((item) => {
+            if (item.classList.contains('locked') || item.getAttribute('data-locked') === 'true') {
+                return; // Skip locked items
+            }
+            
+            const dropdown = item.querySelector('.confidence-dropdown');
+            if (dropdown) {
+                const currentValue = parseInt(dropdown.value);
+                
+                // Clear and rebuild options
+                dropdown.innerHTML = '';
+                
+                // Build options in descending order (highest confidence first)
+                for (let i = totalGames; i >= 1; i--) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    
+                    // Disable if this value is taken by a locked game (unless it's current selection)
+                    if (lockedConfidenceValues.includes(i) && i !== currentValue) {
+                        option.disabled = true;
+                        option.textContent += ' (locked)';
+                    }
+                    
+                    if (i === currentValue) {
+                        option.selected = true;
+                    }
+                    
+                    dropdown.appendChild(option);
+                }
+            }
+        });
+    }
+    
+    // Initial attachment
+    attachConfidenceHandlers();
+    
+    // Tiebreaker input handler
+    function attachTiebreakerHandler() {
+        const tiebreakerInput = document.getElementById('tiebreaker_prediction');
+        if (tiebreakerInput) {
+            tiebreakerInput.addEventListener('input', function() {
+                if (!<%= canEdit ? 'true' : 'false' %>) return;
+                console.log('Tiebreaker changed to:', this.value);
+                autoSave();
+            });
+            
+            // Prevent form submission on Enter key
+            tiebreakerInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    console.log('Enter key prevented in tiebreaker field');
+                    autoSave();
+                }
+            });
+        }
+    }
+    
+    // Initial attachment
+    attachTiebreakerHandler();
+    
+    // Function to reorder items by confidence points
+    function reorderItemsByConfidence() {
+        const items = Array.from(sortableEl.querySelectorAll('.pick-item'));
+        
+        // Sort by confidence points (highest to lowest)
+        items.sort((a, b) => {
+            const aConf = parseInt(a.getAttribute('data-confidence'));
+            const bConf = parseInt(b.getAttribute('data-confidence'));
+            return bConf - aConf;
+        });
+        
+        // Clear existing items and re-append in new order
+        items.forEach(item => sortableEl.appendChild(item));
+        
+        // Note: updateConfidencePoints will be called after this function
+        // to update all values just like drag and drop does
+        
+        // Re-attach event handlers after DOM manipulation
+        attachTeamSelectionHandlers();
+        attachConfidenceHandlers();
+    }
+    
+    // Function to update all confidence values to match position
+    function updateAllConfidenceValues() {
+        const items = Array.from(sortableEl.querySelectorAll('.pick-item'));
+        const totalGames = items.length;
+        
+        items.forEach((item, index) => {
+            const newConfidenceValue = totalGames - index;
+            const dropdown = item.querySelector('.confidence-dropdown');
+            const input = item.querySelector('.confidence-input');
+            
+            // Update data attribute first
+            item.setAttribute('data-confidence', newConfidenceValue);
+            
+            // Update hidden input
+            if (input) {
+                input.value = newConfidenceValue;
+            }
+            
+            // Force dropdown to update by setting value and forcing repaint
+            if (dropdown) {
+                dropdown.value = newConfidenceValue;
+                // Force the browser to repaint the dropdown
+                dropdown.style.display = 'none';
+                dropdown.offsetHeight; // Force reflow
+                dropdown.style.display = '';
+            }
+            
+        });
+    }
+    
+    // Reset picks button - restore original database order
+    document.getElementById('reset-picks')?.addEventListener('click', function() {
+        if (confirm('Reset all picks and restore original game order? This will clear all selections.')) {
+            
+            // Clear the current list
+            sortableEl.innerHTML = '';
+            
+            // Restore original order from stored elements
+            originalOrder.forEach((gameData, index) => {
+                const restoredItem = gameData.element.cloneNode(true);
+                
+                // Clear any team selections
+                restoredItem.querySelectorAll('.team-option').forEach(teamOption => {
+                    teamOption.classList.remove('selected');
+                });
+                
+                restoredItem.querySelectorAll('input[name*="[selected_team]"]').forEach(radio => {
+                    radio.checked = false;
+                });
+                
+                // Add to list first
+                sortableEl.appendChild(restoredItem);
+            });
+            
+            // Now update all confidence values based on their final positions
+            const restoredItems = sortableEl.querySelectorAll('.pick-item');
+            const totalGames = restoredItems.length;
+            
+            restoredItems.forEach((item, index) => {
+                const correctConfidence = totalGames - index;
+                const dropdown = item.querySelector('.confidence-dropdown');
+                const input = item.querySelector('.confidence-input');
+                
+                // Update data attribute and input first
+                item.setAttribute('data-confidence', correctConfidence);
+                if (input) input.value = correctConfidence;
+                
+                // Force dropdown update
+                if (dropdown) {
+                    dropdown.value = correctConfidence;
+                    // Force immediate visual update
+                    dropdown.style.display = 'none';
+                    dropdown.offsetHeight; // Trigger reflow
+                    dropdown.style.display = '';
+                }
+                
+            });
+            
+            
+            // Re-attach all event handlers
+            attachTeamSelectionHandlers();
+            attachConfidenceHandlers();
+            
+            // Update UI
+            updatePicksSummary();
+            
+            // Auto-save the reset state
+            autoSave();
+            
+        }
+    });
+    
+    // League switcher navigation
+    document.getElementById('league-switcher')?.addEventListener('change', function() {
+        const leagueInfo = this.value;
+        const [leagueId, entryId] = leagueInfo.split('/');
+        
+        // Debug logging
+        console.log('League switcher: switching to', { leagueId, entryId, leagueInfo });
+        
+        // Remember the selected league in session storage for client-side persistence
+        sessionStorage.setItem('selectedLeagueId', leagueId);
+        if (entryId !== 'new') {
+            sessionStorage.setItem('selectedEntryId', entryId);
+        }
+        
+        const currentWeek = <%= week %>;
+        
+        // If switching back to a league with 'new' entry_id, try to find existing entry first
+        if (entryId === 'new') {
+            console.log('Handling new entry_id - attempting to find existing entry');
+            // Add a client_league_id parameter to help the navigation middleware preserve context
+            window.location.href = `/picks/${leagueId}/${entryId}?week=${currentWeek}&client_league_id=${leagueId}`;
+        } else {
+            window.location.href = `/picks/${leagueId}/${entryId}?week=${currentWeek}`;
+        }
+    });
+    
+    // Week selector navigation
+    document.getElementById('week-selector')?.addEventListener('change', function() {
+        const selectedWeek = this.value;
+        const currentUrl = new URL(window.location);
+        const pathParts = currentUrl.pathname.split('/');
+        
+        // Update the week in the URL path
+        // Assuming URL structure like: /picks/[league_id]/[entry_id]/week/[week_number]
+        // or /leagues/[league_id]/picks/week/[week_number]
+        if (pathParts.includes('week')) {
+            const weekIndex = pathParts.indexOf('week');
+            if (weekIndex !== -1 && weekIndex < pathParts.length - 1) {
+                pathParts[weekIndex + 1] = selectedWeek;
+                currentUrl.pathname = pathParts.join('/');
+            }
+        } else {
+            // If no 'week' in path, replace the query parameter
+            currentUrl.searchParams.set('week', selectedWeek);
+        }
+        
+        // Navigate to the new week
+        window.location.href = currentUrl.toString();
+    });
+    
+    // Quick selection buttons
+    document.getElementById('select-all-home')?.addEventListener('click', function() {
+        if (!<%= canEdit ? 'true' : 'false' %>) return;
+        
+        sortableEl.querySelectorAll('.pick-item').forEach(item => {
+            const homeTeamOption = item.querySelector('.team-option[data-team]:last-of-type');
+            if (homeTeamOption) {
+                homeTeamOption.click();
+            }
+        });
+        
+        // Ensure confidence values are still correct after bulk selection
+        setTimeout(() => {
+            updatePicksSummary();
+        }, 100);
+    });
+    
+    document.getElementById('select-all-away')?.addEventListener('click', function() {
+        if (!<%= canEdit ? 'true' : 'false' %>) return;
+        
+        sortableEl.querySelectorAll('.pick-item').forEach(item => {
+            const awayTeamOption = item.querySelector('.team-option[data-team]:first-of-type');
+            if (awayTeamOption) {
+                awayTeamOption.click();
+            }
+        });
+        
+        // Ensure confidence values are still correct after bulk selection
+        setTimeout(() => {
+            updatePicksSummary();
+        }, 100);
+    });
+    
+    document.getElementById('select-all-favorites')?.addEventListener('click', function() {
+        if (!<%= canEdit ? 'true' : 'false' %>) return;
+        
+        <% if (games) { %>
+            const gameData = <%- JSON.stringify(games) %>;
+            // Create a map of game_id to game data for reliable lookup
+            const gameDataMap = new Map();
+            gameData.forEach(game => {
+                gameDataMap.set(game.game_id, game);
+            });
+            
+            sortableEl.querySelectorAll('.pick-item').forEach(item => {
+                const gameId = parseInt(item.getAttribute('data-game-id'));
+                const game = gameDataMap.get(gameId);
+                if (game && game.point_spread) {
+                    // Favorite is the team with the negative spread (or home team if home_favorite is true)
+                    const favoriteTeam = game.home_favorite ? game.home_team : game.away_team;
+                    const favoriteOption = item.querySelector(`[data-team="${favoriteTeam}"]`);
+                    if (favoriteOption) {
+                        favoriteOption.click();
+                    }
+                }
+            });
+        <% } %>
+    });
+    
+    document.getElementById('select-all-underdogs')?.addEventListener('click', function() {
+        if (!<%= canEdit ? 'true' : 'false' %>) return;
+        
+        <% if (games) { %>
+            const gameData = <%- JSON.stringify(games) %>;
+            // Create a map of game_id to game data for reliable lookup
+            const gameDataMap = new Map();
+            gameData.forEach(game => {
+                gameDataMap.set(game.game_id, game);
+            });
+            
+            sortableEl.querySelectorAll('.pick-item').forEach(item => {
+                const gameId = parseInt(item.getAttribute('data-game-id'));
+                const game = gameDataMap.get(gameId);
+                if (game && game.point_spread) {
+                    // Underdog is the opposite of the favorite
+                    const underdogTeam = game.home_favorite ? game.away_team : game.home_team;
+                    const underdogOption = item.querySelector(`[data-team="${underdogTeam}"]`);
+                    if (underdogOption) {
+                        underdogOption.click();
+                    }
+                }
+            });
+        <% } %>
+    });
+    
+    // Sort games by confidence on initial load to match saved order
+    function initialSortByConfidence() {
+        const items = Array.from(sortableEl.querySelectorAll('.pick-item'));
+        
+        // Sort by confidence points (highest to lowest)
+        items.sort((a, b) => {
+            const aConf = parseInt(a.getAttribute('data-confidence'));
+            const bConf = parseInt(b.getAttribute('data-confidence'));
+            return bConf - aConf;
+        });
+        
+        // Reorder items in the DOM
+        items.forEach(item => sortableEl.appendChild(item));
+        
+    }
+    
+    // Store original database order before any manipulation
+    function storeOriginalOrder() {
+        originalOrder = [];
+        sortableEl.querySelectorAll('.pick-item').forEach((item, index) => {
+            originalOrder.push({
+                element: item.cloneNode(true),
+                gameId: item.getAttribute('data-game-id'),
+                originalIndex: index
+            });
+        });
+    }
+    
+    // Store the original order first
+    storeOriginalOrder();
+    
+    // Apply initial sort if there are saved picks
+    const hasSavedPicks = sortableEl.querySelectorAll('input[name*="[selected_team]"]:checked').length > 0;
+    if (hasSavedPicks) {
+        initialSortByConfidence();
+    }
+    
+    // Initialize summary
+    updatePicksSummary();
+    
+    // Set Clean Sports theme as default
+    document.documentElement.setAttribute('data-theme', 'clean_sports');
+    
+    // Dynamic team option width adjustment - ensure abbreviations are always visible
+    function adjustTeamOptionsForWidth() {
+        const teamContainers = document.querySelectorAll('.teams-container .d-flex');
+        
+        teamContainers.forEach(container => {
+            const containerWidth = container.offsetWidth;
+            const teamOptions = container.querySelectorAll('.team-option');
+            const atSymbol = container.querySelector('.at-symbol');
+            
+            // Calculate available width for team options
+            const atSymbolWidth = atSymbol ? atSymbol.offsetWidth : 30;
+            const availableWidth = containerWidth - atSymbolWidth - 20; // 20px for gaps/margins
+            const minWidthPerOption = Math.max(60, availableWidth / 2); // Minimum 60px per option
+            
+            teamOptions.forEach(teamOption => {
+                // Ensure each team option has enough width to show abbreviations
+                teamOption.style.minWidth = Math.min(minWidthPerOption, 120) + 'px';
+                teamOption.style.maxWidth = 'none';
+                
+                // Adjust font size based on available space but prioritize visibility
+                if (containerWidth < 300) {
+                    teamOption.style.fontSize = '0.8rem';
+                    teamOption.style.padding = '4px 6px';
+                } else if (containerWidth < 400) {
+                    teamOption.style.fontSize = '0.85rem';
+                    teamOption.style.padding = '6px 8px';
+                } else {
+                    teamOption.style.fontSize = '';
+                    teamOption.style.padding = '';
+                }
+            });
+            
+            // Adjust @ symbol
+            if (atSymbol) {
+                if (containerWidth < 300) {
+                    atSymbol.style.fontSize = '0.9rem';
+                    atSymbol.style.padding = '0 4px';
+                } else if (containerWidth < 400) {
+                    atSymbol.style.fontSize = '1rem';
+                    atSymbol.style.padding = '0 6px';
+                } else {
+                    atSymbol.style.fontSize = '';
+                    atSymbol.style.padding = '';
+                }
+            }
+        });
+    }
+    
+    // Run adjustment on load and resize
+    adjustTeamOptionsForWidth();
+    window.addEventListener('resize', adjustTeamOptionsForWidth);
+});
+
+</script>

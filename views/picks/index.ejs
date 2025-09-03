@@ -1,0 +1,136 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-list-ol me-2"></i>My Picks</h1>
+            <div>
+                <span class="badge bg-primary fs-6">Week <%= currentWeek %></span>
+            </div>
+        </div>
+        
+        <% if (leagues && leagues.length > 0) { %>
+            <div class="row">
+                <% leagues.forEach(league => { %>
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-trophy text-warning me-2"></i>
+                                        <%= league.league_name %>
+                                    </h5>
+                                    <span class="badge bg-<%= league.status === 'active' ? 'success' : 'secondary' %>">
+                                        <%= league.status %>
+                                    </span>
+                                </div>
+                                
+                                <% if (league.entries && league.entries.length > 0) { %>
+                                    <% league.entries.forEach(entry => { %>
+                                        <div class="mb-3 p-3 border rounded">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <strong><%= entry.team_name %></strong>
+                                                <small class="text-muted">Entry #<%= entry.entry_id %></small>
+                                            </div>
+                                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                                <a href="/picks/<%= league.league_id %>/<%= entry.entry_id %>?week=<%= currentWeek %>" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    Make Picks
+                                                </a>
+                                                <a href="/picks/<%= league.league_id %>/<%= entry.entry_id %>/view?week=<%= currentWeek %>" 
+                                                   class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-eye me-1"></i>
+                                                    View Picks
+                                                </a>
+                                                <a href="/picks/history/<%= entry.entry_id %>" 
+                                                   class="btn btn-outline-info btn-sm">
+                                                    <i class="fas fa-history me-1"></i>
+                                                    History
+                                                </a>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                <% } else { %>
+                                    <div class="alert alert-info" role="alert">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No entries in this league yet.
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>No Active Leagues</h4>
+                <p class="mb-0">
+                    You're not currently a member of any leagues. Join or create a league to start making picks!
+                </p>
+                <hr>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="/leagues/join" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Join League
+                    </a>
+                    <a href="/leagues/create" class="btn btn-outline-primary">
+                        <i class="fas fa-trophy me-2"></i>
+                        Create League
+                    </a>
+                </div>
+            </div>
+        <% } %>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-football text-primary me-2"></i>
+                            Active Leagues
+                        </h5>
+                        <p class="card-text">View your active leagues to see which games are available for picks.</p>
+                        <a href="/leagues" class="btn btn-primary">
+                            <i class="fas fa-users me-2"></i>
+                            My Leagues
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-calendar text-success me-2"></i>
+                            NFL Schedule
+                        </h5>
+                        <p class="card-text">Check the upcoming NFL games and matchups for this week.</p>
+                        <a href="#" class="btn btn-outline-success disabled">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            View Schedule
+                        </a>
+                        <small class="text-muted d-block mt-2">Coming soon</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-line text-warning me-2"></i>
+                            Your Pick History
+                        </h5>
+                        <p class="card-text">Once you start making picks, your history and performance will be displayed here.</p>
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No pick history available yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

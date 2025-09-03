@@ -1,0 +1,536 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item">
+                            <a href="/dashboard" class="text-decoration-none">Dashboard</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Settings</li>
+                    </ol>
+                </nav>
+                <h1 class="display-6 mb-0">
+                    <i class="fas fa-cog me-3"></i>Account Settings
+                </h1>
+                <p class="text-muted mb-0">Manage your account information and preferences</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Profile Information
+                </h5>
+                <p class="text-muted small mb-0">Update your basic account information</p>
+            </div>
+            <div class="card-body">
+                <form id="settingsForm" method="POST" action="/settings">
+
+                    <!-- Personal Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="firstName" 
+                                    name="firstName" 
+                                    value="<%= user.first_name || '' %>"
+                                    maxlength="100"
+                                    placeholder="Enter first name"
+                                >
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="lastName" 
+                                    name="lastName" 
+                                    value="<%= user.last_name || '' %>"
+                                    maxlength="100"
+                                    placeholder="Enter last name"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Information -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            Username <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="username" 
+                                name="username" 
+                                value="<%= user.username %>"
+                                required
+                                minlength="3"
+                                maxlength="50"
+                                pattern="[a-zA-Z0-9_\\-]+"
+                                placeholder="Choose a username"
+                            >
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="form-text">3-50 characters, letters, numbers, underscores and hyphens only</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="email" class="form-label">
+                            Email Address <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            <input 
+                                type="email" 
+                                class="form-control" 
+                                id="email" 
+                                name="email" 
+                                value="<%= user.email %>"
+                                required
+                                placeholder="your@email.com"
+                            >
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <!-- Password Change Section -->
+                    <div class="card border-warning mb-4">
+                        <div class="card-header bg-warning-subtle">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </h6>
+                            <small class="text-muted">Leave blank to keep your current password</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">New Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input 
+                                        type="password" 
+                                        class="form-control" 
+                                        id="newPassword" 
+                                        name="newPassword" 
+                                        minlength="8"
+                                        placeholder="Create a new password"
+                                    >
+                                    <button 
+                                        class="btn btn-outline-secondary" 
+                                        type="button" 
+                                        id="toggleNewPassword"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    At least 8 characters with uppercase, lowercase, and number
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input 
+                                        type="password" 
+                                        class="form-control" 
+                                        id="confirmPassword" 
+                                        name="confirmPassword" 
+                                        placeholder="Confirm your new password"
+                                    >
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="/dashboard" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Future Sections Placeholder -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bell me-2"></i>Notification Preferences
+                </h5>
+                <p class="text-muted small mb-0">Manage how you receive updates and alerts</p>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-construction fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Coming Soon</h5>
+                <p class="text-muted mb-0">
+                    Notification settings will be available in a future update.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Confirmation Modal -->
+<div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordConfirmModalLabel">
+                    <i class="fas fa-shield-alt me-2"></i>Confirm Your Password
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">
+                    Please enter your current password to confirm these changes to your account.
+                </p>
+                <div class="mb-3">
+                    <label for="modalCurrentPassword" class="form-label">
+                        Current Password <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="modalCurrentPassword" 
+                            placeholder="Enter your current password"
+                            required
+                        >
+                        <button 
+                            class="btn btn-outline-secondary" 
+                            type="button" 
+                            id="toggleModalPassword"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmPasswordBtn">
+                    <i class="fas fa-save me-2"></i>Confirm & Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store original values for change detection
+const originalValues = {
+    firstName: '<%= user.first_name || "" %>',
+    lastName: '<%= user.last_name || "" %>',
+    username: '<%= user.username %>',
+    email: '<%= user.email %>'
+};
+
+// Check for changes and enable/disable save button
+function checkForChanges() {
+    const hasChanges = (
+        document.getElementById('firstName').value !== originalValues.firstName ||
+        document.getElementById('lastName').value !== originalValues.lastName ||
+        document.getElementById('username').value !== originalValues.username ||
+        document.getElementById('email').value !== originalValues.email ||
+        document.getElementById('newPassword').value.trim() !== ''
+    );
+    
+    const saveBtn = document.getElementById('saveBtn');
+    
+    if (hasChanges) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+    } else {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>No Changes';
+    }
+}
+
+// Add change listeners to all form fields
+document.addEventListener('DOMContentLoaded', function() {
+    const fields = ['firstName', 'lastName', 'username', 'email', 'newPassword'];
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', checkForChanges);
+        }
+    });
+    
+    // Initial check
+    checkForChanges();
+});
+
+// Form validation and modal trigger
+document.getElementById('settingsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validate password confirmation if new password is provided
+    if (newPassword && newPassword !== confirmPassword) {
+        document.getElementById('confirmPassword').classList.add('is-invalid');
+        document.querySelector('#confirmPassword + .invalid-feedback').textContent = 'Passwords do not match';
+        return;
+    }
+    
+    // Clear any previous errors
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    
+    // Show password confirmation modal
+    const modal = new bootstrap.Modal(document.getElementById('passwordConfirmModal'));
+    modal.show();
+    
+    // Focus on password field when modal opens
+    document.getElementById('passwordConfirmModal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('modalCurrentPassword').focus();
+    });
+});
+
+// Handle actual form submission from modal
+document.getElementById('confirmPasswordBtn').addEventListener('click', function() {
+    const currentPassword = document.getElementById('modalCurrentPassword').value;
+    
+    if (!currentPassword) {
+        document.getElementById('modalCurrentPassword').classList.add('is-invalid');
+        document.querySelector('#modalCurrentPassword ~ .invalid-feedback').textContent = 'Current password is required';
+        return;
+    }
+    
+    // Clear any previous errors
+    document.getElementById('modalCurrentPassword').classList.remove('is-invalid');
+    
+    // Submit the actual form with password from modal
+    const saveBtn = document.getElementById('saveBtn');
+    const confirmBtn = document.getElementById('confirmPasswordBtn');
+    
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    fetch('/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            currentPassword: currentPassword,
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            newPassword: document.getElementById('newPassword').value || undefined
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('passwordConfirmModal'));
+            modal.hide();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Success!</strong> Your settings have been updated.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.card-body').insertBefore(alert, document.getElementById('settingsForm'));
+            
+            // Clear passwords
+            document.getElementById('modalCurrentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            // Update original values to reflect saved changes
+            originalValues.firstName = document.getElementById('firstName').value;
+            originalValues.lastName = document.getElementById('lastName').value;
+            originalValues.username = document.getElementById('username').value;
+            originalValues.email = document.getElementById('email').value;
+            
+            // Re-check for changes (should disable button)
+            checkForChanges();
+            
+            // Update username in navbar if changed
+            if (data.usernameChanged) {
+                setTimeout(() => location.reload(), 1500);
+            }
+        } else {
+            // Show error message
+            if (data.field) {
+                if (data.field === 'currentPassword') {
+                    // Handle password error in modal
+                    const modalField = document.getElementById('modalCurrentPassword');
+                    modalField.classList.add('is-invalid');
+                    const feedback = modalField.parentElement.querySelector('.invalid-feedback');
+                    if (feedback) {
+                        feedback.textContent = data.message;
+                    }
+                } else {
+                    // Handle other field errors
+                    const field = document.getElementById(data.field);
+                    if (field) {
+                        field.classList.add('is-invalid');
+                        const feedback = field.parentElement.querySelector('.invalid-feedback') || 
+                                       field.querySelector('.invalid-feedback');
+                        if (feedback) {
+                            feedback.textContent = data.message;
+                        }
+                    }
+                }
+            } else {
+                // General error - show in modal or main form
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show';
+                alert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error!</strong> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.card-body').insertBefore(alert, document.getElementById('settingsForm'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show';
+        alert.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error!</strong> Something went wrong. Please try again.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.card-body').insertBefore(alert, document.getElementById('settingsForm'));
+    })
+    .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-save me-2"></i>Confirm & Save Changes';
+    });
+});
+
+// Password visibility toggles
+document.getElementById('toggleModalPassword').addEventListener('click', function() {
+    togglePasswordVisibility('modalCurrentPassword');
+});
+
+document.getElementById('toggleNewPassword').addEventListener('click', function() {
+    togglePasswordVisibility('newPassword');
+});
+
+function togglePasswordVisibility(fieldId) {
+    const field = document.getElementById(fieldId);
+    const button = field.parentElement.querySelector('button i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        button.className = 'fas fa-eye-slash';
+    } else {
+        field.type = 'password';
+        button.className = 'fas fa-eye';
+    }
+}
+
+// Modal cleanup and keyboard support
+document.getElementById('passwordConfirmModal').addEventListener('hidden.bs.modal', function() {
+    // Clear password field and errors when modal is closed
+    const passwordField = document.getElementById('modalCurrentPassword');
+    passwordField.value = '';
+    passwordField.classList.remove('is-invalid');
+    
+    // Reset confirm button
+    const confirmBtn = document.getElementById('confirmPasswordBtn');
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = '<i class="fas fa-save me-2"></i>Confirm & Save Changes';
+});
+
+// Allow Enter key to submit from modal password field
+document.getElementById('modalCurrentPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('confirmPasswordBtn').click();
+    }
+});
+
+// Username availability check
+let usernameTimeout;
+document.getElementById('username').addEventListener('input', function() {
+    clearTimeout(usernameTimeout);
+    const username = this.value;
+    const originalUsername = '<%= user.username %>';
+    
+    if (username.length >= 3 && username !== originalUsername) {
+        usernameTimeout = setTimeout(() => {
+            checkUsernameAvailability(username);
+        }, 500);
+    } else {
+        // Clear validation state if back to original username
+        this.classList.remove('is-invalid', 'is-valid');
+    }
+});
+
+async function checkUsernameAvailability(username) {
+    try {
+        const response = await fetch('/auth/api/check-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+        });
+        
+        const data = await response.json();
+        const usernameInput = document.getElementById('username');
+        const feedback = usernameInput.parentElement.querySelector('.invalid-feedback');
+        
+        if (data.available) {
+            usernameInput.classList.remove('is-invalid');
+            usernameInput.classList.add('is-valid');
+        } else {
+            usernameInput.classList.remove('is-valid');
+            usernameInput.classList.add('is-invalid');
+            feedback.textContent = data.message;
+        }
+    } catch (error) {
+        console.error('Username check error:', error);
+    }
+}
+</script>

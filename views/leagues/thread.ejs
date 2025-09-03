@@ -1,0 +1,175 @@
+<!-- Thread View Styles -->
+<link rel="stylesheet" href="/css/chat.css">
+
+<div class="whatsapp-thread <%= thread.message_type === 'poll' ? 'has-pinned-poll' : '' %>">
+    <!-- WhatsApp-style Thread Header -->
+    <div class="whatsapp-thread-header">
+        <div class="thread-header-left">
+            <a href="/leagues/<%= league.league_id %>/chat" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="thread-avatar">
+                <% if (thread.message_type === 'poll') { %>
+                    <i class="fas fa-poll"></i>
+                <% } else { %>
+                    <i class="fas fa-comments"></i>
+                <% } %>
+            </div>
+            <div class="thread-header-info">
+                <div class="thread-title">
+                    <%= thread.thread_title || thread.message_text.substring(0, 35) + (thread.message_text.length > 35 ? '...' : '') %>
+                </div>
+                <div class="thread-subtitle">
+                    <%= replies.length %> replies • Started by <%= thread.username %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp-style Messages -->
+    <div class="whatsapp-messages" id="threadMessages">
+        
+        <% if (thread.message_type !== 'poll') { %>
+            <!-- Original Thread Message (for non-poll threads) -->
+            <div class="whatsapp-message <%= thread.user_id === user.user_id ? 'my-message' : 'other-message' %>">
+                <div class="message-bubble">
+                    <div class="message-header">
+                        <span class="message-author">
+                            <%= thread.username %>
+                            <% if (thread.is_commissioner) { %>
+                                <i class="fas fa-crown"></i>
+                            <% } %>
+                        </span>
+                        <span class="message-time"><%= thread.formatted_time %></span>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text"><%= thread.message_text %></div>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <!-- Poll thread intro message (optional) -->
+            <div class="poll-thread-intro">
+                <div class="poll-intro-message">
+                    <i class="fas fa-poll me-2"></i>
+                    <span class="poll-intro-text">
+                        <%= thread.username %> started a poll • <%= thread.formatted_time %>
+                    </span>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Thread Replies -->
+        <% if (replies && replies.length > 0) { %>
+            <% replies.forEach(reply => { %>
+                <div class="whatsapp-message <%= reply.user_id === user.user_id ? 'my-message' : 'other-message' %>">
+                    <div class="message-bubble">
+                        <div class="message-header">
+                            <span class="message-author">
+                                <%= reply.username %>
+                                <% if (reply.is_commissioner) { %>
+                                    <i class="fas fa-crown"></i>
+                                <% } %>
+                            </span>
+                            <span class="message-time"><%= reply.formatted_time %></span>
+                        </div>
+                        <div class="message-content">
+                            <%= reply.message_text %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+    </div>
+    
+    <!-- Pinned Poll at Bottom (for poll threads) -->
+    <% if (thread.message_type === 'poll' && thread.poll) { %>
+        <div class="pinned-poll-container">
+            <div class="pinned-poll-header">
+                <i class="fas fa-thumbtack me-2"></i>
+                <span>Poll Question</span>
+            </div>
+            <div class="poll-container pinned-poll">
+                <h6 class="poll-question">
+                    <%= thread.poll.poll_question %>
+                </h6>
+                
+                <!-- User voting status -->
+                <% if (thread.poll.user_has_voted && !thread.poll.is_closed) { %>
+                    <div class="poll-user-status">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <small class="text-muted ms-1">You voted • Click to change your vote</small>
+                    </div>
+                <% } %>
+                
+                <div class="poll-options" data-poll-state="<%= thread.poll.user_has_voted || thread.poll.is_closed ? 'results' : 'voting' %>">
+                    <% thread.poll.options.forEach(option => { %>
+                        <div class="poll-option" data-option-id="<%= option.option_id %>">
+                            <button class="poll-vote-btn <%= option.user_voted ? 'voted' : '' %>" 
+                                    data-poll-id="<%= thread.poll.poll_id %>" 
+                                    data-option-id="<%= option.option_id %>"
+                                    <%= thread.poll.is_closed ? 'disabled' : '' %>>
+                                
+                                <div class="option-content">
+                                    <div class="option-text">
+                                        <% if (option.user_voted && (thread.poll.user_has_voted || thread.poll.is_closed)) { %>
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                        <% } %>
+                                        <%= option.option_text %>
+                                    </div>
+                                    
+                                    <!-- Results (shown only after voting or if poll closed) -->
+                                    <div class="vote-results" style="<%= !thread.poll.user_has_voted && !thread.poll.is_closed ? 'display: none;' : '' %>">
+                                        <div class="vote-stats">
+                                            <span class="vote-percentage"><%= option.percentage %>%</span>
+                                            <span class="vote-count">(<%= option.vote_count %> votes)</span>
+                                        </div>
+                                        <div class="vote-bar">
+                                            <div class="vote-fill" style="width: <%= option.percentage %>%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    <% }) %>
+                </div>
+                
+                <div class="poll-footer">
+                    <small class="text-muted">
+                        <% if (thread.poll.user_has_voted || thread.poll.is_closed) { %>
+                            <%= thread.poll.total_votes %> total votes
+                        <% } else { %>
+                            Click an option to vote
+                        <% } %>
+                        <% if (thread.poll.expires_at_formatted) { %>
+                            • Expires <%= thread.poll.expires_at_formatted %>
+                        <% } %>
+                        <% if (thread.poll.is_closed) { %>
+                            • <span class="text-danger">Poll Closed</span>
+                        <% } %>
+                    </small>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- WhatsApp-style Reply Input -->
+    <div class="whatsapp-input-container">
+        <form id="replyForm" class="whatsapp-input-form">
+            <div class="input-group">
+                <textarea class="form-control whatsapp-input" id="replyMessage" placeholder="Type a message..." rows="1" maxlength="1000" required></textarea>
+                <button type="button" class="btn whatsapp-send-btn" id="postReplyBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thread View JavaScript -->
+<script>
+    window.leagueId = <%= league.league_id %>;
+    window.threadId = <%= thread.message_id %>;
+</script>
+<script src="/js/chat.js"></script>
+

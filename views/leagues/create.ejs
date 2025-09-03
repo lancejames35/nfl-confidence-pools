@@ -1,0 +1,802 @@
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Create New League
+                </h3>
+            </div>
+            
+            <div class="card-body">
+                <form method="POST" action="/leagues/create" novalidate>
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Basic Information
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="league_name" class="form-label">
+                                League Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control <%= errors.league_name ? 'is-invalid' : '' %>" 
+                                id="league_name" 
+                                name="league_name"
+                                value="<%= formData.league_name || '' %>"
+                                placeholder="Enter league name..."
+                                required
+                                maxlength="50"
+                            >
+                            <% if (errors.league_name) { %>
+                                <div class="invalid-feedback">
+                                    <%= errors.league_name.msg %>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea 
+                                class="form-control <%= errors.description ? 'is-invalid' : '' %>" 
+                                id="description" 
+                                name="description"
+                                rows="3"
+                                placeholder="Optional description for your league..."
+                                maxlength="500"
+                            ><%= formData.description || '' %></textarea>
+                            <% if (errors.description) { %>
+                                <div class="invalid-feedback">
+                                    <%= errors.description.msg %>
+                                </div>
+                            <% } %>
+                            <div class="form-text">Optional - Describe your league rules, themes, or any special information</div>
+                        </div>
+                    </div>
+                    
+                    <!-- League Settings -->
+                    <div class="mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-cogs me-2"></i>
+                            League Settings
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pool_type" class="form-label">
+                                    Pool Type <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.pool_type ? 'is-invalid' : '' %>" 
+                                    id="pool_type" 
+                                    name="pool_type"
+                                    required
+                                >
+                                    <option value="">Choose pool type...</option>
+                                    <option value="confidence" <%= (formData.pool_type || 'confidence') === 'confidence' ? 'selected' : '' %>>
+                                        Confidence Pool
+                                    </option>
+                                    <option value="survivor" <%= formData.pool_type === 'survivor' ? 'selected' : '' %>>
+                                        Survivor Pool
+                                    </option>
+                                    <option value="squares" <%= formData.pool_type === 'squares' ? 'selected' : '' %>>
+                                        Squares Pool
+                                    </option>
+                                </select>
+                                <% if (errors.pool_type) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.pool_type.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="privacy" class="form-label">
+                                    Privacy Setting <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.privacy ? 'is-invalid' : '' %>" 
+                                    id="privacy" 
+                                    name="privacy"
+                                    required
+                                >
+                                    <option value="">Choose privacy...</option>
+                                    <option value="private" <%= (formData.privacy || 'private') === 'private' ? 'selected' : '' %>>
+                                        Private (Join code required)
+                                    </option>
+                                    <option value="invite_only" <%= formData.privacy === 'invite_only' ? 'selected' : '' %>>
+                                        Invite Only
+                                    </option>
+                                    <option value="public" <%= formData.privacy === 'public' ? 'selected' : '' %>>
+                                        Public (Anyone can find)
+                                    </option>
+                                </select>
+                                <% if (errors.privacy) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.privacy.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="max_participants" class="form-label">
+                                    Max Participants <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input 
+                                        type="number" 
+                                        class="form-control <%= errors.max_participants ? 'is-invalid' : '' %>" 
+                                        id="max_participants" 
+                                        name="max_participants"
+                                        value="<%= formData.max_participants || '999' %>"
+                                        min="2"
+                                        max="999"
+                                        disabled
+                                    >
+                                    <div class="input-group-text">
+                                        <input class="form-check-input mt-0" type="checkbox" id="unlimited_participants" 
+                                               name="unlimited_participants" <%= formData.unlimited_participants !== false ? 'checked' : '' %>>
+                                        <label class="form-check-label ms-1" for="unlimited_participants">Unlimited</label>
+                                    </div>
+                                </div>
+                                <% if (errors.max_participants) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.max_participants.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="max_entries" class="form-label">
+                                    Max Entries per User <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control <%= errors.max_entries ? 'is-invalid' : '' %>" 
+                                    id="max_entries" 
+                                    name="max_entries"
+                                    value="<%= formData.max_entries || '1' %>"
+                                    min="1"
+                                    max="5"
+                                    required
+                                >
+                                <% if (errors.max_entries) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.max_entries.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="entry_fee" class="form-label">Entry Fee ($)</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control <%= errors.entry_fee ? 'is-invalid' : '' %>" 
+                                    id="entry_fee" 
+                                    name="entry_fee"
+                                    value="<%= formData.entry_fee || '0' %>"
+                                    min="0"
+                                    max="1000"
+                                    step="0.01"
+                                >
+                                <% if (errors.entry_fee) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.entry_fee.msg %>
+                                    </div>
+                                <% } %>
+                                <div class="form-text">Set to 0 for free leagues</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Multi-Tier Entry System -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="enable_multi_tier" name="enable_multi_tier" <%= formData.enable_multi_tier ? 'checked' : '' %>>
+                                <label class="form-check-label" for="enable_multi_tier">
+                                    Enable Multi-Tier Entry System
+                                </label>
+                                <div class="form-text">Allow different entry levels with varying fees and benefits</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Multi-Tier Configuration (shown when enabled) -->
+                        <div class="mb-3" id="multi-tier-config" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Entry Tier Configuration</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <small><i class="fas fa-info-circle me-1"></i>Configure up to 3 different entry tiers. Users can choose their preferred tier when joining.</small>
+                                    </div>
+                                    
+                                    <!-- Tier 1 (Always shown) -->
+                                    <div class="tier-config mb-4" data-tier="1">
+                                        <h6 class="text-primary mb-3">Tier 1 (Required)</h6>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Tier Name <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" name="tier_name[]" value="<%= formData.tier_names && formData.tier_names[0] || 'Standard' %>" placeholder="e.g., Standard" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Entry Fee ($) <span class="text-danger">*</span></label>
+                                                <input type="number" class="form-control" name="tier_fee[]" value="<%= formData.tier_fees && formData.tier_fees[0] || formData.entry_fee || 0 %>" min="0" step="0.01" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Description <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" name="tier_description[]" value="<%= formData.tier_descriptions && formData.tier_descriptions[0] || 'Basic entry level' %>" placeholder="Describe what this tier includes" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tier 2 (Optional) -->
+                                    <div class="tier-config mb-4" data-tier="2" style="display: none;">
+                                        <h6 class="text-primary mb-3">Tier 2 (Optional)</h6>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Tier Name</label>
+                                                <input type="text" class="form-control" name="tier_name[]" value="<%= formData.tier_names && formData.tier_names[1] || '' %>" placeholder="e.g., Premium">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Entry Fee ($)</label>
+                                                <input type="number" class="form-control" name="tier_fee[]" value="<%= formData.tier_fees && formData.tier_fees[1] || (formData.entry_fee || 0) * 2 %>" min="0" step="0.01">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Description</label>
+                                                <input type="text" class="form-control" name="tier_description[]" value="<%= formData.tier_descriptions && formData.tier_descriptions[1] || '' %>" placeholder="Describe what this tier includes">
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-tier" data-tier="2">
+                                                    <i class="fas fa-times me-1"></i>Remove Tier 2
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tier 3 (Optional) -->
+                                    <div class="tier-config mb-4" data-tier="3" style="display: none;">
+                                        <h6 class="text-primary mb-3">Tier 3 (Optional)</h6>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Tier Name</label>
+                                                <input type="text" class="form-control" name="tier_name[]" value="<%= formData.tier_names && formData.tier_names[2] || '' %>" placeholder="e.g., Elite">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Entry Fee ($)</label>
+                                                <input type="number" class="form-control" name="tier_fee[]" value="<%= formData.tier_fees && formData.tier_fees[2] || (formData.entry_fee || 0) * 3 %>" min="0" step="0.01">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Description</label>
+                                                <input type="text" class="form-control" name="tier_description[]" value="<%= formData.tier_descriptions && formData.tier_descriptions[2] || '' %>" placeholder="Describe what this tier includes">
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-tier" data-tier="3">
+                                                    <i class="fas fa-times me-1"></i>Remove Tier 3
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Add Tier Buttons -->
+                                    <div class="tier-controls">
+                                        <button type="button" class="btn btn-outline-primary btn-sm me-2 add-tier" data-target="2" style="display: inline-block;">
+                                            <i class="fas fa-plus me-1"></i>Add Tier 2
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm add-tier" data-target="3" style="display: none;">
+                                            <i class="fas fa-plus me-1"></i>Add Tier 3
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Confidence Pool Settings (shown when confidence pool is selected) -->
+                    <div class="mb-4" id="confidence-pool-settings" style="display: none;">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-football me-2"></i>
+                            Confidence Pool Settings
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pick_method" class="form-label">
+                                    Pick Method <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.pick_method ? 'is-invalid' : '' %>" 
+                                    id="pick_method" 
+                                    name="pick_method"
+                                    required
+                                >
+                                    <option value="straight_up" <%= (formData.pick_method || 'straight_up') === 'straight_up' ? 'selected' : '' %>>
+                                        Straight Up (Pick winners)
+                                    </option>
+                                    <option value="against_spread" <%= formData.pick_method === 'against_spread' ? 'selected' : '' %>>
+                                        Against the Spread
+                                    </option>
+                                </select>
+                                <% if (errors.pick_method) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.pick_method.msg %>
+                                    </div>
+                                <% } %>
+                                <div class="form-text">Straight up picks team to win. Spread picks team to cover the point spread.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="point_system" class="form-label">
+                                    Point System <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.point_system ? 'is-invalid' : '' %>" 
+                                    id="point_system" 
+                                    name="point_system"
+                                    required
+                                >
+                                    <option value="standard" <%= (formData.point_system || 'standard') === 'standard' ? 'selected' : '' %>>
+                                        Standard (1, 2, 3, 4... points)
+                                    </option>
+                                    <option value="multiplier" <%= formData.point_system === 'multiplier' ? 'selected' : '' %>>
+                                        Multiplier (confidence × multiplier)
+                                    </option>
+                                </select>
+                                <% if (errors.point_system) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.point_system.msg %>
+                                    </div>
+                                <% } %>
+                                <div class="form-text">Higher confidence picks are worth more points if correct.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Multiplier Setting (shown when multiplier is selected) -->
+                        <div class="row" id="multiplier-setting" style="display: none;">
+                            <div class="col-md-4 mb-3">
+                                <label for="point_multiplier" class="form-label">
+                                    Point Multiplier <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control <%= errors.point_multiplier ? 'is-invalid' : '' %>" 
+                                    id="point_multiplier" 
+                                    name="point_multiplier"
+                                    value="<%= formData.point_multiplier || '2' %>"
+                                    min="1"
+                                    max="10"
+                                    step="0.5"
+                                >
+                                <% if (errors.point_multiplier) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.point_multiplier.msg %>
+                                    </div>
+                                <% } %>
+                                <div class="form-text">×2 = (2, 4, 6, 8...), ×5 = (5, 10, 15, 20...)</div>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label text-muted">Point Preview</label>
+                                <div class="border rounded p-2 bg-light">
+                                    <small class="text-muted">
+                                        <span id="point-preview">Confidence 1 = 2 pts, Confidence 2 = 4 pts, Confidence 16 = 32 pts</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pick Deadline Settings -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="deadline_type" class="form-label">
+                                    Pick Deadline <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.deadline_type ? 'is-invalid' : '' %>" 
+                                    id="deadline_type" 
+                                    name="deadline_type"
+                                    required
+                                >
+                                    <option value="per_game" <%= (formData.deadline_type || 'per_game') === 'per_game' ? 'selected' : '' %>>
+                                        Per Game (locks when each game starts)
+                                    </option>
+                                    <option value="league_wide" <%= formData.deadline_type === 'league_wide' ? 'selected' : '' %>>
+                                        League-wide (all picks lock at same time)
+                                    </option>
+                                </select>
+                                <% if (errors.deadline_type) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.deadline_type.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3" id="weekly-deadline-setting">
+                                <label for="weekly_deadline" class="form-label">
+                                    Weekly Deadline <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.weekly_deadline ? 'is-invalid' : '' %>" 
+                                    id="weekly_deadline" 
+                                    name="weekly_deadline"
+                                    required
+                                >
+                                    <option value="first_game" <%= (formData.weekly_deadline || 'first_game') === 'first_game' ? 'selected' : '' %>>
+                                        Before 1st Game Kickoff
+                                    </option>
+                                    <option value="thursday_night" <%= formData.weekly_deadline === 'thursday_night' ? 'selected' : '' %>>
+                                        Thursday Night Game
+                                    </option>
+                                    <option value="sunday_early" <%= formData.weekly_deadline === 'sunday_early' ? 'selected' : '' %>>
+                                        Sunday Early Games (1:00 PM ET)
+                                    </option>
+                                </select>
+                                <% if (errors.weekly_deadline) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.weekly_deadline.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <!-- Tiebreaker Settings -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Tiebreaker Settings
+                            </label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- Primary Tiebreaker -->
+                                    <div class="mb-4">
+                                        <label for="primary_tiebreaker" class="form-label fw-bold">
+                                            Primary Tiebreaker
+                                        </label>
+                                        <select class="form-select mb-3" id="primary_tiebreaker" name="primary_tiebreaker">
+                                            <option value="none" <%= (formData.primary_tiebreaker || 'none') === 'none' ? 'selected' : '' %>>
+                                                None (ties allowed)
+                                            </option>
+                                            <option value="mnf_total" <%= formData.primary_tiebreaker === 'mnf_total' ? 'selected' : '' %>>
+                                                MNF Total Points
+                                            </option>
+                                            <option value="mnf_margin" <%= formData.primary_tiebreaker === 'mnf_margin' ? 'selected' : '' %>>
+                                                MNF Margin of Victory
+                                            </option>
+                                        </select>
+                                        
+                                        <!-- MNF Total Settings -->
+                                        <div id="mnf-settings" class="tiebreaker-settings" style="display: none;">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-2">
+                                                    <label class="form-label small">Scoring Method</label>
+                                                    <select class="form-select form-select-sm" name="mnf_scoring_method">
+                                                        <option value="closest" <%= (formData.mnf_scoring_method || 'closest') === 'closest' ? 'selected' : '' %>>
+                                                            Closest to actual
+                                                        </option>
+                                                        <option value="closest_under" <%= formData.mnf_scoring_method === 'closest_under' ? 'selected' : '' %>>
+                                                            Closest without going over
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- MNF Margin of Victory Settings -->
+                                        <div id="margin-settings" class="tiebreaker-settings" style="display: none;">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-2">
+                                                    <label class="form-label small">Scoring Method</label>
+                                                    <select class="form-select form-select-sm" name="mnf_margin_scoring_method">
+                                                        <option value="closest" <%= (formData.mnf_margin_scoring_method || 'closest') === 'closest' ? 'selected' : '' %>>
+                                                            Closest to actual margin
+                                                        </option>
+                                                        <option value="closest_under" <%= formData.mnf_margin_scoring_method === 'closest_under' ? 'selected' : '' %>>
+                                                            Closest without going over
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-text small">Users predict the winning team's margin of victory in the Monday Night Football game</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Secondary Tiebreaker -->
+                                    <div class="mb-3">
+                                        <label for="secondary_tiebreaker" class="form-label fw-bold">
+                                            Secondary Tiebreaker <small class="text-muted fw-normal">(if primary results in tie)</small>
+                                        </label>
+                                        <select class="form-select" id="secondary_tiebreaker" name="secondary_tiebreaker">
+                                            <option value="none" <%= (formData.secondary_tiebreaker || 'none') === 'none' ? 'selected' : '' %>>
+                                                None (allow ties)
+                                            </option>
+                                            <option value="mnf_total" <%= formData.secondary_tiebreaker === 'mnf_total' ? 'selected' : '' %>>
+                                                MNF Total Points
+                                            </option>
+                                            <option value="mnf_margin" <%= formData.secondary_tiebreaker === 'mnf_margin' ? 'selected' : '' %>>
+                                                MNF Margin of Victory
+                                            </option>
+                                            <option value="earliest_submission" <%= formData.secondary_tiebreaker === 'earliest_submission' ? 'selected' : '' %>>
+                                                Earliest Pick Submission
+                                            </option>
+                                        </select>
+                                        <div class="form-text">Secondary tiebreaker uses same settings as primary for that method</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="/dashboard" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>
+                            Create League
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pool type change handler - show/hide confidence pool settings
+    const poolTypeSelect = document.getElementById('pool_type');
+    const confidencePoolSettings = document.getElementById('confidence-pool-settings');
+    
+    function toggleConfidenceSettings() {
+        if (poolTypeSelect.value === 'confidence') {
+            confidencePoolSettings.style.display = 'block';
+        } else {
+            confidencePoolSettings.style.display = 'none';
+        }
+    }
+    
+    if (poolTypeSelect) {
+        poolTypeSelect.addEventListener('change', toggleConfidenceSettings);
+        toggleConfidenceSettings(); // Initial check
+    }
+    
+    // Point system change handler - show/hide multiplier settings
+    const pointSystemSelect = document.getElementById('point_system');
+    const multiplierSetting = document.getElementById('multiplier-setting');
+    const pointMultiplierInput = document.getElementById('point_multiplier');
+    const pointPreview = document.getElementById('point-preview');
+    
+    function togglePointSystemSettings() {
+        if (pointSystemSelect.value === 'multiplier') {
+            multiplierSetting.style.display = 'flex';
+            updatePointPreview();
+        } else {
+            multiplierSetting.style.display = 'none';
+        }
+    }
+    
+    function updatePointPreview() {
+        if (pointSystemSelect.value === 'multiplier' && pointMultiplierInput) {
+            const multiplier = parseFloat(pointMultiplierInput.value) || 2;
+            pointPreview.textContent = `Confidence 1 = ${multiplier} pts, Confidence 2 = ${multiplier * 2} pts, Confidence 16 = ${multiplier * 16} pts`;
+        }
+    }
+    
+    if (pointSystemSelect) {
+        pointSystemSelect.addEventListener('change', togglePointSystemSettings);
+        togglePointSystemSettings(); // Initial check
+    }
+    
+    if (pointMultiplierInput) {
+        pointMultiplierInput.addEventListener('input', updatePointPreview);
+    }
+    
+    
+    // Handle unlimited participants checkbox
+    const unlimitedCheckbox = document.getElementById('unlimited_participants');
+    const maxParticipantsInput = document.getElementById('max_participants');
+    
+    if (unlimitedCheckbox && maxParticipantsInput) {
+        unlimitedCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                maxParticipantsInput.disabled = true;
+                maxParticipantsInput.value = '999';
+            } else {
+                maxParticipantsInput.disabled = false;
+                maxParticipantsInput.value = '50';
+                maxParticipantsInput.focus();
+            }
+        });
+    }
+    
+    // Deadline type change handler - show/hide league-wide deadline options
+    const deadlineTypeSelect = document.getElementById('deadline_type');
+    const weeklyDeadlineSetting = document.getElementById('weekly-deadline-setting');
+    
+    function toggleDeadlineSettings() {
+        if (weeklyDeadlineSetting) {
+            if (deadlineTypeSelect.value === 'league_wide') {
+                weeklyDeadlineSetting.style.display = 'block';
+            } else {
+                weeklyDeadlineSetting.style.display = 'none';
+            }
+        }
+    }
+    
+    if (deadlineTypeSelect) {
+        deadlineTypeSelect.addEventListener('change', toggleDeadlineSettings);
+        toggleDeadlineSettings(); // Initial check
+    }
+    
+    // Tiebreaker settings handler - show/hide specific tiebreaker options
+    const primaryTiebreakerSelect = document.getElementById('primary_tiebreaker');
+    const secondaryTiebreakerSelect = document.getElementById('secondary_tiebreaker');
+    const mnfSettings = document.getElementById('mnf-settings');
+    const marginSettings = document.getElementById('margin-settings');
+    
+    function toggleTiebreakerSettings() {
+        // Hide all settings first
+        document.querySelectorAll('.tiebreaker-settings').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Show relevant settings based on selection
+        const selectedTiebreaker = primaryTiebreakerSelect.value;
+        switch(selectedTiebreaker) {
+            case 'mnf_total':
+                mnfSettings.style.display = 'block';
+                break;
+            case 'mnf_margin':
+                marginSettings.style.display = 'block';
+                break;
+        }
+    }
+    
+    function updateSecondaryOptions() {
+        if (!primaryTiebreakerSelect || !secondaryTiebreakerSelect) return;
+        
+        const primaryValue = primaryTiebreakerSelect.value;
+        const secondaryValue = secondaryTiebreakerSelect.value;
+        
+        // Enable all options first
+        Array.from(secondaryTiebreakerSelect.options).forEach(option => {
+            option.disabled = false;
+        });
+        
+        // Disable the primary selection in secondary dropdown (except 'none')
+        if (primaryValue !== 'none') {
+            const optionToDisable = secondaryTiebreakerSelect.querySelector(`option[value="${primaryValue}"]`);
+            if (optionToDisable) {
+                optionToDisable.disabled = true;
+                // If secondary was set to same as primary, reset to none
+                if (secondaryValue === primaryValue) {
+                    secondaryTiebreakerSelect.value = 'none';
+                }
+            }
+        }
+    }
+    
+    // Set up all tiebreaker event listeners
+    if (primaryTiebreakerSelect) {
+        primaryTiebreakerSelect.addEventListener('change', function() {
+            toggleTiebreakerSettings();
+            updateSecondaryOptions();
+        });
+        toggleTiebreakerSettings(); // Initial check
+        updateSecondaryOptions(); // Initial check
+    }
+    
+    // Multi-tier system handlers
+    const enableMultiTierCheckbox = document.getElementById('enable_multi_tier');
+    const multiTierConfig = document.getElementById('multi-tier-config');
+    
+    function toggleMultiTierSettings() {
+        if (enableMultiTierCheckbox.checked) {
+            multiTierConfig.style.display = 'block';
+        } else {
+            multiTierConfig.style.display = 'none';
+        }
+    }
+    
+    if (enableMultiTierCheckbox) {
+        enableMultiTierCheckbox.addEventListener('change', toggleMultiTierSettings);
+        toggleMultiTierSettings(); // Initial check
+    }
+    
+    // Multi-tier add/remove handlers
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-tier') || e.target.closest('.add-tier')) {
+            const button = e.target.classList.contains('add-tier') ? e.target : e.target.closest('.add-tier');
+            const targetTier = button.dataset.target;
+            const tierElement = document.querySelector(`.tier-config[data-tier="${targetTier}"]`);
+            
+            if (tierElement) {
+                tierElement.style.display = 'block';
+                button.style.display = 'none';
+                
+                // Show next add tier button if available
+                if (targetTier === '2') {
+                    const tier3Button = document.querySelector('.add-tier[data-target="3"]');
+                    if (tier3Button) tier3Button.style.display = 'inline-block';
+                }
+            }
+        }
+        
+        if (e.target.classList.contains('remove-tier') || e.target.closest('.remove-tier')) {
+            const button = e.target.classList.contains('remove-tier') ? e.target : e.target.closest('.remove-tier');
+            const targetTier = button.dataset.tier;
+            const tierElement = document.querySelector(`.tier-config[data-tier="${targetTier}"]`);
+            
+            if (tierElement) {
+                // Clear the inputs
+                tierElement.querySelectorAll('input').forEach(input => input.value = '');
+                tierElement.style.display = 'none';
+                
+                // Show the appropriate add button
+                const addButton = document.querySelector(`.add-tier[data-target="${targetTier}"]`);
+                if (addButton) addButton.style.display = 'inline-block';
+                
+                // Hide higher tier add buttons
+                if (targetTier === '2') {
+                    const tier3Button = document.querySelector('.add-tier[data-target="3"]');
+                    if (tier3Button) tier3Button.style.display = 'none';
+                    
+                    // Also remove tier 3 if it's visible
+                    const tier3Element = document.querySelector('.tier-config[data-tier="3"]');
+                    if (tier3Element) {
+                        tier3Element.querySelectorAll('input').forEach(input => input.value = '');
+                        tier3Element.style.display = 'none';
+                    }
+                }
+            }
+        }
+    });
+    
+    // Auto-update character count for description
+    const descriptionField = document.getElementById('description');
+    if (descriptionField) {
+        const maxLength = 500;
+        
+        function updateCharCount() {
+            const remaining = maxLength - descriptionField.value.length;
+            const formText = descriptionField.nextElementSibling.nextElementSibling;
+            if (formText && formText.classList.contains('form-text')) {
+                formText.innerHTML = `Optional - Describe your league rules, themes, or any special information (${remaining} characters remaining)`;
+            }
+        }
+        
+        descriptionField.addEventListener('input', updateCharCount);
+        updateCharCount();
+    }
+    
+    // League name validation feedback
+    const leagueNameField = document.getElementById('league_name');
+    if (leagueNameField) {
+        leagueNameField.addEventListener('input', function() {
+            const value = this.value;
+            const regex = /^[a-zA-Z0-9\s\-_]+$/;
+            
+            if (value && !regex.test(value)) {
+                this.classList.add('is-invalid');
+                let feedback = this.parentElement.querySelector('.invalid-feedback');
+                if (!feedback) {
+                    feedback = document.createElement('div');
+                    feedback.classList.add('invalid-feedback');
+                    this.parentElement.appendChild(feedback);
+                }
+                feedback.textContent = 'League name can only contain letters, numbers, spaces, hyphens, and underscores';
+            } else {
+                this.classList.remove('is-invalid');
+                const feedback = this.parentElement.querySelector('.invalid-feedback');
+                if (feedback) {
+                    feedback.remove();
+                }
+            }
+        });
+    }
+});
+</script>

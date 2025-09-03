@@ -1,0 +1,709 @@
+<!-- Dashboard Styles and Scripts -->
+<link rel="stylesheet" href="/css/dashboard.css">
+
+<!-- Enhanced Dashboard Navigation Hub -->
+<div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-banner">
+                <h1 class="h3 mb-0">
+                    Welcome back, <strong><%= user ? user.username : 'Player' %></strong>!
+                </h1>
+                <p class="text-light-emphasis mb-0 mt-2">
+                    <%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) %>
+                    <span class="ms-3">•</span>
+                    <span class="ms-3">NFL Week <%= locals.currentWeek || 1 %></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- League Selector -->
+    <% if (userLeagues && userLeagues.length > 0) { %>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="league-selector-card">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center flex-grow-1">
+                        <i class="fas fa-users text-primary me-3"></i>
+                        <label for="leagueSelector" class="form-label mb-0 me-3">Viewing League:</label>
+                        <div class="league-selector-group d-flex align-items-center gap-2">
+                            <select class="form-select league-selector" id="leagueSelector">
+                                <% userLeagues.forEach((league, index) => { %>
+                                    <option value="<%= league.league_id %>" 
+                                            data-entry-id="<%= league.entry_id || '' %>"
+                                            data-is-commissioner="<%= league.actual_role === 'commissioner' %>"
+                                            data-join-code="<%= league.join_code || '' %>"
+                                            <%= (locals.selectedLeagueId == league.league_id) || (!locals.selectedLeagueId && index === 0) ? 'selected' : '' %>>
+                                        <%= league.league_name %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                            <% 
+                            const currentLeagueId = locals.selectedLeagueId || (userLeagues[0] ? userLeagues[0].league_id : null);
+                            const selectedLeague = userLeagues.find(l => l.league_id == currentLeagueId) || userLeagues[0];
+                            %>
+                            <% if (selectedLeague && selectedLeague.actual_role === 'commissioner') { %>
+                                <a href="/leagues/<%= selectedLeague.league_id %>" 
+                                   class="btn btn-outline-primary btn-sm commissioner-manage-btn"
+                                   id="manageLeagueBtn"
+                                   title="Manage League Details">
+                                    <i class="fas fa-cog me-1"></i>
+                                    <span class="d-none d-md-inline">Manage</span>
+                                </a>
+                            <% } %>
+                            <a href="/leagues/create" 
+                               class="btn btn-sm btn-primary"
+                               title="Create Another League"
+                               style="white-space: nowrap;">
+                                <i class="fas fa-plus me-1"></i>
+                                Create League
+                            </a>
+                        </div>
+                    </div>
+                    <div class="selected-league-info d-flex align-items-center gap-2">
+                        <% if (selectedLeague) { %>
+                            <span class="badge bg-primary">
+                                <i class="fas fa-trophy me-1"></i>
+                                <%= selectedLeague.member_count || 0 %> Members
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#inviteUsersModal" title="Invite Users">
+                                <i class="fas fa-user-plus me-1"></i>
+                                <span class="d-none d-md-inline">Invite</span>
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- NFL Kickoff Countdown -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="kickoff-countdown-card">
+                <div class="countdown-header">
+                    <i class="fas fa-football-ball me-2"></i>
+                    <span class="countdown-title">2025 NFL Season Kickoff</span>
+                </div>
+                <div class="countdown-game-info">
+                    <span class="game-date" id="kickoff-time">Loading game time...</span>
+                </div>
+                <div class="countdown-timer" id="kickoff-countdown">
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-days">--</span>
+                        <span class="countdown-label">Days</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-hours">--</span>
+                        <span class="countdown-label">Hours</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-minutes">--</span>
+                        <span class="countdown-label">Minutes</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-seconds">--</span>
+                        <span class="countdown-label">Seconds</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary Action Cards -->
+    <div class="row mb-4">
+        <% 
+        const defaultLeagueId = locals.selectedLeagueId || (userLeagues && userLeagues[0] ? userLeagues[0].league_id : null);
+        const defaultEntryId = userLeagues && userLeagues[0] ? userLeagues[0].entry_id : null;
+        %>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="primary-action-card picks-card">
+                <div class="action-header">
+                    <div class="action-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="action-title">
+                        <h6>Make Your Picks</h6>
+                        <small>Week <%= currentWeek || 1 %> Confidence Rankings</small>
+                    </div>
+                </div>
+                <div class="action-content">
+                    <p class="action-description">Rank all <%= gamesThisWeek || 16 %> NFL games by confidence level</p>
+                    <div class="action-stats">
+                        <div class="action-stat-display">
+                            <div class="action-stat-number">
+                                <span class="stat-primary"><%= locals.picksLocked || 0 %></span>
+                                <span class="stat-separator">/</span>
+                                <span class="stat-secondary"><%= gamesThisWeek || 16 %></span>
+                            </div>
+                            <div class="action-stat-label">picks completed</div>
+                        </div>
+                    </div>
+                </div>
+                <a href="/picks<%= defaultLeagueId ? '/' + defaultLeagueId + '/' + (defaultEntryId || 'new') : '' %>" 
+                   class="btn btn-primary action-button" id="picks-link">
+                    <i class="fas fa-arrow-right me-1"></i>Make Picks
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="primary-action-card results-card">
+                <div class="action-header">
+                    <div class="action-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="action-title">
+                        <h6>View Results</h6>
+                        <small>Weekly & Season Performance</small>
+                    </div>
+                </div>
+                <div class="action-content">
+                    <p class="action-description">Check game results and your scoring history</p>
+                    <div class="action-stats">
+                        <div class="action-stat-display">
+                            <div class="action-stat-horizontal">
+                                <span class="stat-primary"><%= winPercentage || '0' %>%</span>
+                                <span class="stat-fraction">(<%= correctPicks || 0 %>/<%= totalPicks || 0 %>)</span>
+                            </div>
+                            <div class="action-stat-label">pick accuracy</div>
+                        </div>
+                    </div>
+                </div>
+                <a href="/results<%= defaultLeagueId ? '?league_id=' + defaultLeagueId : '' %>" 
+                   class="btn btn-success action-button" id="results-link">
+                    <i class="fas fa-arrow-right me-1"></i>View Results
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="primary-action-card standings-card">
+                <div class="action-header">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="action-title">
+                        <h6>League Standings</h6>
+                        <small>Current Rankings & Stats</small>
+                    </div>
+                </div>
+                <div class="action-content">
+                    <p class="action-description">See how you stack up against the competition</p>
+                    <div class="action-stats">
+                        <div class="action-stat-display">
+                            <% 
+                            const currentLeague = userLeagues && userLeagues.find(l => l.league_id == (locals.selectedLeagueId || userLeagues[0]?.league_id));
+                            %>
+                            <div class="action-stat-number">
+                                <span class="stat-primary"><%= (currentLeague && currentLeague.member_count) || 0 %></span>
+                            </div>
+                            <div class="action-stat-label">league members</div>
+                        </div>
+                    </div>
+                </div>
+                <a href="/standings<%= defaultLeagueId ? '?league_id=' + defaultLeagueId : '' %>" 
+                   class="btn btn-warning action-button" id="standings-link">
+                    <i class="fas fa-arrow-right me-1"></i>View Standings
+                </a>
+            </div>
+        </div>
+
+        <!-- Chat Action Card -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="primary-action-card chat-card">
+                <div class="action-header">
+                    <div class="action-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="action-title">
+                        <h6>League Chat</h6>
+                        <small>Connect with Members</small>
+                    </div>
+                </div>
+                <div class="action-content">
+                    <p class="action-description">Chat with league members and stay updated</p>
+                    <div class="action-stats">
+                        <div class="action-stat-display">
+                            <div class="action-stat-number">
+                                <span class="stat-primary"><%= locals.unreadChatCount || 0 %></span>
+                            </div>
+                            <div class="action-stat-label">unread messages</div>
+                        </div>
+                    </div>
+                </div>
+                <% 
+                const selectedLeagueForNav = userLeagues && userLeagues.find(l => l.league_id == (locals.selectedLeagueId || userLeagues[0]?.league_id)) || (userLeagues && userLeagues[0]);
+                %>
+                <% if (selectedLeagueForNav) { %>
+                    <a href="/leagues/<%= selectedLeagueForNav.league_id %>/chat" 
+                       class="btn btn-info action-button" id="chat-link"
+                       title="Chat for <%= selectedLeagueForNav.league_name %>">
+                        <i class="fas fa-arrow-right me-1"></i>Join Chat
+                    </a>
+                <% } else { %>
+                    <a href="/chat" 
+                       class="btn btn-info action-button" id="chat-link">
+                        <i class="fas fa-arrow-right me-1"></i>Join Chat
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Main Dashboard Grid -->
+    <div class="row g-4">
+        <!-- Main Content Section -->
+        <div class="col-lg-8">
+            
+            <!-- League Information & Rules -->
+            <% 
+            const selectedLeague = userLeagues && userLeagues.find(l => l.league_id == (locals.selectedLeagueId || userLeagues[0]?.league_id)) || (userLeagues && userLeagues[0]);
+            %>
+            <% if (selectedLeague) { %>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users text-primary me-2"></i>League Information
+                        </h5>
+                        <div class="league-badges">
+                            <span class="badge bg-primary"><%= selectedLeague.member_count || 0 %> Members</span>
+                            <% if (selectedLeague.is_commissioner) { %>
+                                <span class="badge bg-warning text-dark">Commissioner</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="league-overview">
+                        <div class="row g-4">
+                            <div class="col-md-8">
+                                <div class="league-info-grid">
+                                    <div class="info-item">
+                                        <i class="fas fa-trophy text-warning"></i>
+                                        <span>
+                                            <%
+                                            let poolTypeText = 'Confidence Pool';
+                                            let pointsText = '(1-16 points per game)';
+                                            
+                                            if (leagueSettings) {
+                                                if (leagueSettings.pool_type === 'survivor') {
+                                                    poolTypeText = 'Survivor Pool';
+                                                    pointsText = '(Pick one team per week)';
+                                                } else if (leagueSettings.pool_type === 'squares') {
+                                                    poolTypeText = 'Squares Pool';
+                                                    pointsText = '(Grid-based scoring)';
+                                                } else if (leagueSettings.pool_type === 'confidence') {
+                                                    // Default to standard confidence pool text
+                                                    // Point system details would need to be queried from confidence_pool_settings if needed
+                                                    pointsText = '(1-16 points per game)';
+                                                }
+                                            }
+                                            %>
+                                            <%= poolTypeText %> <%= pointsText %>
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-clock text-info"></i>
+                                        <span>
+                                            <%
+                                            let deadlineText = 'Picks due before first game each week';
+                                            
+                                            if (leagueSettings) {
+                                                if (leagueSettings.deadline_type === 'per_game') {
+                                                    deadlineText = 'Picks due before each game kickoff';
+                                                } else if (leagueSettings.deadline_type === 'league_wide') {
+                                                    if (leagueSettings.weekly_deadline === 'thursday_night') {
+                                                        deadlineText = 'Picks due before Thursday Night Game';
+                                                    } else if (leagueSettings.weekly_deadline === 'sunday_early') {
+                                                        deadlineText = 'Picks due before Sunday early games (1:00 PM ET)';
+                                                    } else {
+                                                        deadlineText = 'Picks due before first game each week';
+                                                    }
+                                                }
+                                            }
+                                            %>
+                                            <%= deadlineText %>
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-lock text-secondary"></i>
+                                        <span>
+                                            <%
+                                            let privacyText = 'Public League';
+                                            if (leagueSettings && leagueSettings.privacy) {
+                                                if (leagueSettings.privacy === 'private') {
+                                                    privacyText = 'Private League (Join code required)';
+                                                } else if (leagueSettings.privacy === 'invite_only') {
+                                                    privacyText = 'Invite Only League';
+                                                } else if (leagueSettings.privacy === 'public') {
+                                                    privacyText = 'Public League (Anyone can find)';
+                                                }
+                                            } else if (selectedLeague) {
+                                                // Fallback to existing logic if leagueSettings not available
+                                                privacyText = selectedLeague.is_private ? 'Private League' : 'Public League';
+                                            }
+                                            %>
+                                            <%= privacyText %>
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-calendar text-success"></i>
+                                        <span>2025 NFL Regular Season</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="your-performance">
+                                    <div class="perf-stat">
+                                        <div class="perf-value"><%= selectedLeague.user_total_points || 0 %></div>
+                                        <div class="perf-label">Total Points</div>
+                                    </div>
+                                    <% 
+                                    // Use proper completed weeks calculation
+                                    const completedWeeks = selectedLeague.user_completed_weeks || 0;
+                                    const totalPts = selectedLeague.user_total_points || 0;
+                                    const weeklyAvg = completedWeeks > 0 ? Math.round((totalPts / completedWeeks) * 10) / 10 : 0;
+                                    %>
+                                    <% if (completedWeeks > 0 && totalPts > 0) { %>
+                                    <div class="perf-stat">
+                                        <div class="perf-value"><%= weeklyAvg %></div>
+                                        <div class="perf-label">Weekly Average</div>
+                                    </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+            
+            <!-- Commissioner Messages -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bullhorn text-warning me-2"></i>Commissioner Messages
+                        </h5>
+                        <span class="badge bg-light text-dark">Latest Updates</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="commissioner-messages">
+                        <% if (locals.commissionerMessages && commissionerMessages.length > 0) { %>
+                            <% commissionerMessages.forEach(message => { %>
+                                <div class="message-item <%= message.important ? 'message-important' : '' %>">
+                                    <div class="message-line">
+                                        <div class="message-main">
+                                            <span class="message-title">
+                                                <%= message.important ? '⚠️ ' : '' %><strong><%= message.title %></strong>
+                                            </span>
+                                            <span class="message-content text-muted">— <%= message.content %></span>
+                                        </div>
+                                        <div class="message-meta text-muted">
+                                            <small>
+                                                <i class="fas fa-crown me-1"></i><%= message.posted_by %>
+                                                • <i class="fas fa-clock me-1"></i><%= new Date(message.created_at).toLocaleDateString() %>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="no-messages text-center py-4">
+                                <i class="fas fa-inbox text-muted mb-2" style="font-size: 2rem;"></i>
+                                <p class="text-muted mb-0">No commissioner messages yet</p>
+                                <small class="text-muted">Select a league to see commissioner updates</small>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-4">
+            <!-- User Stats Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line text-info me-2"></i>Your Performance
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="stats-list">
+                        <div class="stat-item-enhanced">
+                            <div class="stat-icon bg-primary-light">
+                                <i class="fas fa-trophy text-primary"></i>
+                            </div>
+                            <div class="stat-details flex-grow-1">
+                                <div class="stat-label-enhanced">Weekly Wins</div>
+                                <div class="stat-sublabel">First place finishes across all leagues</div>
+                            </div>
+                            <div class="stat-value-large"><%= totalWins || 0 %></div>
+                        </div>
+                        <div class="stat-item-enhanced">
+                            <div class="stat-icon bg-success-light">
+                                <i class="fas fa-percentage text-success"></i>
+                            </div>
+                            <div class="stat-details flex-grow-1">
+                                <div class="stat-label-enhanced">Pick Accuracy</div>
+                                <div class="stat-sublabel">Percentage of correct picks this season</div>
+                            </div>
+                            <div class="stat-value-with-fraction">
+                                <div class="stat-value-large"><%= winPercentage || '0' %>%</div>
+                                <div class="stat-fraction-small">(<%= correctPicks || 0 %>/<%= totalPicks || 0 %>)</div>
+                            </div>
+                        </div>
+                        <div class="stat-item-enhanced">
+                            <div class="stat-icon bg-warning-light">
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                            <div class="stat-details flex-grow-1">
+                                <div class="stat-label-enhanced">Total Points</div>
+                                <div class="stat-sublabel">Combined points across all entries</div>
+                            </div>
+                            <div class="stat-value-large"><%= totalPoints || 0 %></div>
+                        </div>
+                        <div class="stat-item-enhanced">
+                            <div class="stat-icon bg-info-light">
+                                <i class="fas fa-users text-info"></i>
+                            </div>
+                            <div class="stat-details flex-grow-1">
+                                <div class="stat-label-enhanced">Active Leagues</div>
+                                <div class="stat-sublabel">Number of leagues you're playing in</div>
+                            </div>
+                            <div class="stat-value-large"><%= activeLeaguesCount || 0 %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Dashboard JavaScript -->
+<script>
+// Global variables for template data
+window.currentUser = {
+    username: '<%= user ? user.username : "" %>'
+};
+window.isCommissioner = <%= locals.selectedLeague && selectedLeague.actual_role === 'commissioner' ? 'true' : 'false' %>;
+window.firstGameKickoffET = '<%= firstGameKickoff ? firstGameKickoff.toISOString().replace("T", " ").substring(0, 19) + " ET" : "" %>';
+</script>
+<script src="/js/dashboard.js"></script>
+
+
+<!-- Invite Users Modal -->
+<% if (selectedLeague) { %>
+<div class="modal fade" id="inviteUsersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Invite Users to <%= selectedLeague.league_name %>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-share-alt text-primary" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Share this with friends to invite them:</h6>
+                </div>
+
+                <!-- Single Copy Message -->
+                <div class="mb-3">
+                    <div class="border rounded p-3 bg-light">
+                        <div class="mb-2 text-muted small">Message to share:</div>
+                        <div id="inviteMessage" class="mb-3">
+                            Join my NFL confidence pool on League Station Pools! Click here to get started: <span id="dynamicInviteLink"></span>
+                        </div>
+                        <button class="btn btn-primary w-100" id="copyMessageBtn">
+                            <i class="fas fa-copy me-2"></i>Copy Message
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        They'll be taken to the main page and automatically prompted to join your league
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<!-- Commissioner Modals -->
+<% if (selectedLeague && selectedLeague.actual_role === 'commissioner') { %>
+
+<!-- League Settings Modal -->
+<div class="modal fade" id="leagueSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-cog me-2"></i>League Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="leagueSettingsForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">League Name</label>
+                            <input type="text" class="form-control" value="<%= selectedLeague.league_name || '' %>" name="league_name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Privacy</label>
+                            <select class="form-select" name="is_private">
+                                <option value="0" <%= !selectedLeague.is_private ? 'selected' : '' %>>Public League</option>
+                                <option value="1" <%= selectedLeague.is_private ? 'selected' : '' %>>Private League</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">League Description</label>
+                        <textarea class="form-control" rows="3" name="description"><%= selectedLeague.description || '' %></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rules & Settings</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="allow_late_entries" <%= selectedLeague.allow_late_entries ? 'checked' : '' %>>
+                            <label class="form-check-label">Allow late entries after season start</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="public_picks" <%= selectedLeague.public_picks ? 'checked' : '' %>>
+                            <label class="form-check-label">Make all picks visible to members</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveLeagueSettings()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Members Modal -->
+<div class="modal fade" id="manageMembersModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users me-2"></i>Manage League Members
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>Current Members (<span id="memberCount"><%= selectedLeague.member_count || 0 %></span>)</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Joined</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="membersTableBody">
+                                    <!-- Members will be loaded here -->
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading members...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Invite New Members</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="inviteEmail" placeholder="user@example.com">
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100" onclick="inviteMember()">
+                            <i class="fas fa-paper-plane me-2"></i>Send Invite
+                        </button>
+                        
+                        <hr class="my-3">
+                        
+                        <h6>Invite Link</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" readonly 
+                                   value="<%= process.env.BASE_URL || 'http://localhost:3000' %>/leagues/join/<%= selectedLeague.league_id %>/<%= selectedLeague.invite_code || 'ABC123' %>" 
+                                   id="inviteLink">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="copyInviteLink()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Share this link with people you want to invite</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Post Message Modal -->
+<div class="modal fade" id="postMessageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bullhorn me-2"></i>Post Commissioner Message
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="commissionerMessageForm">
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-control" rows="4" name="message" placeholder="Enter your message to league members..." maxlength="1000"></textarea>
+                        <div class="form-text">Maximum 1000 characters</div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_important" id="importantMessage">
+                        <label class="form-check-label" for="importantMessage">
+                            Mark as Important <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="postCommissionerMessage()">
+                    <i class="fas fa-paper-plane me-2"></i>Post Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<% } %>

@@ -1,0 +1,514 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item">
+                            <a href="/" class="text-decoration-none">Home</a>
+                        </li>
+                        <% if (isOwnProfile) { %>
+                            <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+                        <% } else { %>
+                            <li class="breadcrumb-item active" aria-current="page"><%= profileUser.username %>'s Profile</li>
+                        <% } %>
+                    </ol>
+                </nav>
+                <h1 class="display-5 mb-0">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-lg bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
+                            <%= profileUser.username.charAt(0).toUpperCase() %>
+                        </div>
+                        <div>
+                            <%= profileUser.username %>'s Profile
+                            <% if (isOwnProfile) { %>
+                                <span class="badge bg-primary ms-2">You</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </h1>
+            </div>
+            
+            <% if (isOwnProfile) { %>
+            <div class="btn-group" role="group">
+                <a href="/profile/edit" class="btn btn-outline-primary">
+                    <i class="fas fa-edit me-1"></i> Edit Profile
+                </a>
+                <a href="/profile/change-password" class="btn btn-outline-secondary">
+                    <i class="fas fa-key me-1"></i> Change Password
+                </a>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- User Stats Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                <h5 class="card-title"><%= userStats.total_picks || 0 %></h5>
+                <p class="card-text mb-0">Total Picks</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-bullseye fa-2x mb-2"></i>
+                <h5 class="card-title"><%= userStats.accuracy || 0 %>%</h5>
+                <p class="card-text mb-0">Pick Accuracy</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-star fa-2x mb-2"></i>
+                <h5 class="card-title"><%= userStats.total_points || 0 %></h5>
+                <p class="card-text mb-0">Total Points</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h5 class="card-title"><%= userStats.total_leagues || 0 %></h5>
+                <p class="card-text mb-0">Leagues Joined</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column - Profile Info and Stats -->
+    <div class="col-lg-8">
+        <!-- Detailed Statistics -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Performance Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="stat-group">
+                            <h6 class="stat-category">Overall Performance</h6>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Picks Made:</span>
+                                <span class="stat-value text-primary"><%= userStats.total_picks || 0 %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Correct Picks:</span>
+                                <span class="stat-value text-success">
+                                    <%= userStats.correct_picks || 0 %> 
+                                    <small class="text-muted">(<%= userStats.accuracy || 0 %>%)</small>
+                                </span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Points Earned:</span>
+                                <span class="stat-value text-warning"><%= userStats.total_points || 0 %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg Points per Pick:</span>
+                                <span class="stat-value"><%= userStats.avgPointsPerPick || 0 %></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="stat-group">
+                            <h6 class="stat-category">Experience</h6>
+                            <div class="stat-item">
+                                <span class="stat-label">Seasons Played:</span>
+                                <span class="stat-value text-info"><%= userStats.seasons_played || 0 %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Weeks Active:</span>
+                                <span class="stat-value text-info"><%= userStats.weeks_played || 0 %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Best Single Pick:</span>
+                                <span class="stat-value text-success"><%= userStats.best_single_pick || 0 %> pts</span>
+                            </div>
+                            <% if (userStats.avgCorrectConfidence) { %>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg Confidence (Wins):</span>
+                                <span class="stat-value"><%= userStats.avgCorrectConfidence %></span>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Current League Standings -->
+        <% if (userStats.standings && userStats.standings.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Current League Standings
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>League</th>
+                                <th width="80" class="text-center">Position</th>
+                                <th width="100" class="text-center">Points</th>
+                                <th width="100" class="text-center">Record</th>
+                                <th width="100" class="text-center">Accuracy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% userStats.standings.forEach(league => { %>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <div class="fw-semibold"><%= league.league_name %></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <% if (league.current_position <= 3) { %>
+                                            <span class="badge bg-<%= league.current_position === 1 ? 'warning' : league.current_position === 2 ? 'light text-dark' : 'secondary' %>">
+                                                <% if (league.current_position === 1) { %>
+                                                    <i class="fas fa-crown"></i>
+                                                <% } else if (league.current_position === 2) { %>
+                                                    <i class="fas fa-medal"></i>
+                                                <% } else { %>
+                                                    <i class="fas fa-award"></i>
+                                                <% } %>
+                                                #<%= league.current_position %>
+                                            </span>
+                                        <% } else { %>
+                                            <span class="text-muted">#<%= league.current_position %></span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold text-primary"><%= league.league_points || 0 %></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold">
+                                            <%= league.league_correct || 0 %>-<%= (league.league_picks - league.league_correct) || 0 %>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <% const accuracy = league.league_picks > 0 ? (league.league_correct / league.league_picks * 100).toFixed(1) : 0; %>
+                                        <span class="badge bg-<%= parseFloat(accuracy) >= 60 ? 'success' : parseFloat(accuracy) >= 40 ? 'warning' : 'danger' %>">
+                                            <%= accuracy %>%
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- League History -->
+        <% if (leagueHistory && leagueHistory.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    League History
+                </h5>
+                <small class="text-muted">All Time</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>League</th>
+                                <th width="100" class="text-center">Joined</th>
+                                <th width="80" class="text-center">Picks</th>
+                                <th width="100" class="text-center">Points</th>
+                                <th width="80" class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% leagueHistory.forEach(league => { %>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <div class="fw-semibold"><%= league.league_name %></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <small class="text-muted">
+                                            <%= new Date(league.joined_at).toLocaleDateString() %>
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <%= league.picks_made || 0 %>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold text-primary"><%= league.total_points || 0 %></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-<%= league.league_status === 'Active' ? 'success' : league.league_status === 'Completed' ? 'secondary' : 'warning' %>">
+                                            <%= league.league_status %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+    
+    <!-- Right Column - Achievements and Activity -->
+    <div class="col-lg-4">
+        <!-- Achievements -->
+        <% if (achievements && achievements.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Achievements
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="achievements-grid">
+                    <% achievements.forEach(achievement => { %>
+                        <div class="achievement-item <%= achievement.earned ? 'earned' : '' %>">
+                            <div class="achievement-icon">
+                                <i class="<%= achievement.icon %> <%= achievement.earned ? 'text-warning' : 'text-muted' %>"></i>
+                            </div>
+                            <div class="achievement-info">
+                                <div class="achievement-title"><%= achievement.title %></div>
+                                <div class="achievement-desc"><%= achievement.description %></div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- Recent Activity -->
+        <% if (recentActivity && recentActivity.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Activity
+                </h6>
+                <small class="text-muted">Last 10</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="activity-feed">
+                    <% recentActivity.forEach(activity => { %>
+                        <div class="activity-item">
+                            <div class="activity-icon bg-<%= activity.is_correct === 1 ? 'success' : activity.is_correct === 0 ? 'danger' : 'secondary' %>">
+                                <i class="fas fa-<%= activity.is_correct === 1 ? 'check' : activity.is_correct === 0 ? 'times' : 'clock' %>"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-text">
+                                    <%= activity.description %>
+                                </div>
+                                <div class="activity-meta">
+                                    <small class="text-muted">
+                                        <%= activity.league_name %>
+                                        • <%= new Date(activity.activity_time).toLocaleDateString() %>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/profile/picks" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i> View Pick History
+                    </a>
+                    
+                    <% if (isOwnProfile) { %>
+                        <a href="/leagues" class="btn btn-outline-success">
+                            <i class="fas fa-users me-2"></i> My Leagues
+                        </a>
+                        <a href="/picks" class="btn btn-outline-warning">
+                            <i class="fas fa-hand-point-right me-2"></i> Make Picks
+                        </a>
+                        <a href="/results" class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar me-2"></i> Game Results
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-lg {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.stat-group {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.stat-category {
+    color: var(--bs-secondary);
+    font-weight: 600;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 5px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: var(--bs-dark);
+}
+
+.stat-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.achievements-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+.achievement-item.earned {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.achievement-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    text-align: center;
+}
+
+.achievement-title {
+    font-weight: 600;
+    color: var(--bs-dark);
+}
+
+.achievement-desc {
+    font-size: 0.85rem;
+    color: var(--bs-secondary);
+}
+
+.activity-feed {
+    padding: 15px;
+}
+
+.activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white;
+    font-size: 0.8rem;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.activity-meta {
+    font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .achievement-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>

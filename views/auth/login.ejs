@@ -1,0 +1,180 @@
+<!-- Dynamic Welcome Message Based on Action -->
+<div class="text-center mb-4">
+    <% if (locals.action === 'create-league') { %>
+        <h2 class="auth-title mb-3">
+            <i class="fas fa-rocket text-primary me-2"></i>
+            Create Your League
+        </h2>
+        <p class="text-muted">Sign in or create an account to set up your NFL confidence pool</p>
+    <% } else if (locals.action === 'join-league') { %>
+        <h2 class="auth-title mb-3">
+            <i class="fas fa-users text-success me-2"></i>
+            Join League
+        </h2>
+        <p class="text-muted">
+            Sign in to join: 
+            <% if (locals.joinCode) { %>
+                <span class="badge bg-primary ms-1"><%= locals.joinCode %></span>
+            <% } else { %>
+                your invited league
+            <% } %>
+        </p>
+    <% } else { %>
+        <h2 class="auth-title mb-3">
+            Welcome Back
+        </h2>
+        <p class="text-muted">Sign in to access your pools</p>
+    <% } %>
+</div>
+
+<form method="POST" action="/auth/login" id="loginForm">
+    <!-- Hidden fields to preserve action and join code -->
+    <% if (locals.action) { %>
+        <input type="hidden" name="action" value="<%= action %>">
+    <% } %>
+    <% if (locals.joinCode) { %>
+        <input type="hidden" name="joinCode" value="<%= joinCode %>">
+    <% } %>
+    
+    <div class="mb-4">
+        <label for="email" class="form-label fw-semibold">Email Address</label>
+        <div class="input-group modern-input">
+            <span class="input-group-text">
+                <i class="fas fa-envelope"></i>
+            </span>
+            <input 
+                type="email" 
+                class="form-control form-control-lg" 
+                id="email" 
+                name="email" 
+                required
+                placeholder="Enter your email"
+                autocomplete="email"
+            >
+        </div>
+    </div>
+    
+    <div class="mb-4">
+        <label for="password" class="form-label fw-semibold">Password</label>
+        <div class="input-group modern-input">
+            <span class="input-group-text">
+                <i class="fas fa-lock"></i>
+            </span>
+            <input 
+                type="password" 
+                class="form-control form-control-lg" 
+                id="password" 
+                name="password" 
+                required
+                placeholder="Enter your password"
+                autocomplete="current-password"
+            >
+            <button 
+                class="btn btn-outline-secondary password-toggle" 
+                type="button" 
+                id="passwordToggle"
+                aria-label="Toggle password visibility"
+            >
+                <i class="fas fa-eye" id="passwordToggleIcon"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+            <input 
+                type="checkbox" 
+                class="form-check-input" 
+                id="remember" 
+                name="remember"
+            >
+            <label class="form-check-label" for="remember">
+                Remember me
+            </label>
+        </div>
+        <a href="/auth/forgot-password" class="text-decoration-none forgot-link">
+            Forgot password?
+        </a>
+    </div>
+    
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg btn-nfl">
+            <% if (locals.action === 'create-league') { %>
+                <i class="fas fa-rocket me-2"></i>Sign In & Create League
+            <% } else if (locals.action === 'join-league') { %>
+                <i class="fas fa-users me-2"></i>Sign In & Join League
+            <% } else { %>
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In to Your Account
+            <% } %>
+        </button>
+    </div>
+</form>
+
+<div class="my-4"></div>
+
+<div class="text-center">
+    <% if (locals.action === 'create-league' || locals.action === 'join-league') { %>
+        <p class="mb-3 text-muted">Don't have an account?</p>
+        <a href="/auth/register<%= locals.action ? '?action=' + action : '' %><%= locals.joinCode ? (locals.action ? '&' : '?') + 'code=' + joinCode : '' %>" class="btn btn-outline-secondary btn-lg w-100">
+            <% if (locals.action === 'create-league') { %>
+                <i class="fas fa-user-plus me-2"></i>Sign Up & Create League
+            <% } else if (locals.action === 'join-league') { %>
+                <i class="fas fa-user-plus me-2"></i>Sign Up & Join League
+            <% } else { %>
+                <i class="fas fa-user-plus me-2"></i>Create Your Account
+            <% } %>
+        </a>
+    <% } else { %>
+        <p class="mb-3 text-muted">New to League Station Pools?</p>
+        <a href="/auth/register" class="btn btn-outline-secondary btn-lg w-100">
+            <i class="fas fa-user-plus me-2"></i>Create Your Account
+        </a>
+    <% } %>
+</div>
+
+<script>
+// Password visibility toggle
+document.getElementById('passwordToggle').addEventListener('click', function() {
+    const passwordField = document.getElementById('password');
+    const toggleIcon = document.getElementById('passwordToggleIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+});
+
+// Auto-focus email field
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('email').focus();
+});
+
+// Add form validation feedback
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if (!email || !password) {
+        e.preventDefault();
+        if (!email) {
+            document.getElementById('email').classList.add('is-invalid');
+        }
+        if (!password) {
+            document.getElementById('password').classList.add('is-invalid');
+        }
+    }
+});
+
+// Remove invalid class on input
+document.getElementById('email').addEventListener('input', function() {
+    this.classList.remove('is-invalid');
+});
+document.getElementById('password').addEventListener('input', function() {
+    this.classList.remove('is-invalid');
+});
+</script>

@@ -1,0 +1,152 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5">
+                <i class="fas fa-users text-primary me-3"></i>
+                My Leagues
+            </h1>
+            <div class="btn-group" role="group">
+                <a href="/leagues/create" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Create League
+                </a>
+                <a href="/leagues/join" class="btn btn-outline-secondary">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Join League
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (leagues && leagues.length > 0) { %>
+    <div class="row g-4">
+        <% leagues.forEach(league => { %>
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 shadow-sm hover-shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <a href="/leagues/<%= league.league_id %>" class="text-decoration-none">
+                                <%= league.league_name %>
+                            </a>
+                        </h5>
+                        <% if (league.role === 'participant' && league.commissioner_id === user.user_id) { %>
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-crown me-1"></i>
+                                Commissioner
+                            </span>
+                        <% } else { %>
+                            <span class="badge bg-info">
+                                <i class="fas fa-user me-1"></i>
+                                Member
+                            </span>
+                        <% } %>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="text-muted small">Members</div>
+                                <div class="fw-bold text-primary">
+                                    <%= league.member_count %>/<%= league.max_participants %>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-muted small">Entries</div>
+                                <div class="fw-bold text-success">
+                                    <%= league.entry_count %>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-muted small">Pool Type</div>
+                                <div class="fw-bold">
+                                    <%= league.pool_type.charAt(0).toUpperCase() + league.pool_type.slice(1) %>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <% if (league.description && league.description.trim()) { %>
+                            <p class="card-text text-muted small mb-3">
+                                <%= league.description.length > 80 ? league.description.substring(0, 80) + '...' : league.description %>
+                            </p>
+                        <% } %>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                Season <%= league.season_year %>
+                            </small>
+                            <div class="d-flex gap-2">
+                                <% if (league.entry_fee > 0) { %>
+                                    <span class="badge bg-success">
+                                        $<%= parseFloat(league.entry_fee).toFixed(2) %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-light text-dark">Free</span>
+                                <% } %>
+                                
+                                <span class="badge <%= league.status === 'active' ? 'bg-success' : league.status === 'draft' ? 'bg-warning text-dark' : 'bg-secondary' %>">
+                                    <%= league.status.charAt(0).toUpperCase() + league.status.slice(1) %>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Joined <%= new Date(league.joined_at).toLocaleDateString() %>
+                            </small>
+                            <a href="/leagues/<%= league.league_id %>" class="btn btn-sm btn-outline-primary">
+                                View Details
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+<% } else { %>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-users fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">No Leagues Yet</h4>
+                    <p class="lead text-muted mb-4">
+                        You haven't joined any leagues yet. Create your own or join an existing one!
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/leagues/create" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus me-2"></i>
+                            Create Your First League
+                        </a>
+                        <a href="/leagues/join" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Join a League
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<style>
+.hover-shadow {
+    transition: all 0.15s ease-in-out;
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+.card-title a:hover {
+    color: var(--color-primary) !important;
+}
+</style>

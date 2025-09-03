@@ -1,0 +1,478 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <% if (league) { %>
+                            <li class="breadcrumb-item">
+                                <a href="/dashboard" class="text-decoration-none">Dashboard</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/leagues/<%= league.league_id %>" class="text-decoration-none">
+                                    <%= league.league_name %>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page"><%= seasonYear %> Season</li>
+                        <% } else { %>
+                            <li class="breadcrumb-item">
+                                <a href="/" class="text-decoration-none">Home</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page"><%= seasonYear %> Season</li>
+                        <% } %>
+                    </ol>
+                </nav>
+                <h1 class="display-5 mb-0">
+                    <i class="fas fa-chart-line text-primary me-3"></i>
+                    <%= seasonYear %> Season Overview
+                    <% if (league) { %>
+                        <small class="text-muted fs-6">- <%= league.league_name %></small>
+                    <% } %>
+                </h1>
+            </div>
+            
+            <!-- Season Selector -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <%= seasonYear %> Season
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <% for (let year = new Date().getFullYear(); year >= 2020; year--) { %>
+                        <li>
+                            <a class="dropdown-item <%= year == seasonYear ? 'active' : '' %>" 
+                               href="?season=<%= year %><%= league ? '&league=' + league.league_id : '' %>">
+                                <%= year %> Season
+                            </a>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Season Summary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-football-ball fa-2x mb-2"></i>
+                <h5 class="card-title"><%= seasonStats.completed_games %>/<%= seasonStats.total_games %></h5>
+                <p class="card-text mb-0">Games Completed</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-bullseye fa-2x mb-2"></i>
+                <h5 class="card-title"><%= seasonStats.accuracy %>%</h5>
+                <p class="card-text mb-0">Season Accuracy</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h5 class="card-title"><%= seasonStats.total_picks || 0 %></h5>
+                <p class="card-text mb-0">Total Picks</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-star fa-2x mb-2"></i>
+                <h5 class="card-title"><%= seasonStats.total_points_awarded || 0 %></h5>
+                <p class="card-text mb-0">Points Awarded</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Breakdown -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Weekly Breakdown
+                </h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-secondary active" onclick="toggleView('table')">
+                        <i class="fas fa-table"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="toggleView('chart')">
+                        <i class="fas fa-chart-bar"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <!-- Table View -->
+                <div id="tableView" class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Week</th>
+                                <th width="120" class="text-center">Games</th>
+                                <th width="120" class="text-center">Picks</th>
+                                <th width="120" class="text-center">Accuracy</th>
+                                <th width="120" class="text-center">Points</th>
+                                <th width="100" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% weeklySummaries.forEach((week, index) => { %>
+                                <tr class="<%= week.completed_games === 0 ? 'table-light' : '' %>">
+                                    <td>
+                                        <div class="fw-semibold">Week <%= week.week %></div>
+                                        <% if (week.completed_games === 0 && index < 18) { %>
+                                            <small class="text-muted">Upcoming</small>
+                                        <% } else if (week.completed_games > 0 && week.completed_games < week.total_games) { %>
+                                            <small class="text-warning">In Progress</small>
+                                        <% } else if (week.completed_games === week.total_games && week.total_games > 0) { %>
+                                            <small class="text-success">Complete</small>
+                                        <% } else { %>
+                                            <small class="text-muted">No games</small>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <div>
+                                            <span class="fw-semibold"><%= week.completed_games || 0 %></span>/<%= week.total_games || 0 %>
+                                        </div>
+                                        <% if (week.total_games > 0) { %>
+                                            <div class="progress mt-1" style="height: 4px;">
+                                                <div class="progress-bar bg-success" 
+                                                     style="width: <%= ((week.completed_games || 0) / week.total_games * 100) %>%">
+                                                </div>
+                                            </div>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <span class="fw-semibold"><%= week.total_picks || 0 %></span>
+                                        <% if (week.correct_picks) { %>
+                                            <div>
+                                                <small class="text-muted">(<%= week.correct_picks %> correct)</small>
+                                            </div>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <% if (week.total_picks > 0) { %>
+                                            <span class="badge bg-<%= parseFloat(week.accuracy) >= 60 ? 'success' : parseFloat(week.accuracy) >= 40 ? 'warning' : 'danger' %>">
+                                                <%= week.accuracy %>%
+                                            </span>
+                                        <% } else { %>
+                                            <span class="text-muted">-</span>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <span class="fw-semibold text-primary"><%= week.total_points_awarded || 0 %></span>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <a href="/results<%= league ? '/league/' + league.league_id : '' %>?week=<%= week.week %>" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Chart View -->
+                <div id="chartView" style="display: none;" class="p-4">
+                    <canvas id="weeklyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Season Highlights -->
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Season Highlights
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="highlight-item">
+                    <div class="highlight-label">Best Week Accuracy</div>
+                    <div class="highlight-value">
+                        <% 
+                        const bestWeek = weeklySummaries.reduce((best, week) => 
+                            parseFloat(week.accuracy || 0) > parseFloat(best.accuracy || 0) ? week : best
+                        );
+                        %>
+                        <span class="text-success"><%= bestWeek.accuracy || 0 %>%</span>
+                        <small class="text-muted ms-2">(Week <%= bestWeek.week %>)</small>
+                    </div>
+                </div>
+                
+                <div class="highlight-item">
+                    <div class="highlight-label">Most Active Week</div>
+                    <div class="highlight-value">
+                        <% 
+                        const mostActiveWeek = weeklySummaries.reduce((most, week) => 
+                            (week.total_picks || 0) > (most.total_picks || 0) ? week : most
+                        );
+                        %>
+                        <span class="text-primary"><%= mostActiveWeek.total_picks || 0 %> picks</span>
+                        <small class="text-muted ms-2">(Week <%= mostActiveWeek.week %>)</small>
+                    </div>
+                </div>
+                
+                <div class="highlight-item">
+                    <div class="highlight-label">Highest Scoring Week</div>
+                    <div class="highlight-value">
+                        <% 
+                        const highestScoringWeek = weeklySummaries.reduce((highest, week) => 
+                            (week.total_points_awarded || 0) > (highest.total_points_awarded || 0) ? week : highest
+                        );
+                        %>
+                        <span class="text-warning"><%= highestScoringWeek.total_points_awarded || 0 %> points</span>
+                        <small class="text-muted ms-2">(Week <%= highestScoringWeek.week %>)</small>
+                    </div>
+                </div>
+                
+                <div class="highlight-item">
+                    <div class="highlight-label">Season Progress</div>
+                    <div class="highlight-value">
+                        <span class="text-info">
+                            <%= Math.round((seasonStats.completed_games / seasonStats.total_games) * 100) %>% Complete
+                        </span>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-info" 
+                                 style="width: <%= (seasonStats.completed_games / seasonStats.total_games) * 100 %>%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mt-4 mt-lg-0">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-compass me-2"></i>
+                    Quick Navigation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <% const currentWeek = Math.max(1, Math.min(18, Math.ceil((new Date() - new Date(new Date().getFullYear(), 8, 5)) / (1000 * 60 * 60 * 24 * 7)))); %>
+                    <% for (let w = 1; w <= 18; w += 3) { %>
+                        <div class="col-6">
+                            <div class="btn-group w-100" role="group">
+                                <% for (let i = 0; i < 3 && w + i <= 18; i++) { %>
+                                    <a href="/results<%= league ? '/league/' + league.league_id : '' %>?week=<%= w + i %>" 
+                                       class="btn <%= (w + i) == currentWeek ? 'btn-primary' : 'btn-outline-secondary' %> btn-sm">
+                                        W<%= w + i %>
+                                    </a>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <% if (league) { %>
+                        <a href="/standings/<%= league.league_id %>" class="btn btn-outline-primary">
+                            <i class="fas fa-trophy me-2"></i> Current Standings
+                        </a>
+                        <a href="/picks/<%= league.league_id %>" class="btn btn-outline-success">
+                            <i class="fas fa-hand-point-right me-2"></i> Make Picks
+                        </a>
+                        <a href="/leagues/<%= league.league_id %>" class="btn btn-outline-info">
+                            <i class="fas fa-users me-2"></i> League Home
+                        </a>
+                    <% } else { %>
+                        <a href="/results?week=<%= currentWeek %>" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar me-2"></i> Current Week
+                        </a>
+                        <a href="/leagues" class="btn btn-outline-success">
+                            <i class="fas fa-users me-2"></i> Join a League
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.highlight-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.highlight-item:last-child {
+    border-bottom: none;
+}
+
+.highlight-label {
+    font-weight: 600;
+    color: var(--bs-secondary);
+}
+
+.highlight-value {
+    text-align: right;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Chart styling */
+#weeklyChart {
+    max-height: 400px;
+}
+</style>
+
+<!-- Include Chart.js for the chart view -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let weeklyChart = null;
+
+function toggleView(view) {
+    const tableView = document.getElementById('tableView');
+    const chartView = document.getElementById('chartView');
+    const buttons = document.querySelectorAll('.btn-group .btn');
+    
+    // Remove active class from all buttons
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    if (view === 'table') {
+        tableView.style.display = 'block';
+        chartView.style.display = 'none';
+        buttons[0].classList.add('active');
+    } else {
+        tableView.style.display = 'none';
+        chartView.style.display = 'block';
+        buttons[1].classList.add('active');
+        
+        // Initialize chart if not already created
+        if (!weeklyChart) {
+            initializeChart();
+        }
+    }
+}
+
+function initializeChart() {
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
+    
+    // Prepare data
+    const weekLabels = [];
+    const accuracyData = [];
+    const pointsData = [];
+    const picksData = [];
+    
+    <% weeklySummaries.forEach((week) => { %>
+        weekLabels.push('Week <%= week.week %>');
+        accuracyData.push(<%= week.accuracy || 0 %>);
+        pointsData.push(<%= week.total_points_awarded || 0 %>);
+        picksData.push(<%= week.total_picks || 0 %>);
+    <% }); %>
+    
+    weeklyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weekLabels,
+            datasets: [
+                {
+                    label: 'Accuracy (%)',
+                    data: accuracyData,
+                    borderColor: 'rgb(25, 135, 84)',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Points Awarded',
+                    data: pointsData,
+                    borderColor: 'rgb(13, 202, 240)',
+                    backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                    yAxisID: 'y1'
+                },
+                {
+                    label: 'Total Picks',
+                    data: picksData,
+                    borderColor: 'rgb(255, 193, 7)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Week'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Accuracy (%)'
+                    },
+                    min: 0,
+                    max: 100
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Points / Picks'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: '<%= seasonYear %> Season Performance'
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        }
+    });
+}
+</script>

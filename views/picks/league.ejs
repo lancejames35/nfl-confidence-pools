@@ -1,0 +1,521 @@
+<div class="row">
+    <div class="col-12">
+        <!-- Theme Testing Dropdown -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-end">
+                <div class="d-flex align-items-center">
+                    <label for="theme-selector-picks" class="form-label me-2 mb-0 small">Theme:</label>
+                    <select class="form-select form-select-sm" id="theme-selector-picks" style="width: 180px;">
+                        <option value="clean_sports">Clean Sports</option>
+                        <option value="bold_gameday">Bold Game Day</option>
+                        <option value="classic_fantasy">Classic Fantasy</option>
+                        <option value="premium_dark">Premium Dark</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-users me-2"></i><%= title %></h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/picks">My Picks</a></li>
+                        <li class="breadcrumb-item"><a href="/leagues/<%= league.league_id %>"><%= league.league_name %></a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Week <%= week %> League Picks</li>
+                    </ol>
+                </nav>
+            </div>
+            <div>
+                <span class="badge bg-primary fs-6">Week <%= week %></span>
+                <div class="btn-group ms-2" role="group">
+                    <% for (let w = Math.max(1, week - 2); w <= Math.min(18, week + 2); w++) { %>
+                        <% if (w == week) { %>
+                            <span class="btn btn-primary btn-sm active"><%= w %></span>
+                        <% } else { %>
+                            <a href="/picks/league/<%= league.league_id %>?week=<%= w %>" class="btn btn-outline-primary btn-sm"><%= w %></a>
+                        <% } %>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <% if (picksByEntry && picksByEntry.length > 0) { %>
+            <div class="row">
+                <!-- League Overview -->
+                <div class="col-lg-3">
+                    <div class="card sticky-top" style="top: 20px;">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-trophy me-2"></i>Week <%= week %> Leaders
+                            </h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <% 
+                                // Calculate points for each entry and sort
+                                const entryScores = picksByEntry.map(entry => {
+                                    const totalPoints = entry.picks.reduce((sum, pick) => sum + (pick.points_earned || 0), 0);
+                                    const correctPicks = entry.picks.filter(pick => pick.is_correct === 1).length;
+                                    return { ...entry, totalPoints, correctPicks };
+                                }).sort((a, b) => {
+                                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                                    return b.correctPicks - a.correctPicks;
+                                });
+                                %>
+                                
+                                <% entryScores.forEach((entry, index) => { %>
+                                    <a href="#entry-<%= entry.entry_id %>" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center">
+                                                    <span class="position-badge me-2">
+                                                        <%= index + 1 %>
+                                                    </span>
+                                                    <div>
+                                                        <div class="fw-bold"><%= entry.team_name %></div>
+                                                        <small class="text-muted"><%= entry.username %></small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold text-<%= entry.totalPoints > 0 ? 'success' : 'muted' %>">
+                                                    <%= entry.totalPoints %> pts
+                                                </div>
+                                                <small class="text-muted">
+                                                    <%= entry.correctPicks %>/<%= entry.picks.length %>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </a>
+                                <% }) %>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <%= picksByEntry.length %> entries
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Picks -->
+                <div class="col-lg-9">
+                    <% picksByEntry.forEach((entry, entryIndex) => { 
+                        const entryPoints = entry.picks.reduce((sum, pick) => sum + (pick.points_earned || 0), 0);
+                        const entryCorrect = entry.picks.filter(pick => pick.is_correct === 1).length;
+                    %>
+                        <div class="card mb-4" id="entry-<%= entry.entry_id %>">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <i class="fas fa-user-circle me-2"></i>
+                                            <%= entry.team_name %>
+                                        </h5>
+                                        <small class="text-muted">by <%= entry.username %></small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="badge bg-<%= entryPoints > 0 ? 'success' : 'secondary' %> fs-6 me-2">
+                                            <%= entryPoints %> points
+                                        </div>
+                                        <div class="badge bg-info">
+                                            <%= entryCorrect %>/<%= entry.picks.length %> correct
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="8%">Conf.</th>
+                                                <th width="30%">Game</th>
+                                                <th width="15%">Pick</th>
+                                                <th width="25%">Result</th>
+                                                <th width="12%" class="text-center">Points</th>
+                                                <th width="10%" class="text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% entry.picks.sort((a, b) => b.confidence_points - a.confidence_points).forEach(pick => { %>
+                                                <tr class="<%= pick.is_correct === 1 ? 'table-success' : pick.is_correct === 0 ? 'table-danger' : '' %>">
+                                                    <td>
+                                                        <div class="confidence-mini <%= pick.is_correct === 1 ? 'bg-success' : pick.is_correct === 0 ? 'bg-danger' : 'bg-primary' %>">
+                                                            <%= pick.confidence_points %>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="game-compact">
+                                                            <div class="teams">
+                                                                <%= pick.away_team %> @ <%= pick.home_team %>
+                                                            </div>
+                                                            <div class="game-time small text-muted">
+                                                                <%= new Date(pick.kickoff_timestamp).toLocaleDateString('en-US', {
+                                                                    weekday: 'short',
+                                                                    month: 'short',
+                                                                    day: 'numeric'
+                                                                }) %>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <% if (pick.selected_team) { %>
+                                                            <span class="team-pick <%= pick.is_correct === 1 ? 'correct' : pick.is_correct === 0 ? 'incorrect' : '' %>">
+                                                                <%= pick.selected_team %>
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span class="text-muted">-</span>
+                                                        <% } %>
+                                                    </td>
+                                                    <td>
+                                                        <% if (pick.home_score !== null && pick.away_score !== null) { %>
+                                                            <div class="final-result">
+                                                                <div class="score">
+                                                                    <%= pick.away_team %> <%= pick.away_score %>, 
+                                                                    <%= pick.home_team %> <%= pick.home_score %>
+                                                                </div>
+                                                                <% if (pick.winning_team) { %>
+                                                                    <div class="winner small text-muted">
+                                                                        Winner: <%= pick.winning_team %>
+                                                                    </div>
+                                                                <% } %>
+                                                            </div>
+                                                        <% } else { %>
+                                                            <span class="text-muted">Not played</span>
+                                                        <% } %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <% if (pick.points_earned > 0) { %>
+                                                            <span class="points-earned success">
+                                                                +<%= pick.points_earned %>
+                                                            </span>
+                                                        <% } else if (pick.is_correct === 0) { %>
+                                                            <span class="points-earned miss">0</span>
+                                                        <% } else { %>
+                                                            <span class="text-muted">-</span>
+                                                        <% } %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <% if (pick.is_correct === 1) { %>
+                                                            <i class="fas fa-check-circle text-success" title="Correct"></i>
+                                                        <% } else if (pick.is_correct === 0) { %>
+                                                            <i class="fas fa-times-circle text-danger" title="Incorrect"></i>
+                                                        <% } else { %>
+                                                            <i class="fas fa-clock text-muted" title="Pending"></i>
+                                                        <% } %>
+                                                    </td>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+
+                    <!-- Summary Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Week <%= week %> Summary
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="stat-box">
+                                        <div class="stat-number text-primary">
+                                            <%= picksByEntry.length %>
+                                        </div>
+                                        <div class="stat-label">Entries</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-box">
+                                        <div class="stat-number text-success">
+                                            <% 
+                                            const totalPoints = picksByEntry.reduce((sum, entry) => 
+                                                sum + entry.picks.reduce((entrySum, pick) => entrySum + (pick.points_earned || 0), 0), 0);
+                                            %>
+                                            <%= totalPoints %>
+                                        </div>
+                                        <div class="stat-label">Total Points</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-box">
+                                        <div class="stat-number text-info">
+                                            <% 
+                                            let totalCorrect = 0;
+                                            let totalPicks = 0;
+                                            picksByEntry.forEach(entry => {
+                                                totalCorrect += entry.picks.filter(pick => pick.is_correct === 1).length;
+                                                totalPicks += entry.picks.length;
+                                            });
+                                            %>
+                                            <%= totalPicks > 0 ? Math.round(totalCorrect / totalPicks * 100) : 0 %>%
+                                        </div>
+                                        <div class="stat-label">League Accuracy</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-box">
+                                        <div class="stat-number text-warning">
+                                            <% 
+                                            const topScore = picksByEntry.length > 0 ? 
+                                                Math.max(...picksByEntry.map(entry => 
+                                                    entry.picks.reduce((sum, pick) => sum + (pick.points_earned || 0), 0)
+                                                )) : 0;
+                                            %>
+                                            <%= topScore %>
+                                        </div>
+                                        <div class="stat-label">High Score</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="text-center py-5">
+                <i class="fas fa-users-slash fa-4x text-muted mb-4"></i>
+                <h3 class="text-muted mb-3">No Picks Yet</h3>
+                <p class="text-muted mb-4">
+                    No one in the league has made picks for Week <%= week %> yet.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/picks" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Make Your Picks
+                    </a>
+                    <a href="/leagues/<%= league.league_id %>" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to League
+                    </a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.position-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6f42c1, #495057);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.confidence-mini {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.75rem;
+    margin: 0 auto;
+}
+
+.confidence-mini.bg-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.confidence-mini.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+.confidence-mini.bg-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.game-compact {
+    line-height: 1.3;
+}
+
+.teams {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.team-pick {
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.team-pick.correct {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.team-pick.incorrect {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.final-result {
+    line-height: 1.2;
+}
+
+.score {
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.winner {
+    font-size: 0.75rem;
+}
+
+.points-earned {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.points-earned.success {
+    color: #28a745;
+}
+
+.points-earned.miss {
+    color: #dc3545;
+}
+
+.stat-box {
+    padding: 1rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+}
+
+.card:target {
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .confidence-mini {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scroll for entry navigation
+    document.querySelectorAll('a[href^="#entry-"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Add temporary highlight
+                targetElement.style.boxShadow = '0 0 20px rgba(0, 123, 255, 0.3)';
+                
+                setTimeout(() => {
+                    targetElement.style.boxShadow = '';
+                }, 2000);
+            }
+        });
+    });
+
+    // Auto-refresh functionality (optional)
+    let refreshInterval;
+    
+    function startAutoRefresh() {
+        refreshInterval = setInterval(() => {
+            // Check if any games are in progress and refresh
+            const now = new Date();
+            const gameElements = document.querySelectorAll('[data-kickoff]');
+            let hasActiveGames = false;
+            
+            gameElements.forEach(el => {
+                const kickoff = new Date(el.dataset.kickoff);
+                if (kickoff <= now && now <= new Date(kickoff.getTime() + 4 * 60 * 60 * 1000)) {
+                    hasActiveGames = true;
+                }
+            });
+            
+            if (hasActiveGames) {
+                location.reload();
+            }
+        }, 60000); // Check every minute
+    }
+    
+    // Start auto-refresh if there are active games
+    // startAutoRefresh();
+    
+    // Stop auto-refresh when user leaves page
+    window.addEventListener('beforeunload', () => {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    });
+    
+    // Theme selector functionality
+    const themeSelector = document.getElementById('theme-selector-picks');
+    if (themeSelector) {
+        // Load saved theme
+        const savedTheme = localStorage.getItem('test-theme') || 'clean_sports';
+        themeSelector.value = savedTheme;
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // Handle theme changes
+        themeSelector.addEventListener('change', function() {
+            const selectedTheme = this.value;
+            document.documentElement.setAttribute('data-theme', selectedTheme);
+            localStorage.setItem('test-theme', selectedTheme);
+        });
+    }
+});
+</script>

@@ -1,0 +1,542 @@
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-3">
+                <% if (league) { %>
+                    <li class="breadcrumb-item">
+                        <a href="/dashboard" class="text-decoration-none">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/leagues/<%= league.league_id %>" class="text-decoration-none">
+                            <%= league.league_name %>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/results/league/<%= league.league_id %>?week=<%= game.week %>" class="text-decoration-none">
+                            Week <%= game.week %> Results
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Game Details</li>
+                <% } else { %>
+                    <li class="breadcrumb-item">
+                        <a href="/" class="text-decoration-none">Home</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/results?week=<%= game.week %>" class="text-decoration-none">
+                            Week <%= game.week %> Results
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Game Details</li>
+                <% } %>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Game Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="game-header-matchup">
+                            <!-- Away Team -->
+                            <div class="team-section <%= game.winning_team === game.away_team ? 'winner' : '' %>">
+                                <div class="team-info">
+                                    <div class="team-name">
+                                        <%= game.away_team %>
+                                        <% if (game.winning_team === game.away_team) { %>
+                                            <i class="fas fa-crown ms-2 text-warning"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="team-full-name"><%= game.away_team_name %></div>
+                                </div>
+                                <div class="team-score">
+                                    <%= game.result_status === 'completed' ? (game.away_score || 0) : '-' %>
+                                </div>
+                            </div>
+                            
+                            <div class="vs-divider">
+                                <span class="vs-text">@</span>
+                            </div>
+                            
+                            <!-- Home Team -->
+                            <div class="team-section <%= game.winning_team === game.home_team ? 'winner' : '' %>">
+                                <div class="team-info">
+                                    <div class="team-name">
+                                        <%= game.home_team %>
+                                        <% if (game.winning_team === game.home_team) { %>
+                                            <i class="fas fa-crown ms-2 text-warning"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="team-full-name"><%= game.home_team_name %></div>
+                                </div>
+                                <div class="team-score">
+                                    <%= game.result_status === 'completed' ? (game.home_score || 0) : '-' %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 text-md-end">
+                        <div class="game-meta">
+                            <div class="game-status mb-2">
+                                <% if (game.result_status === 'completed') { %>
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-check-circle me-1"></i>FINAL
+                                    </span>
+                                <% } else if (game.status === 'in_progress') { %>
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        <i class="fas fa-clock me-1"></i>IN PROGRESS
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="fas fa-calendar me-1"></i>SCHEDULED
+                                    </span>
+                                <% } %>
+                            </div>
+                            
+                            <div class="game-time">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                <%= new Date(game.kickoff_timestamp).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    month: 'long', 
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit'
+                                }) %>
+                            </div>
+                            
+                            <div class="game-week mt-1">
+                                <i class="fas fa-football-ball me-1"></i>
+                                Week <%= game.week %>, <%= game.season_year %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Game Stats and Pick Details -->
+<div class="row">
+    <!-- Pick Statistics -->
+    <% if (pickStats && picks.length > 0) { %>
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Pick Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Total Picks -->
+                <div class="stat-item mb-3">
+                    <div class="stat-label">Total Picks</div>
+                    <div class="stat-value text-primary"><%= pickStats.totalPicks %></div>
+                </div>
+                
+                <!-- Pick Distribution -->
+                <div class="stat-item mb-3">
+                    <div class="stat-label">Pick Distribution</div>
+                    <div class="pick-distribution">
+                        <div class="team-pick-row">
+                            <span class="team-name"><%= game.away_team %></span>
+                            <span class="pick-count"><%= pickStats.awayPicksCount %> (<%= pickStats.awayPicksPercent %>%)</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-secondary" style="width: <%= pickStats.awayPicksPercent %>%"></div>
+                        </div>
+                        
+                        <div class="team-pick-row">
+                            <span class="team-name"><%= game.home_team %></span>
+                            <span class="pick-count"><%= pickStats.homePicksCount %> (<%= pickStats.homePicksPercent %>%)</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: <%= pickStats.homePicksPercent %>%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <% if (game.result_status === 'completed') { %>
+                <!-- Accuracy -->
+                <div class="stat-item mb-3">
+                    <div class="stat-label">Pick Accuracy</div>
+                    <div class="stat-value">
+                        <span class="badge bg-<%= parseFloat(pickStats.accuracy) >= 60 ? 'success' : parseFloat(pickStats.accuracy) >= 40 ? 'warning' : 'danger' %> fs-6">
+                            <%= pickStats.accuracy %>%
+                        </span>
+                        <small class="text-muted ms-2">
+                            (<%= pickStats.correctPicks %>/<%= pickStats.totalPicks %>)
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Points Earned -->
+                <div class="stat-item mb-3">
+                    <div class="stat-label">Total Points Earned</div>
+                    <div class="stat-value text-success"><%= pickStats.totalPointsEarned %></div>
+                </div>
+                <% } %>
+                
+                <!-- Average Confidence -->
+                <div class="stat-item">
+                    <div class="stat-label">Average Confidence</div>
+                    <div class="stat-value text-info"><%= pickStats.avgConfidence %></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+    
+    <!-- Pick Details -->
+    <div class="<%= pickStats && picks.length > 0 ? 'col-lg-8' : 'col-12' %>">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    <% if (league) { %>
+                        League Picks (<%= picks.length %>)
+                    <% } else { %>
+                        All Picks (<%= picks.length %>)
+                    <% } %>
+                </h5>
+                
+                <% if (picks.length > 0) { %>
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check" name="pickFilter" id="allPicks" checked>
+                    <label class="btn btn-outline-secondary" for="allPicks" onclick="filterPicks('all')">All</label>
+                    
+                    <% if (game.result_status === 'completed') { %>
+                    <input type="radio" class="btn-check" name="pickFilter" id="correctPicks">
+                    <label class="btn btn-outline-success" for="correctPicks" onclick="filterPicks('correct')">Correct</label>
+                    
+                    <input type="radio" class="btn-check" name="pickFilter" id="incorrectPicks">
+                    <label class="btn btn-outline-danger" for="incorrectPicks" onclick="filterPicks('incorrect')">Incorrect</label>
+                    <% } %>
+                </div>
+                <% } %>
+            </div>
+            
+            <div class="card-body p-0">
+                <% if (picks.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Player</th>
+                                <th width="120" class="text-center">Pick</th>
+                                <th width="100" class="text-center">Confidence</th>
+                                <% if (game.result_status === 'completed') { %>
+                                <th width="80" class="text-center">Result</th>
+                                <th width="80" class="text-center">Points</th>
+                                <% } %>
+                            </tr>
+                        </thead>
+                        <tbody id="picksTableBody">
+                            <% picks.forEach((pick, index) => { %>
+                                <% if (pick.show_pick) { %>
+                                <tr class="pick-row" 
+                                    data-result="<%= pick.is_correct === 1 ? 'correct' : pick.is_correct === 0 ? 'incorrect' : 'pending' %>">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <%= pick.username.charAt(0).toUpperCase() %>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">
+                                                    <%= pick.username %>
+                                                    <% if (pick.user_id === user?.user_id) { %>
+                                                        <span class="badge bg-primary ms-1">You</span>
+                                                    <% } %>
+                                                </div>
+                                                <small class="text-muted">@<%= pick.username %></small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <span class="badge bg-<%= pick.selected_team === game.home_team ? 'primary' : 'secondary' %> fs-6">
+                                            <%= pick.selected_team %>
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <span class="confidence-badge badge bg-light text-dark">
+                                            <%= pick.confidence_points %>
+                                        </span>
+                                    </td>
+                                    
+                                    <% if (game.result_status === 'completed') { %>
+                                    <td class="text-center">
+                                        <% if (pick.is_correct === 1) { %>
+                                            <i class="fas fa-check text-success fa-lg"></i>
+                                        <% } else if (pick.is_correct === 0) { %>
+                                            <i class="fas fa-times text-danger fa-lg"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-minus text-muted"></i>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <span class="badge bg-<%= pick.points_earned > 0 ? 'success' : 'secondary' %>">
+                                            <%= pick.points_earned || 0 %>
+                                        </span>
+                                    </td>
+                                    <% } %>
+                                </tr>
+                                <% } %>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                <% } else { %>
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No picks available</h5>
+                    <p class="text-muted">
+                        <% if (league && league.privacy === 'private') { %>
+                            Join this league to see picks and make your own predictions.
+                        <% } else { %>
+                            No picks have been made for this game yet.
+                        <% } %>
+                    </p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/results<%= league ? '/league/' + league.league_id : '' %>?week=<%= game.week %>" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Week <%= game.week %>
+                    </a>
+                    
+                    <% if (league) { %>
+                        <a href="/standings/<%= league.league_id %>" class="btn btn-outline-info">
+                            <i class="fas fa-trophy me-1"></i> Standings
+                        </a>
+                        
+                        <% if (game.status === 'scheduled') { %>
+                            <a href="/picks/<%= league.league_id %>" class="btn btn-outline-success">
+                                <i class="fas fa-hand-point-right me-1"></i> Make Picks
+                            </a>
+                        <% } %>
+                    <% } %>
+                    
+                    <button class="btn btn-outline-secondary" onclick="shareGame()">
+                        <i class="fas fa-share me-1"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, #0056b3 100%);
+}
+
+.game-header-matchup {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.team-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.team-section.winner {
+    background: rgba(255, 193, 7, 0.2);
+    border: 2px solid var(--bs-warning);
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+}
+
+.team-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+}
+
+.team-full-name {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 2px;
+}
+
+.team-score {
+    font-size: 3rem;
+    font-weight: 900;
+    color: white;
+    min-width: 80px;
+    text-align: center;
+}
+
+.vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+}
+
+.vs-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.game-meta {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stat-item {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 15px;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.pick-distribution .team-pick-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.pick-distribution .team-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-dark);
+}
+
+.pick-distribution .pick-count {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.confidence-badge {
+    font-weight: 600;
+    border: 1px solid var(--bs-border-color);
+}
+
+.pick-row.filtered-out {
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .game-header-matchup {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .team-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .team-name {
+        font-size: 1.4rem;
+    }
+    
+    .team-score {
+        font-size: 2.5rem;
+    }
+    
+    .vs-divider {
+        order: -1;
+    }
+}
+</style>
+
+<script>
+function filterPicks(filter) {
+    const rows = document.querySelectorAll('.pick-row');
+    
+    rows.forEach(row => {
+        const result = row.dataset.result;
+        
+        if (filter === 'all') {
+            row.style.display = '';
+        } else if (filter === 'correct' && result === 'correct') {
+            row.style.display = '';
+        } else if (filter === 'incorrect' && result === 'incorrect') {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function shareGame() {
+    const title = '<%= game.away_team %> @ <%= game.home_team %> - Game Results';
+    const text = 'Check out the results for <%= game.away_team %> @ <%= game.home_team %>!';
+    
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: text,
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    }
+}
+
+// Auto-refresh for in-progress games
+<% if (game.status === 'in_progress') { %>
+setInterval(() => {
+    if (!document.hidden) {
+        // In a real implementation, you'd fetch updated game data via AJAX
+        document.title = '🔄 ' + document.title.replace('🔄 ', '');
+        setTimeout(() => {
+            document.title = document.title.replace('🔄 ', '');
+        }, 2000);
+    }
+}, 30000); // 30 seconds for active games
+<% } %>
+</script>

@@ -1,0 +1,351 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-eye me-2"></i><%= title %></h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/picks">My Picks</a></li>
+                        <li class="breadcrumb-item"><a href="/leagues/<%= league.league_id %>"><%= league.league_name %></a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Week <%= week %> View</li>
+                    </ol>
+                </nav>
+            </div>
+            <div>
+                <span class="badge bg-primary fs-6">Week <%= week %></span>
+                <a href="/picks/<%= league.league_id %>/<%= entry_id %>?week=<%= week %>" class="btn btn-primary btn-sm ms-2">
+                    <i class="fas fa-edit me-1"></i>Edit Picks
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Picks Display -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list-ol me-2"></i>
+                            Your Week <%= week %> Picks
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <% if (picks && picks.length > 0) { %>
+                            <div class="list-group list-group-flush">
+                                <% picks.forEach((pick, index) => { %>
+                                    <div class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <!-- Confidence Points -->
+                                            <div class="col-2 col-md-1">
+                                                <div class="confidence-badge <%= pick.is_correct === 1 ? 'bg-success' : pick.is_correct === 0 ? 'bg-danger' : 'bg-primary' %>">
+                                                    <span class="confidence-number"><%= pick.confidence_points %></span>
+                                                    <small class="d-block">pts</small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Game Info -->
+                                            <div class="col-7 col-md-8">
+                                                <div class="game-matchup">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <div class="matchup-text">
+                                                            <strong class="<%= pick.selected_team === pick.away_team ? 'text-primary' : '' %>">
+                                                                <%= pick.away_team %>
+                                                            </strong>
+                                                            <span class="mx-2">@</span>
+                                                            <strong class="<%= pick.selected_team === pick.home_team ? 'text-primary' : '' %>">
+                                                                <%= pick.home_team %>
+                                                            </strong>
+                                                        </div>
+                                                        <% if (pick.selected_team) { %>
+                                                            <span class="badge bg-light text-dark ms-2">
+                                                                Picked: <%= pick.selected_team %>
+                                                            </span>
+                                                        <% } %>
+                                                    </div>
+                                                    
+                                                    <div class="game-time text-muted small">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        <%= new Date(pick.kickoff_timestamp).toLocaleString('en-US', {
+                                                            weekday: 'short',
+                                                            month: 'short', 
+                                                            day: 'numeric',
+                                                            hour: 'numeric',
+                                                            minute: '2-digit',
+                                                            timeZoneName: 'short'
+                                                        }) %>
+                                                    </div>
+
+                                                    <% if (pick.point_spread) { %>
+                                                        <div class="spread text-muted small">
+                                                            <%= pick.home_favorite ? pick.home_team : pick.away_team %> 
+                                                            <%= Math.abs(pick.point_spread) %>
+                                                        </div>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+
+                                            <!-- Result & Points -->
+                                            <div class="col-3 text-end">
+                                                <% if (pick.home_score !== null && pick.away_score !== null) { %>
+                                                    <div class="final-score mb-2">
+                                                        <div class="score-line">
+                                                            <span class="<%= pick.winning_team === pick.away_team ? 'fw-bold text-success' : '' %>">
+                                                                <%= pick.away_team %> <%= pick.away_score %>
+                                                            </span>
+                                                        </div>
+                                                        <div class="score-line">
+                                                            <span class="<%= pick.winning_team === pick.home_team ? 'fw-bold text-success' : '' %>">
+                                                                <%= pick.home_team %> <%= pick.home_score %>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="pick-result">
+                                                        <% if (pick.is_correct === 1) { %>
+                                                            <span class="badge bg-success">
+                                                                <i class="fas fa-check me-1"></i>
+                                                                +<%= pick.points_earned %> pts
+                                                            </span>
+                                                        <% } else if (pick.is_correct === 0) { %>
+                                                            <span class="badge bg-danger">
+                                                                <i class="fas fa-times me-1"></i>
+                                                                0 pts
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span class="badge bg-secondary">
+                                                                <i class="fas fa-clock me-1"></i>
+                                                                Pending
+                                                            </span>
+                                                        <% } %>
+                                                    </div>
+                                                <% } else { %>
+                                                    <div class="text-muted">
+                                                        <i class="fas fa-hourglass-half"></i>
+                                                        <div class="small">Not played</div>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        
+                                        <% if (pick.is_locked) { %>
+                                            <div class="mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-lock me-1"></i>
+                                                    Locked at <%= new Date(pick.locked_at).toLocaleString() %>
+                                                </small>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                <% }) %>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-5">
+                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Picks Made Yet</h5>
+                                <p class="text-muted">You haven't made any picks for Week <%= week %> yet.</p>
+                                <a href="/picks/<%= league.league_id %>/<%= entry_id %>?week=<%= week %>" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Make Picks
+                                </a>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Sidebar -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- Week Stats -->
+                    <% if (stats && picks && picks.length > 0) { %>
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-bar me-2"></i>Week <%= week %> Stats
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="stat-item">
+                                            <div class="stat-number text-primary">
+                                                <%= stats.correct_picks || 0 %>/<%= stats.total_picks || 0 %>
+                                            </div>
+                                            <div class="stat-label small text-muted">Correct</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-item">
+                                            <div class="stat-number text-success">
+                                                <%= stats.total_points || 0 %>
+                                            </div>
+                                            <div class="stat-label small text-muted">Points</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <% if (stats.correct_picks > 0) { %>
+                                    <hr class="my-3">
+                                    <div class="row">
+                                        <% if (stats.highest_correct) { %>
+                                            <div class="col-6 text-center">
+                                                <div class="text-success">
+                                                    <i class="fas fa-arrow-up"></i>
+                                                    <%= stats.highest_correct %>
+                                                </div>
+                                                <small class="text-muted">Best Pick</small>
+                                            </div>
+                                        <% } %>
+                                        <% if (stats.lowest_incorrect) { %>
+                                            <div class="col-6 text-center">
+                                                <div class="text-danger">
+                                                    <i class="fas fa-arrow-down"></i>
+                                                    <%= stats.lowest_incorrect %>
+                                                </div>
+                                                <small class="text-muted">Worst Miss</small>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                <% } %>
+                                
+                                <% if (stats.total_picks > 0) { %>
+                                    <div class="progress mt-3">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: <%= (stats.correct_picks / stats.total_picks * 100) %>%">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-1 text-center">
+                                        <%= Math.round(stats.correct_picks / stats.total_picks * 100) %>% accuracy
+                                    </small>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <!-- Navigation -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-navigation me-2"></i>Quick Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="/picks/<%= league.league_id %>/<%= entry_id %>?week=<%= week %>" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit me-2"></i>Edit Picks
+                                </a>
+                                <a href="/picks/history/<%= entry_id %>" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-history me-2"></i>Pick History
+                                </a>
+                                <a href="/picks/league/<%= league.league_id %>?week=<%= week %>" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-users me-2"></i>League Picks
+                                </a>
+                                <a href="/leagues/<%= league.league_id %>" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-trophy me-2"></i>League Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Week Navigation -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-calendar me-2"></i>Other Weeks
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <% for (let w = 1; w <= 18; w++) { %>
+                                    <div class="col-3 mb-2">
+                                        <% if (w == week) { %>
+                                            <span class="btn btn-primary btn-sm w-100 active">
+                                                <%= w %>
+                                            </span>
+                                        <% } else { %>
+                                            <a href="/picks/<%= league.league_id %>/<%= entry_id %>/view?week=<%= w %>" 
+                                               class="btn btn-outline-secondary btn-sm w-100">
+                                                <%= w %>
+                                            </a>
+                                        <% } %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.confidence-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.confidence-badge.bg-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.confidence-badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+.confidence-badge.bg-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.confidence-number {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.game-matchup {
+    line-height: 1.4;
+}
+
+.score-line {
+    margin: 2px 0;
+}
+
+.final-score {
+    font-size: 0.9rem;
+}
+
+.pick-result .badge {
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .confidence-badge {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .confidence-number {
+        font-size: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.3rem;
+    }
+}
+</style>

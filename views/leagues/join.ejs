@@ -1,0 +1,310 @@
+<% if (!locals.layout) { %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | NFL Pools</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="/css/main.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #013369 0%, #000000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+<% } %>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-lg border-0 join-league-modal">
+            <div class="card-header join-league-header">
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="modal-icon me-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="text-center">
+                        <h5 class="mb-0 text-white">Join Existing League</h5>
+                        <small class="text-light">Enter your invitation code to get started</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="/leagues/join" novalidate>
+                    <div class="text-center mb-4">
+                        <div class="join-code-icon mb-3">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <% if (league) { %>
+                            <h6 class="mb-2">Confirm Joining League</h6>
+                            <div class="alert alert-success mb-3">
+                                <i class="fas fa-trophy me-2"></i>
+                                <strong>You're about to join:</strong> <%= league.league_name %>
+                            </div>
+                            <p class="text-muted">Click "Join League" below to confirm</p>
+                        <% } else { %>
+                            <h6 class="mb-2">League Join Code</h6>
+                            <p class="text-muted">Enter the 8-character code provided by your league commissioner</p>
+                        <% } %>
+                    </div>
+                    
+                    <div class="join-code-input-container mb-4">
+                        <input type="text" 
+                               class="form-control form-control-lg text-center join-code-input <%= errors.join_code ? 'is-invalid' : '' %>" 
+                               id="join_code" 
+                               name="join_code"
+                               value="<%= joinCode %>"
+                               placeholder="ABC12345"
+                               maxlength="8"
+                               required
+                               autocomplete="off">
+                        <% if (errors.join_code) { %>
+                            <div class="invalid-feedback text-center">
+                                <%= errors.join_code.msg %>
+                            </div>
+                        <% } %>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-icon">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <div class="info-content">
+                                    <h6>Quick Start</h6>
+                                    <p class="small text-muted">Join instantly and start making picks right away</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="info-content">
+                                    <h6>Secure Access</h6>
+                                    <p class="small text-muted">Only members with the code can join the league</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info-custom mb-4">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Don't have a join code?</strong> Ask your league commissioner to send you an invitation or check your email for the code.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-check me-2"></i>
+                            Join League
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Join League Modal Styling */
+.join-league-modal .card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.join-league-header {
+    background: linear-gradient(135deg, #013369 0%, #000000 100%);
+    color: white;
+    border: none;
+    padding: 1.5rem 2rem;
+    border-bottom: 3px solid #D50A0A;
+}
+
+.join-league-header .modal-icon {
+    width: 50px;
+    height: 50px;
+    background: #D50A0A;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(213, 10, 10, 0.3);
+}
+
+.join-league-header .modal-title {
+    color: white;
+    font-weight: 700;
+}
+
+.join-league-header small {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Join Code Styling */
+.join-code-icon {
+    width: 80px;
+    height: 80px;
+    background: #D50A0A;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto;
+    box-shadow: 0 8px 25px rgba(213, 10, 10, 0.3);
+}
+
+.join-code-input-container {
+    position: relative;
+}
+
+.join-code-input {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.8rem;
+    letter-spacing: 8px;
+    padding: 1rem 2rem;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.join-code-input:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    background: white;
+    transform: scale(1.02);
+}
+
+.join-code-input.is-valid {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+/* Info Cards */
+.info-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-color: #D50A0A;
+}
+
+.info-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #013369, #000000);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(1, 51, 105, 0.2);
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-content h6 {
+    margin: 0 0 0.5rem 0;
+    color: #013369;
+    font-weight: 600;
+}
+
+.info-content p {
+    margin: 0;
+    color: #666;
+}
+
+/* Alert Styling */
+.alert-info-custom {
+    background: linear-gradient(135deg, #e3f2fd, #ffffff);
+    border: 1px solid #2196f3;
+    color: #1976d2;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const joinCodeField = document.getElementById('join_code');
+    
+    if (joinCodeField) {
+        // Auto-format input to uppercase
+        joinCodeField.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // Visual feedback for valid length
+            if (this.value.length === 8) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+        
+        // Focus on the input field when page loads
+        joinCodeField.focus();
+        
+        // Select all text when focused
+        joinCodeField.addEventListener('focus', function() {
+            this.select();
+        });
+        
+        // Handle paste events
+        joinCodeField.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8);
+                this.dispatchEvent(new Event('input'));
+            }, 0);
+        });
+    }
+});
+</script>
+
+<% if (!locals.layout) { %>
+    </div>
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<% } %>

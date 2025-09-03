@@ -1,0 +1,884 @@
+/* NFL Pools Chat - WhatsApp Layout with Site Theme */
+
+/* Main Chat Container */
+.whatsapp-chat {
+    max-width: 100%;
+    margin: 0;
+    background: #f7fafc;
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Chat Header */
+.whatsapp-header {
+    background: var(--primary-color);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.league-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-right: 14px;
+    flex-shrink: 0;
+    color: white;
+}
+
+.header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.league-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: white;
+}
+
+.members-info {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    line-height: 1.2;
+    color: #e2e8f0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.header-btn {
+    background: none;
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+}
+
+.header-btn:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+/* Conversations List */
+.whatsapp-conversations {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
+}
+
+.conversation-item {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.conversation-item:last-child {
+    border-bottom: none;
+}
+
+.conversation-link {
+    display: flex;
+    padding: 14px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.15s;
+}
+
+.conversation-link:hover {
+    background-color: #f8f9fa;
+    color: inherit;
+    text-decoration: none;
+}
+
+.conversation-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
+    font-size: 1.3rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.conversation-content {
+    flex: 1;
+    min-width: 0;
+    padding-top: 2px;
+}
+
+.conversation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.conversation-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.3;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.conversation-time {
+    font-size: 0.8rem;
+    color: #718096;
+    white-space: nowrap;
+    margin-left: 12px;
+}
+
+.conversation-preview {
+    font-size: 0.9rem;
+    color: #718096;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.conversation-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reply-count {
+    font-size: 0.8rem;
+    color: #718096;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* Empty State */
+.empty-conversations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: #718096;
+    min-height: 400px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 24px;
+    opacity: 0.4;
+    color: var(--primary-color);
+}
+
+.empty-text h6 {
+    color: var(--dark-color);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.empty-text p {
+    margin-bottom: 24px;
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+/* Thread View */
+.whatsapp-thread {
+    max-width: 100%;
+    margin: 0;
+    background: #f8fafc;
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+/* Thread with pinned poll layout */
+.whatsapp-thread.has-pinned-poll {
+    display: flex;
+    flex-direction: column;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-messages {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 16px;
+    padding-bottom: 16px !important;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-messages::-webkit-scrollbar-track {
+    background: #f7fafc;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-messages::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-messages::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+.whatsapp-thread.has-pinned-poll .pinned-poll-container {
+    flex-shrink: 0;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-thread-header {
+    flex-shrink: 0;
+}
+
+.whatsapp-thread.has-pinned-poll .whatsapp-input-container {
+    flex-shrink: 0;
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    background: white;
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+    z-index: 10;
+}
+
+.whatsapp-thread-header {
+    background: var(--primary-color);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.thread-header-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.back-btn {
+    color: white;
+    margin-right: 14px;
+    font-size: 1.2rem;
+    text-decoration: none;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: white;
+}
+
+.thread-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-right: 14px;
+    flex-shrink: 0;
+    color: white;
+}
+
+.thread-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.thread-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: white;
+}
+
+.thread-subtitle {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    line-height: 1.2;
+    color: #e2e8f0;
+}
+
+/* Messages */
+.whatsapp-messages {
+    flex: 1;
+    padding: 16px;
+    padding-bottom: 90px;
+    overflow-y: auto;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.whatsapp-messages::after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+.whatsapp-message {
+    margin-bottom: 16px;
+    display: block;
+    width: 100%;
+    clear: both;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    margin-bottom: 4px;
+}
+
+/* Messages from other users (left side) */
+.other-message .message-bubble {
+    background: white;
+    color: var(--dark-color);
+    border: 1px solid #e2e8f0;
+    float: left;
+    border-bottom-left-radius: 4px;
+}
+
+/* Messages from current user (right side) */
+.my-message .message-bubble {
+    background: var(--secondary-color);
+    color: white;
+    border: 1px solid var(--secondary-color);
+    float: right;
+    border-bottom-right-radius: 4px;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.message-author {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+}
+
+/* Author styling for other users' messages */
+.other-message .message-author {
+    color: var(--primary-color);
+}
+
+/* Author styling for current user's messages */
+.my-message .message-author {
+    color: rgba(255,255,255,0.9);
+}
+
+.message-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-left: 8px;
+}
+
+.message-content {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-top: 2px;
+}
+
+/* Message content inherits color from bubble */
+
+/* Modern Poll Styles in Messages */
+.poll-container {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 8px;
+}
+
+.original-message .poll-container {
+    background: rgba(255,255,255,0.15);
+}
+
+.reply-message .poll-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.poll-question {
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 1.05rem;
+    line-height: 1.3;
+}
+
+.poll-user-status {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(72, 187, 120, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(72, 187, 120, 0.3);
+}
+
+.poll-user-status small {
+    color: var(--dark-color);
+    font-weight: 500;
+}
+
+.original-message .poll-user-status {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.original-message .poll-user-status small {
+    color: white;
+    font-weight: 500;
+}
+
+.poll-option {
+    margin-bottom: 8px;
+}
+
+.poll-vote-btn {
+    width: 100%;
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: left;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.original-message .poll-vote-btn {
+    color: white;
+}
+
+.reply-message .poll-vote-btn {
+    background: white;
+    border-color: #e2e8f0;
+    color: var(--dark-color);
+}
+
+/* Voting state - clean buttons before voting */
+.poll-options[data-poll-state="voting"] .poll-vote-btn {
+    border-style: dashed;
+}
+
+.poll-options[data-poll-state="voting"] .poll-vote-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.1);
+    border-style: solid;
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-1px);
+}
+
+.reply-message .poll-options[data-poll-state="voting"] .poll-vote-btn:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: var(--secondary-color);
+}
+
+/* Results state - show results with solid borders */
+.poll-options[data-poll-state="results"] .poll-vote-btn {
+    border-style: solid;
+}
+
+.poll-vote-btn.voted {
+    background: rgba(72, 187, 120, 0.15);
+    border-color: var(--success-color);
+    border-width: 2px;
+}
+
+.original-message .poll-vote-btn.voted {
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.8);
+}
+
+/* Better text contrast for voted options */
+.poll-vote-btn.voted .option-text {
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+.original-message .poll-vote-btn.voted .option-text {
+    color: white;
+    font-weight: 600;
+}
+
+/* Improve checkmark visibility */
+.poll-vote-btn.voted .option-text .fa-check-circle {
+    color: var(--success-color);
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));
+}
+
+.original-message .poll-vote-btn.voted .option-text .fa-check-circle {
+    color: rgba(255,255,255,0.9);
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+}
+
+.option-content {
+    position: relative;
+}
+
+.option-text {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.vote-results {
+    margin-top: 8px;
+}
+
+.vote-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.vote-percentage {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.vote-count {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.vote-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.vote-fill {
+    height: 100%;
+    background: rgba(255,255,255,0.6);
+    transition: width 0.4s ease;
+    border-radius: 3px;
+}
+
+.reply-message .vote-bar {
+    background: #e2e8f0;
+}
+
+.reply-message .vote-fill {
+    background: var(--success-color);
+}
+
+.poll-footer {
+    margin-top: 14px;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    text-align: center;
+}
+
+/* Poll Thread Intro - Compact */
+.poll-thread-intro {
+    text-align: center;
+    padding: 8px 16px;
+    margin-bottom: 12px;
+}
+
+.poll-intro-message {
+    display: inline-block;
+    background: rgba(0,0,0,0.1);
+    color: var(--dark-color);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Ultra-Compact Pinned Poll */
+.pinned-poll-container {
+    background: white;
+    border-top: 2px solid var(--primary-color);
+    position: relative;
+    z-index: 5;
+    flex-shrink: 0;
+}
+
+.pinned-poll-header {
+    background: var(--primary-color);
+    color: white;
+    padding: 3px 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    min-height: 20px;
+}
+
+.pinned-poll-header i {
+    font-size: 0.65rem;
+    margin-right: 4px;
+}
+
+.poll-container.pinned-poll {
+    background: white;
+    padding: 8px 12px;
+    margin: 0;
+}
+
+/* Ultra-compact poll styling */
+.pinned-poll .poll-question {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.pinned-poll .poll-user-status {
+    display: none; /* Remove to save space */
+}
+
+.pinned-poll .poll-option {
+    margin-bottom: 3px;
+}
+
+.pinned-poll .poll-vote-btn {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.pinned-poll .poll-vote-btn:hover {
+    border-color: var(--primary-color);
+    background: #f0f9ff;
+    transform: none;
+}
+
+.pinned-poll .poll-vote-btn.voted {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pinned-poll .option-text {
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.pinned-poll .vote-results {
+    margin-top: 3px;
+}
+
+.pinned-poll .vote-stats {
+    margin-bottom: 2px;
+    font-size: 0.7rem;
+}
+
+.pinned-poll .vote-percentage {
+    font-weight: 600;
+}
+
+.pinned-poll .vote-count {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+.pinned-poll .vote-bar {
+    height: 3px;
+    border-radius: 2px;
+}
+
+.pinned-poll .poll-footer {
+    margin-top: 4px;
+    font-size: 0.65rem;
+    text-align: center;
+    opacity: 0.8;
+}
+
+/* Adjust thread layout for pinned poll */
+.whatsapp-thread .whatsapp-messages {
+    padding-bottom: 90px;
+}
+
+
+/* Input container stays at bottom but poll appears above it */
+.pinned-poll-container ~ .whatsapp-input-container {
+    margin-top: 0;
+}
+
+/* Input Container */
+.whatsapp-input-container {
+    background: white;
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.whatsapp-input-form {
+    margin: 0;
+}
+
+.whatsapp-input {
+    border-radius: 24px;
+    border: 2px solid #e2e8f0;
+    padding: 12px 20px;
+    resize: none;
+    max-height: 120px;
+    background: #f8fafc;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.whatsapp-input:focus {
+    box-shadow: none;
+    border-color: var(--secondary-color);
+    background: white;
+}
+
+.whatsapp-send-btn {
+    background: var(--secondary-color);
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    color: white;
+    margin-left: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+}
+
+.whatsapp-send-btn:hover {
+    background: var(--success-color);
+}
+
+.whatsapp-send-btn:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .whatsapp-chat,
+    .whatsapp-thread {
+        height: calc(100vh - 140px);
+        border-radius: 0;
+    }
+    
+    .mb-mobile-nav .whatsapp-chat,
+    .mb-mobile-nav .whatsapp-thread {
+        height: calc(100vh - 220px);
+    }
+    
+    .conversation-link {
+        padding: 16px 20px;
+    }
+    
+    .conversation-avatar {
+        width: 56px;
+        height: 56px;
+        font-size: 1.4rem;
+    }
+    
+    .conversation-title {
+        font-size: 1.1rem;
+    }
+    
+    .conversation-preview {
+        font-size: 0.95rem;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+    }
+    
+    .whatsapp-messages {
+        padding: 12px 12px 90px 12px;
+    }
+    
+    .whatsapp-header,
+    .whatsapp-thread-header {
+        padding: 16px;
+    }
+    
+    .whatsapp-input-container {
+        padding: 16px;
+    }
+}

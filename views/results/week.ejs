@@ -1,0 +1,488 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <% if (league) { %>
+                            <li class="breadcrumb-item">
+                                <a href="/dashboard" class="text-decoration-none">Dashboard</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/leagues/<%= league.league_id %>" class="text-decoration-none">
+                                    <%= league.league_name %>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Week <%= currentWeek %> Results</li>
+                        <% } else { %>
+                            <li class="breadcrumb-item">
+                                <a href="/" class="text-decoration-none">Home</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Week <%= currentWeek %> Results</li>
+                        <% } %>
+                    </ol>
+                </nav>
+                <h1 class="display-5 mb-0">
+                    <i class="fas fa-chart-bar text-primary me-3"></i>
+                    Week <%= currentWeek %> Results
+                    <% if (league) { %>
+                        <small class="text-muted fs-6">- <%= league.league_name %></small>
+                    <% } %>
+                </h1>
+            </div>
+            
+            <!-- Week Navigation -->
+            <div class="btn-group" role="group">
+                <% if (currentWeek > 1) { %>
+                    <a href="?week=<%= currentWeek - 1 %>" class="btn btn-outline-secondary">
+                        <i class="fas fa-chevron-left"></i> Week <%= currentWeek - 1 %>
+                    </a>
+                <% } %>
+                <button class="btn btn-secondary disabled">Week <%= currentWeek %></button>
+                <% if (currentWeek < 18) { %>
+                    <a href="?week=<%= currentWeek + 1 %>" class="btn btn-outline-secondary">
+                        Week <%= currentWeek + 1 %> <i class="fas fa-chevron-right"></i>
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Week Summary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-football-ball fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weekSummary.completed_games %>/<%= weekSummary.total_games %></h5>
+                <p class="card-text mb-0">Games Completed</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-bullseye fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weekSummary.accuracy || 0 %>%</h5>
+                <p class="card-text mb-0">Pick Accuracy</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weekSummary.total_picks || 0 %></h5>
+                <p class="card-text mb-0">Total Picks</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-star fa-2x mb-2"></i>
+                <h5 class="card-title"><%= weekSummary.total_points_awarded || 0 %></h5>
+                <p class="card-text mb-0">Points Awarded</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Game Results Sections -->
+<div class="row">
+    <div class="col-12">
+        <!-- Completed Games -->
+        <% if (completedGames.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Completed Games (<%= completedGames.length %>)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <% completedGames.forEach(game => { %>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card border-0 border-bottom border-end game-card">
+                                <div class="card-body p-3">
+                                    <div class="game-matchup">
+                                        <!-- Away Team -->
+                                        <div class="team <%= game.winning_team === game.away_team ? 'winner' : '' %>">
+                                            <div class="team-info">
+                                                <span class="team-name"><%= game.away_team %></span>
+                                                <span class="team-full-name text-muted"><%= game.away_team_name %></span>
+                                            </div>
+                                            <div class="team-score">
+                                                <%= game.away_score || 0 %>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="game-divider">@</div>
+                                        
+                                        <!-- Home Team -->
+                                        <div class="team <%= game.winning_team === game.home_team ? 'winner' : '' %>">
+                                            <div class="team-info">
+                                                <span class="team-name"><%= game.home_team %></span>
+                                                <span class="team-full-name text-muted"><%= game.home_team_name %></span>
+                                            </div>
+                                            <div class="team-score">
+                                                <%= game.home_score || 0 %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Game Details -->
+                                    <div class="game-details mt-3">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-users me-1"></i>
+                                                    <%= game.total_picks || 0 %> picks
+                                                </small>
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-star me-1"></i>
+                                                    <%= game.total_points_awarded || 0 %> pts
+                                                </small>
+                                            </div>
+                                        </div>
+                                        
+                                        <% if (game.home_picks || game.away_picks) { %>
+                                        <div class="pick-distribution mt-2">
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-secondary" 
+                                                     style="width: <%= (game.away_picks / (game.home_picks + game.away_picks) * 100).toFixed(1) %>%">
+                                                </div>
+                                                <div class="progress-bar bg-primary" 
+                                                     style="width: <%= (game.home_picks / (game.home_picks + game.away_picks) * 100).toFixed(1) %>%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                <%= game.away_picks || 0 %> picked <%= game.away_team %>, 
+                                                <%= game.home_picks || 0 %> picked <%= game.home_team %>
+                                            </small>
+                                        </div>
+                                        <% } %>
+                                        
+                                        <div class="mt-2">
+                                            <a href="/results/<%= league ? 'league/' + league.league_id + '/' : '' %>game/<%= game.game_id %>" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i> View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- In Progress Games -->
+        <% if (inProgressGames.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    In Progress (<%= inProgressGames.length %>)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <% inProgressGames.forEach(game => { %>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card border-0 border-bottom border-end game-card">
+                                <div class="card-body p-3">
+                                    <div class="game-matchup">
+                                        <div class="team">
+                                            <div class="team-info">
+                                                <span class="team-name"><%= game.away_team %></span>
+                                                <span class="team-full-name text-muted"><%= game.away_team_name %></span>
+                                            </div>
+                                            <div class="team-score">
+                                                <%= game.away_score || '-' %>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="game-divider">@</div>
+                                        
+                                        <div class="team">
+                                            <div class="team-info">
+                                                <span class="team-name"><%= game.home_team %></span>
+                                                <span class="team-full-name text-muted"><%= game.home_team_name %></span>
+                                            </div>
+                                            <div class="team-score">
+                                                <%= game.home_score || '-' %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="game-details mt-3">
+                                        <div class="text-center">
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-clock me-1"></i>
+                                                IN PROGRESS
+                                            </span>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-users me-1"></i>
+                                                    <%= game.total_picks || 0 %> picks
+                                                </small>
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-lock me-1"></i>
+                                                    Locked
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- Upcoming Games -->
+        <% if (upcomingGames.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar me-2"></i>
+                    Upcoming (<%= upcomingGames.length %>)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <% upcomingGames.forEach(game => { %>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card border-0 border-bottom border-end game-card">
+                                <div class="card-body p-3">
+                                    <div class="game-matchup">
+                                        <div class="team">
+                                            <div class="team-info">
+                                                <span class="team-name"><%= game.away_team %></span>
+                                                <span class="team-full-name text-muted"><%= game.away_team_name %></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="game-divider">@</div>
+                                        
+                                        <div class="team">
+                                            <div class="team-info">
+                                                <span class="team-name"><%= game.home_team %></span>
+                                                <span class="team-full-name text-muted"><%= game.home_team_name %></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="game-details mt-3">
+                                        <div class="text-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                <%= new Date(game.kickoff_timestamp).toLocaleDateString('en-US', { 
+                                                    weekday: 'short', 
+                                                    month: 'short', 
+                                                    day: 'numeric',
+                                                    hour: 'numeric',
+                                                    minute: '2-digit'
+                                                }) %>
+                                            </small>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-users me-1"></i>
+                                                    <%= game.total_picks || 0 %> picks
+                                                </small>
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                <% if (game.spread) { %>
+                                                    <small class="text-muted">
+                                                        <%= game.home_team %> <%= game.spread > 0 ? '+' : '' %><%= game.spread %>
+                                                    </small>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <% if (games.length === 0) { %>
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No games scheduled for Week <%= currentWeek %></h5>
+                <p class="text-muted">Check back later or view other weeks.</p>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Quick Navigation -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-compass me-2"></i>
+                    Quick Navigation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <% for (let w = 1; w <= 18; w++) { %>
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="?week=<%= w %>" 
+                               class="btn <%= w == currentWeek ? 'btn-primary' : 'btn-outline-secondary' %> btn-sm w-100">
+                                Week <%= w %>
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="/results/season<%= league ? '?league=' + league.league_id : '' %>" 
+                       class="btn btn-outline-info me-2">
+                        <i class="fas fa-chart-line me-1"></i> Season Overview
+                    </a>
+                    <% if (league) { %>
+                        <a href="/standings/<%= league.league_id %>" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-trophy me-1"></i> Standings
+                        </a>
+                        <a href="/picks/<%= league.league_id %>" class="btn btn-outline-success">
+                            <i class="fas fa-hand-point-right me-1"></i> Make Picks
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.game-card {
+    transition: all 0.2s ease;
+    min-height: 200px;
+}
+
+.game-card:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.game-matchup {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.team {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.team.winner {
+    background-color: rgba(25, 135, 84, 0.1);
+    border: 2px solid var(--bs-success);
+    font-weight: 600;
+}
+
+.team-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.team-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.team-full-name {
+    font-size: 0.8rem;
+}
+
+.team-score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: center;
+}
+
+.game-divider {
+    font-weight: 600;
+    color: var(--bs-secondary);
+    font-size: 1.2rem;
+}
+
+.pick-distribution {
+    margin-top: 10px;
+}
+
+.progress {
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.game-details {
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .game-matchup {
+        gap: 10px;
+    }
+    
+    .team-name {
+        font-size: 1rem;
+    }
+    
+    .team-score {
+        font-size: 1.3rem;
+    }
+}
+</style>
+
+<script>
+// Auto-refresh for in-progress games
+<% if (inProgressGames.length > 0) { %>
+setInterval(() => {
+    if (!document.hidden) {
+        // Subtle refresh indication
+        document.title = '🔄 ' + document.title.replace('🔄 ', '');
+        
+        // You could implement AJAX refresh here
+        // For now, just indicate refresh is possible
+        setTimeout(() => {
+            document.title = document.title.replace('🔄 ', '');
+        }, 2000);
+    }
+}, 120000); // 2 minutes for in-progress games
+<% } %>
+</script>

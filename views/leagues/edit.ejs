@@ -1,0 +1,490 @@
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-3">
+                <li class="breadcrumb-item">
+                    <a href="/dashboard" class="text-decoration-none">Dashboard</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="/leagues/<%= league.league_id %>" class="text-decoration-none">
+                        <%= league.league_name %>
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Settings
+                </li>
+            </ol>
+        </nav>
+        
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    League Settings
+                </h3>
+                <small>Modify your league configuration and preferences</small>
+            </div>
+            
+            <div class="card-body">
+                <form method="POST" action="/leagues/<%= league.league_id %>?_method=PUT" novalidate>
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Basic Information
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="league_name" class="form-label">
+                                League Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control <%= errors.league_name ? 'is-invalid' : '' %>" 
+                                id="league_name" 
+                                name="league_name"
+                                value="<%= league.league_name %>"
+                                placeholder="Enter league name..."
+                                required
+                                maxlength="50"
+                            >
+                            <% if (errors.league_name) { %>
+                                <div class="invalid-feedback">
+                                    <%= errors.league_name.msg %>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea 
+                                class="form-control <%= errors.description ? 'is-invalid' : '' %>" 
+                                id="description" 
+                                name="description"
+                                rows="3"
+                                placeholder="Optional description for your league..."
+                                maxlength="500"
+                            ><%= league.description || '' %></textarea>
+                            <% if (errors.description) { %>
+                                <div class="invalid-feedback">
+                                    <%= errors.description.msg %>
+                                </div>
+                            <% } %>
+                            <div class="form-text">Optional - Describe your league rules, themes, or any special information</div>
+                        </div>
+                    </div>
+                    
+                    <!-- League Settings -->
+                    <div class="mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-cogs me-2"></i>
+                            League Configuration
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="privacy" class="form-label">
+                                    Privacy Setting <span class="text-danger">*</span>
+                                </label>
+                                <select 
+                                    class="form-select <%= errors.privacy ? 'is-invalid' : '' %>" 
+                                    id="privacy" 
+                                    name="privacy"
+                                    required
+                                >
+                                    <option value="private" <%= league.privacy === 'private' ? 'selected' : '' %>>
+                                        Private (Join code required)
+                                    </option>
+                                    <option value="invite_only" <%= league.privacy === 'invite_only' ? 'selected' : '' %>>
+                                        Invite Only
+                                    </option>
+                                    <option value="public" <%= league.privacy === 'public' ? 'selected' : '' %>>
+                                        Public (Anyone can find)
+                                    </option>
+                                </select>
+                                <% if (errors.privacy) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.privacy.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="max_participants" class="form-label">
+                                    Max Participants <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control <%= errors.max_participants ? 'is-invalid' : '' %>" 
+                                    id="max_participants" 
+                                    name="max_participants"
+                                    value="<%= league.max_participants %>"
+                                    min="<%= league.member_count %>"
+                                    max="100"
+                                    required
+                                >
+                                <% if (errors.max_participants) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.max_participants.msg %>
+                                    </div>
+                                <% } %>
+                                <div class="form-text">
+                                    Current members: <%= league.member_count %>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="max_entries" class="form-label">
+                                    Max Entries per User <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control <%= errors.max_entries ? 'is-invalid' : '' %>" 
+                                    id="max_entries" 
+                                    name="max_entries"
+                                    value="<%= league.max_entries %>"
+                                    min="1"
+                                    max="5"
+                                    required
+                                >
+                                <% if (errors.max_entries) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.max_entries.msg %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="entry_fee" class="form-label">Entry Fee ($)</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control <%= errors.entry_fee ? 'is-invalid' : '' %>" 
+                                    id="entry_fee" 
+                                    name="entry_fee"
+                                    value="<%= parseFloat(league.entry_fee).toFixed(2) %>"
+                                    min="0"
+                                    max="1000"
+                                    step="0.01"
+                                >
+                                <% if (errors.entry_fee) { %>
+                                    <div class="invalid-feedback">
+                                        <%= errors.entry_fee.msg %>
+                                    </div>
+                                <% } %>
+                                <div class="form-text">Set to 0 for free leagues</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tiebreaker Settings -->
+                    <div class="mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-balance-scale me-2"></i>
+                            Tiebreaker Settings
+                        </h5>
+                        
+                        <!-- Primary Tiebreaker -->
+                        <div class="mb-3">
+                            <label for="primary_tiebreaker" class="form-label">
+                                Primary Tiebreaker <span class="text-danger">*</span>
+                            </label>
+                            <select 
+                                class="form-select <%= errors.primary_tiebreaker ? 'is-invalid' : '' %>" 
+                                id="primary_tiebreaker" 
+                                name="primary_tiebreaker"
+                                required
+                            >
+                                <option value="head_to_head" <%= (league.settings && league.settings.primary_tiebreaker === 'head_to_head') ? 'selected' : '' %>>
+                                    Head to Head
+                                </option>
+                                <option value="mnf_total" <%= (league.settings && league.settings.primary_tiebreaker === 'mnf_total') ? 'selected' : '' %>>
+                                    Monday Night Football Total Points
+                                </option>
+                                <option value="highest_confidence_correct" <%= (league.settings && league.settings.primary_tiebreaker === 'highest_confidence_correct') ? 'selected' : '' %>>
+                                    Highest Confidence Correct
+                                </option>
+                                <option value="total_games_correct" <%= (league.settings && league.settings.primary_tiebreaker === 'total_games_correct') ? 'selected' : '' %>>
+                                    Total Games Correct
+                                </option>
+                            </select>
+                            <% if (errors.primary_tiebreaker) { %>
+                                <div class="invalid-feedback">
+                                    <%= errors.primary_tiebreaker.msg %>
+                                </div>
+                            <% } %>
+                            <div class="form-text">Used to resolve ties in weekly and season standings</div>
+                        </div>
+                        
+                        <!-- Secondary Tiebreaker -->
+                        <div class="mb-3">
+                            <label for="secondary_tiebreaker" class="form-label">
+                                Secondary Tiebreaker
+                            </label>
+                            <select 
+                                class="form-select <%= errors.secondary_tiebreaker ? 'is-invalid' : '' %>" 
+                                id="secondary_tiebreaker" 
+                                name="secondary_tiebreaker"
+                            >
+                                <option value="head_to_head" <%= (league.settings && league.settings.secondary_tiebreaker === 'head_to_head') ? 'selected' : '' %>>
+                                    Head to Head
+                                </option>
+                                <option value="mnf_total" <%= (league.settings && league.settings.secondary_tiebreaker === 'mnf_total') ? 'selected' : '' %>>
+                                    Monday Night Football Total Points
+                                </option>
+                                <option value="highest_confidence_correct" <%= (league.settings && league.settings.secondary_tiebreaker === 'highest_confidence_correct') ? 'selected' : '' %>>
+                                    Highest Confidence Correct
+                                </option>
+                                <option value="total_games_correct" <%= (league.settings && league.settings.secondary_tiebreaker === 'total_games_correct') ? 'selected' : '' %>>
+                                    Total Games Correct
+                                </option>
+                            </select>
+                            <% if (errors.secondary_tiebreaker) { %>
+                                <div class="invalid-feedback">
+                                    <%= errors.secondary_tiebreaker.msg %>
+                                </div>
+                            <% } %>
+                            <div class="form-text">Applied if primary tiebreaker results in a tie</div>
+                        </div>
+                    </div>
+                    
+                    
+                    <!-- League Status -->
+                    <div class="mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-flag me-2"></i>
+                            League Status
+                        </h5>
+                        
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <div>
+                                    <strong>Current Status:</strong> 
+                                    <span class="badge <%= league.status === 'active' ? 'bg-success' : league.status === 'draft' ? 'bg-warning text-dark' : 'bg-secondary' %>">
+                                        <%= league.status.charAt(0).toUpperCase() + league.status.slice(1) %>
+                                    </span>
+                                    <div class="small text-muted mt-1">
+                                        <% if (league.status === 'draft') { %>
+                                            League is in draft mode. Activate when ready to start the season.
+                                        <% } else if (league.status === 'active') { %>
+                                            League is active and accepting picks.
+                                        <% } else { %>
+                                            League has ended for this season.
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="/leagues/<%= league.league_id %>" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to League
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="fas fa-trash me-2"></i>
+                                Delete League
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete League Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-danger">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Delete League
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                
+                <p>Are you absolutely sure you want to delete <strong><%= league.league_name %></strong>?</p>
+                
+                <ul class="text-muted small">
+                    <li>All league data will be permanently deleted</li>
+                    <li>All member picks and standings will be lost</li>
+                    <li>Members will be removed from the league</li>
+                    <li>This action is irreversible</li>
+                </ul>
+                
+                <div class="mb-3">
+                    <label for="confirmDelete" class="form-label">
+                        Type <strong><%= league.league_name %></strong> to confirm deletion:
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="confirmDelete"
+                        placeholder="Enter league name to confirm"
+                    >
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="/leagues/<%= league.league_id %>?_method=DELETE" class="d-inline">
+                    <button type="submit" class="btn btn-danger" id="deleteConfirmBtn" disabled>
+                        <i class="fas fa-trash me-2"></i>
+                        Delete League Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Character count for description
+    const descriptionField = document.getElementById('description');
+    if (descriptionField) {
+        const maxLength = 500;
+        
+        function updateCharCount() {
+            const remaining = maxLength - descriptionField.value.length;
+            const formText = descriptionField.parentElement.querySelector('.form-text');
+            if (formText) {
+                formText.innerHTML = `Optional - Describe your league rules, themes, or any special information (${remaining} characters remaining)`;
+                if (remaining < 50) {
+                    formText.classList.add('text-warning');
+                } else {
+                    formText.classList.remove('text-warning');
+                }
+            }
+        }
+        
+        descriptionField.addEventListener('input', updateCharCount);
+        updateCharCount();
+    }
+    
+    // League name validation
+    const leagueNameField = document.getElementById('league_name');
+    if (leagueNameField) {
+        leagueNameField.addEventListener('input', function() {
+            const value = this.value;
+            const regex = /^[a-zA-Z0-9\s\-_]+$/;
+            
+            if (value && !regex.test(value)) {
+                this.classList.add('is-invalid');
+                let feedback = this.parentElement.querySelector('.invalid-feedback');
+                if (!feedback) {
+                    feedback = document.createElement('div');
+                    feedback.classList.add('invalid-feedback');
+                    this.parentElement.appendChild(feedback);
+                }
+                feedback.textContent = 'League name can only contain letters, numbers, spaces, hyphens, and underscores';
+            } else {
+                this.classList.remove('is-invalid');
+                const feedback = this.parentElement.querySelector('.invalid-feedback');
+                if (feedback && !feedback.textContent.includes('must be between')) {
+                    feedback.remove();
+                }
+            }
+        });
+    }
+    
+    // Delete confirmation
+    const confirmDeleteField = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteConfirmBtn');
+    const leagueName = '<%= league.league_name %>';
+    
+    if (confirmDeleteField && deleteBtn) {
+        confirmDeleteField.addEventListener('input', function() {
+            if (this.value === leagueName) {
+                deleteBtn.disabled = false;
+                deleteBtn.classList.remove('btn-danger');
+                deleteBtn.classList.add('btn-danger');
+            } else {
+                deleteBtn.disabled = true;
+            }
+        });
+        
+        // Reset when modal closes
+        document.getElementById('deleteModal').addEventListener('hidden.bs.modal', function() {
+            confirmDeleteField.value = '';
+            deleteBtn.disabled = true;
+        });
+    }
+    
+    // Max participants validation
+    const maxParticipantsField = document.getElementById('max_participants');
+    if (maxParticipantsField) {
+        const currentMembers = <%= league.member_count %>;
+        maxParticipantsField.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value < currentMembers) {
+                this.classList.add('is-invalid');
+                let feedback = this.parentElement.querySelector('.invalid-feedback');
+                if (!feedback) {
+                    feedback = document.createElement('div');
+                    feedback.classList.add('invalid-feedback');
+                    this.parentElement.appendChild(feedback);
+                }
+                feedback.textContent = `Cannot be less than current member count (${currentMembers})`;
+            } else {
+                this.classList.remove('is-invalid');
+                const feedback = this.parentElement.querySelector('.invalid-feedback');
+                if (feedback && feedback.textContent.includes('Cannot be less than')) {
+                    feedback.remove();
+                }
+            }
+        });
+    }
+    
+    // Tiebreaker validation - prevent duplicate selections
+    const primaryTiebreakerField = document.getElementById('primary_tiebreaker');
+    const secondaryTiebreakerField = document.getElementById('secondary_tiebreaker');
+    
+    function updateTiebreakerOptions() {
+        if (!primaryTiebreakerField || !secondaryTiebreakerField) return;
+        
+        const primaryValue = primaryTiebreakerField.value;
+        const secondaryValue = secondaryTiebreakerField.value;
+        
+        // Enable all secondary options first
+        Array.from(secondaryTiebreakerField.options).forEach(option => {
+            option.disabled = false;
+        });
+        
+        // Disable the primary selection in secondary dropdown
+        if (primaryValue) {
+            const optionToDisable = secondaryTiebreakerField.querySelector(`option[value="${primaryValue}"]`);
+            if (optionToDisable) {
+                optionToDisable.disabled = true;
+                // If secondary was set to same as primary, reset it
+                if (secondaryValue === primaryValue) {
+                    secondaryTiebreakerField.value = '';
+                }
+            }
+        }
+    }
+    
+    if (primaryTiebreakerField) {
+        primaryTiebreakerField.addEventListener('change', updateTiebreakerOptions);
+        updateTiebreakerOptions(); // Initial check
+    }
+});
+</script>

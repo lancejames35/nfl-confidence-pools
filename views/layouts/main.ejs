@@ -256,9 +256,18 @@
         <script src="/js/socket-client.js"></script>
         <script>
             // Initialize socket client for authenticated users only
-            if (typeof SocketClient !== 'undefined') {
-                window.socketClient = new SocketClient();
-                window.socketClient.initialize(); // Explicitly initialize
+            try {
+                if (typeof SocketClient !== 'undefined') {
+                    window.socketClient = new SocketClient();
+                    if (typeof window.socketClient.initialize === 'function') {
+                        window.socketClient.initialize();
+                    }
+                } else {
+                    console.warn('SocketClient not available, continuing without real-time features');
+                }
+            } catch (error) {
+                console.warn('Socket client initialization failed:', error.message);
+                // Continue without socket functionality
             }
         </script>
     <% } %>

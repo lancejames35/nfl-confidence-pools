@@ -1,0 +1,182 @@
+<!-- Start Page for New Users -->
+<link rel="stylesheet" href="/css/dashboard.css">
+
+<div class="dashboard-container">
+    <!-- Welcome Header for New User -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-banner text-center">
+                <div class="mb-3">
+                    <i class="fas fa-trophy text-warning" style="font-size: 3rem;"></i>
+                </div>
+                <h1 class="h2 mb-3">
+                    Welcome to NFL Confidence Pools, <strong><%= user ? user.username : 'Player' %></strong>!
+                </h1>
+                <p class="lead text-light-emphasis mb-0">
+                    Your account is ready! Let's get you started with your first league.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Getting Started Options -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <!-- Action Cards -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center py-5">
+                    <h3 class="card-title mb-4">Choose How to Get Started</h3>
+                    
+                    <div class="row g-4">
+                        <!-- Join League Option -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border-primary h-100 hover-lift">
+                                <div class="card-body p-4">
+                                    <div class="text-primary mb-3">
+                                        <i class="fas fa-users" style="font-size: 3rem;"></i>
+                                    </div>
+                                    <h4 class="card-title">Join a League</h4>
+                                    <p class="card-text mb-4">Have an invite code from a friend? Enter it here to join their league instantly.</p>
+                                    
+                                    <form action="/leagues/join" method="POST" class="mb-3">
+                                        <div class="input-group mb-3">
+                                            <input type="text" 
+                                                   class="form-control form-control-lg" 
+                                                   name="join_code" 
+                                                   placeholder="Enter 6-12 character code" 
+                                                   required 
+                                                   pattern="[A-Za-z0-9]{6,12}" 
+                                                   maxlength="12"
+                                                   style="text-transform: uppercase;">
+                                            <button class="btn btn-primary btn-lg" type="submit">
+                                                <i class="fas fa-sign-in-alt me-2"></i>Join
+                                            </button>
+                                        </div>
+                                    </form>
+                                    
+                                    <div class="text-muted small">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Example: NFL2025 or POOL123
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Create League Option -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border-success h-100 hover-lift">
+                                <div class="card-body p-4">
+                                    <div class="text-success mb-3">
+                                        <i class="fas fa-crown" style="font-size: 3rem;"></i>
+                                    </div>
+                                    <h4 class="card-title">Create Your Own League</h4>
+                                    <p class="card-text mb-4">Be the commissioner! Set up your own league and invite friends to compete.</p>
+                                    
+                                    <a href="/leagues/create" class="btn btn-success btn-lg w-100 mb-3">
+                                        <i class="fas fa-plus-circle me-2"></i>Create New League
+                                    </a>
+                                    
+                                    <div class="text-muted small">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Set rules, manage members, track standings
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- How It Works Guide -->
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">
+                        <i class="fas fa-graduation-cap text-info me-2"></i>
+                        New to Confidence Pools? Here's How It Works
+                    </h5>
+                    
+                    <div class="row text-center">
+                        <div class="col-12 col-md-3 mb-4">
+                            <div class="step-number rounded-circle bg-primary text-white mx-auto mb-3" 
+                                 style="width: 50px; height: 50px; line-height: 50px; font-size: 1.5rem;">1</div>
+                            <h6 class="mb-2">Pick Winners</h6>
+                            <p class="small text-muted">Select who you think will win each NFL game this week</p>
+                        </div>
+                        
+                        <div class="col-12 col-md-3 mb-4">
+                            <div class="step-number rounded-circle bg-primary text-white mx-auto mb-3" 
+                                 style="width: 50px; height: 50px; line-height: 50px; font-size: 1.5rem;">2</div>
+                            <h6 class="mb-2">Assign Confidence</h6>
+                            <p class="small text-muted">Rank games 1-16 based on how confident you are (16 = most confident)</p>
+                        </div>
+                        
+                        <div class="col-12 col-md-3 mb-4">
+                            <div class="step-number rounded-circle bg-primary text-white mx-auto mb-3" 
+                                 style="width: 50px; height: 50px; line-height: 50px; font-size: 1.5rem;">3</div>
+                            <h6 class="mb-2">Earn Points</h6>
+                            <p class="small text-muted">Get the confidence points for each correct pick</p>
+                        </div>
+                        
+                        <div class="col-12 col-md-3 mb-4">
+                            <div class="step-number rounded-circle bg-primary text-white mx-auto mb-3" 
+                                 style="width: 50px; height: 50px; line-height: 50px; font-size: 1.5rem;">4</div>
+                            <h6 class="mb-2">Win Prizes</h6>
+                            <p class="small text-muted">Most points wins the week, season champion takes it all!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <p class="mb-0 text-muted">
+                            <i class="fas fa-clock me-2"></i>
+                            Takes just 5 minutes per week to make your picks!
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Tips -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert alert-info border-0">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-lightbulb me-2"></i>Quick Tips for Success
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>Join multiple leagues to increase your chances of winning</li>
+                            <li>Submit picks early - you can always change them before games lock</li>
+                            <li>Use high confidence (13-16) on games you're most sure about</li>
+                            <li>Check standings regularly to track your progress</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+.step-number {
+    font-weight: bold;
+}
+</style>
+
+<script>
+// Auto-uppercase join code input
+document.addEventListener('DOMContentLoaded', function() {
+    const joinCodeInput = document.querySelector('input[name="join_code"]');
+    if (joinCodeInput) {
+        joinCodeInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+});
+</script>

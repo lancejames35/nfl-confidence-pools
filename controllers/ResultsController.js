@@ -116,11 +116,6 @@ class ResultsController {
             // Prepare user parameters for pick visibility
             const currentUserId = req.user?.user_id || req.user?.id || 0;
             
-            console.log(`=== USER CONTEXT DEBUGGING ===`);
-            console.log(`req.user:`, req.user);
-            console.log(`req.user.user_id:`, req.user?.user_id);
-            console.log(`req.user.id:`, req.user?.id);
-            console.log(`Final currentUserId: ${currentUserId} (type: ${typeof currentUserId})`);
             
             // Find current user's participation in this league
             const currentUserParticipant = participants.find(p => p.user_id == currentUserId);
@@ -281,7 +276,6 @@ class ResultsController {
                 const lastGameKickoff = lastGameResult?.last_kickoff;
                 const lastGameHasStarted = lastGameKickoff && new Date(lastGameKickoff) <= new Date();
                 
-                console.log(`Last game kickoff: ${lastGameKickoff}, has started: ${lastGameHasStarted}`);
                 
                 const tiebreakerQuery = `
                     SELECT t.entry_id, t.predicted_value, u.user_id
@@ -296,67 +290,35 @@ class ResultsController {
                 `;
                 
                 try {
-                    console.log(`=== TIEBREAKER DEBUGGING ===`);
-                    console.log(`Current user ID: ${currentUserId} (type: ${typeof currentUserId})`);
-                    console.log(`Current week: ${currentWeek}`);
-                    console.log(`Last game kickoff: ${lastGameKickoff}`);
-                    console.log(`Last game has started: ${lastGameHasStarted}`);
-                    console.log(`Entry IDs: [${entryIds.join(', ')}]`);
                     
                     const tiebreakerResults = await database.execute(tiebreakerQuery, [...entryIds, currentWeek]);
                     const tiebreakers = tiebreakerResults;
-                    console.log(`Tiebreaker raw results:`, tiebreakerResults);
-                    console.log(`Using full results as tiebreakers array:`, tiebreakers);
-                    console.log(`Extracted tiebreaker rows:`, tiebreakers);
                     
                     const tiebreakerMap = {};
                     
                     // Ensure tiebreakers is always an array
                     const tiebreakerArray = Array.isArray(tiebreakers) ? tiebreakers : (tiebreakers ? [tiebreakers] : []);
                     
-                    console.log(`Found ${tiebreakerArray.length} tiebreaker predictions`);
-                    
                     tiebreakerArray.forEach(tb => {
-                        console.log(`Processing tiebreaker:`, {
-                            entry_id: tb.entry_id,
-                            user_id: tb.user_id,
-                            user_id_type: typeof tb.user_id,
-                            predicted_value: tb.predicted_value
-                        });
                         
                         // Show tiebreaker if:
                         // 1. It's the current user's own tiebreaker, OR
                         // 2. The last game of the week has started
                         const isCurrentUser = (tb.user_id == currentUserId);
-                        const strictComparison = (tb.user_id === currentUserId);
                         const shouldShow = isCurrentUser || lastGameHasStarted;
-                        
-                        console.log(`User ID comparison for entry ${tb.entry_id}:`, {
-                            tb_user_id: tb.user_id,
-                            current_user_id: currentUserId,
-                            loose_equal: isCurrentUser,
-                            strict_equal: strictComparison,
-                            last_game_started: lastGameHasStarted,
-                            final_show_decision: shouldShow
-                        });
                         
                         if (shouldShow) {
                             tiebreakerMap[tb.entry_id] = tb.predicted_value;
-                            console.log(`✅ Added tiebreaker for entry ${tb.entry_id}: ${tb.predicted_value}`);
-                        } else {
-                            console.log(`❌ Hiding tiebreaker for entry ${tb.entry_id}`);
                         }
                     });
                     // Built tiebreaker mapping
                     
-                    console.log(`Final tiebreaker map:`, tiebreakerMap);
                     
                     // Add MNF predictions to user results
                     userResults.forEach(user => {
                         const tiebreakerValue = tiebreakerMap[user.entry_id] || null;
                         user.mnfPrediction = tiebreakerValue;
                         
-                        console.log(`Assigning tiebreaker to user ${user.username} (entry ${user.entry_id}): ${tiebreakerValue}`);
                     });
                 } catch (error) {
                     // Error fetching tiebreakers

@@ -830,6 +830,52 @@
         margin-bottom: 4px;
     }
     
+    /* Ensure the row doesn't wrap by keeping elements on same line */
+    .pick-item .row {
+        flex-wrap: nowrap !important;
+    }
+    
+    /* Confidence column should be minimal width */
+    .pick-item .col-auto:first-child {
+        flex: 0 0 auto;
+        max-width: 80px;
+        padding-right: 6px;
+    }
+    
+    /* Confidence dropdown compact styling */
+    .confidence-select {
+        width: 60px !important;
+        padding: 4px 4px !important;
+        font-size: 0.85rem !important;
+        min-height: 36px !important;
+    }
+    
+    /* Teams section should flex to fill remaining space */
+    .pick-item .teams-section {
+        flex: 1 1 auto;
+        min-width: 0; /* Allow it to shrink */
+        padding-left: 0;
+    }
+    
+    /* Keep format but smaller text on mobile */
+    .mobile-game-time {
+        padding: 4px 6px !important;
+        margin-bottom: 6px !important;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .game-time-mobile {
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .game-time-mobile i {
+        font-size: 0.7rem !important;
+    }
+    
     /* Make drag indicator more prominent on mobile */
     .drag-indicator {
         cursor: grab;
@@ -1485,6 +1531,74 @@
     }
 }
 
+/* Extra small screens (narrow phones like iPhone SE) */
+@media (max-width: 380px) {
+    /* Even smaller confidence dropdown */
+    .confidence-select {
+        width: 55px !important;
+        padding: 3px 2px !important;
+        font-size: 0.8rem !important;
+        min-height: 34px !important;
+    }
+    
+    /* Smaller drag handle */
+    .drag-indicator {
+        padding: 6px 2px !important;
+        margin-right: 4px !important;
+    }
+    
+    /* Even smaller game time text */
+    .game-time-mobile {
+        font-size: 0.7rem !important;
+    }
+    
+    .game-time-mobile i {
+        font-size: 0.65rem !important;
+        margin-right: 2px !important;
+    }
+    
+    /* Reduce padding on game time container */
+    .mobile-game-time {
+        padding: 3px 4px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    /* Smaller team text */
+    .team-name {
+        font-size: 0.75rem !important;
+    }
+    
+    .team-abbr {
+        font-size: 0.7rem !important;
+    }
+    
+    /* Tighter spacing */
+    .pick-item .col-auto:first-child {
+        max-width: 75px;
+        padding-right: 4px;
+    }
+}
+
+/* Ultra narrow screens (below 350px) */
+@media (max-width: 350px) {
+    /* Minimum viable dropdown */
+    .confidence-select {
+        width: 50px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Hide clock icon on very small screens to save space */
+    .game-time-mobile i {
+        display: none !important;
+    }
+    
+    /* Even more compact */
+    .game-time-mobile {
+        font-size: 0.65rem !important;
+        letter-spacing: -0.5px;
+    }
+}
+
 </style>
 
 <!-- Include SortableJS for drag & drop -->
@@ -1504,6 +1618,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Convert game times to user's local timezone (using same logic as dashboard)
     function convertGameTimesToUserTimezone() {
         const gameTimeElements = document.querySelectorAll('.game-time-display');
+        
         gameTimeElements.forEach(element => {
             const timestamp = element.getAttribute('data-timestamp');
             if (timestamp) {
@@ -1514,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Get user's timezone
                     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     
-                    // Format the time for user's display
+                    // Keep the same format for all screens - just adjust size with CSS
                     const formattedTime = new Intl.DateTimeFormat('en-US', {
                         timeZone: userTimezone,
                         weekday: 'short',
@@ -1536,6 +1651,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Convert times immediately when page loads
     convertGameTimesToUserTimezone();
+    
+    // Update times when window is resized (handles orientation changes)
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            convertGameTimesToUserTimezone();
+        }, 250);
+    });
     
     // Store selections globally to preserve during drag operations
     let storedSelections = new Map();

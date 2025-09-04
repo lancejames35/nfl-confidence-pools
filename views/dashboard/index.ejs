@@ -726,5 +726,93 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
+<% } else { %>
+
+<!-- No Leagues - Simple Getting Started -->
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <!-- Getting Started Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-football-ball text-primary mb-3" style="font-size: 3rem;"></i>
+                    <h3 class="card-title">Ready to Start Playing?</h3>
+                    <p class="text-muted">You're not in any leagues yet. Choose how you'd like to get started with NFL confidence pools.</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="card border-primary h-100">
+                            <div class="card-body p-4">
+                                <div class="text-primary mb-3">
+                                    <i class="fas fa-users" style="font-size: 2rem;"></i>
+                                </div>
+                                <h5 class="card-title">Join Existing League</h5>
+                                <p class="card-text">Have a join code? Enter it below to join a friend's league.</p>
+                                <form action="/leagues/join" method="POST" class="mb-3">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="join_code" placeholder="Enter join code" required pattern="[A-Za-z0-9]{6,12}" maxlength="12">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-sign-in-alt me-1"></i>Join
+                                        </button>
+                                    </div>
+                                </form>
+                                <small class="text-muted">Join codes are usually 6-12 characters</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="card border-success h-100">
+                            <div class="card-body p-4">
+                                <div class="text-success mb-3">
+                                    <i class="fas fa-plus-circle" style="font-size: 2rem;"></i>
+                                </div>
+                                <h5 class="card-title">Create New League</h5>
+                                <p class="card-text">Start your own league and invite friends to compete.</p>
+                                <a href="/leagues/create" class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-crown me-2"></i>Create League
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How It Works -->
+        <div class="card border-0 bg-light">
+            <div class="card-body">
+                <h5 class="card-title text-center mb-4">
+                    <i class="fas fa-question-circle text-info me-2"></i>
+                    How NFL Confidence Pools Work
+                </h5>
+                <div class="row">
+                    <div class="col-12 col-md-4 text-center mb-3">
+                        <div class="text-primary mb-2">
+                            <i class="fas fa-list-ol" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <h6>Rank Your Picks</h6>
+                        <p class="small text-muted">Assign confidence points 1-16 to each game based on how sure you are.</p>
+                    </div>
+                    <div class="col-12 col-md-4 text-center mb-3">
+                        <div class="text-success mb-2">
+                            <i class="fas fa-trophy" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <h6>Earn Points</h6>
+                        <p class="small text-muted">Correct picks earn you the confidence points you assigned to that game.</p>
+                    </div>
+                    <div class="col-12 col-md-4 text-center mb-3">
+                        <div class="text-warning mb-2">
+                            <i class="fas fa-crown" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <h6>Win Weekly & Season</h6>
+                        <p class="small text-muted">Most points each week wins, plus overall season champion!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <% } %>

@@ -264,11 +264,22 @@ function initializeKickoffCountdown() {
     // Get first game kickoff timestamp from server (ISO format)
     const firstGameKickoffTimestamp = window.firstGameKickoffTimestamp;
     
-    if (!firstGameKickoffTimestamp) {
-        // No game data available, hide countdown
+    
+    if (!firstGameKickoffTimestamp || firstGameKickoffTimestamp === '') {
+        // No game data available - show helpful message instead of hiding
+        const kickoffTimeEl = document.getElementById('kickoff-time');
         const countdownEl = document.getElementById('kickoff-countdown');
+        
+        if (kickoffTimeEl) {
+            kickoffTimeEl.textContent = 'No upcoming games scheduled';
+        }
+        
         if (countdownEl) {
-            countdownEl.style.display = 'none';
+            // Hide countdown numbers but keep the container visible with message
+            const countdownNumbers = countdownEl.querySelector('.countdown-numbers');
+            if (countdownNumbers) {
+                countdownNumbers.style.display = 'none';
+            }
         }
         return;
     }

@@ -378,6 +378,12 @@ class Application {
                      LIMIT 10`,
                     [req.user.user_id, req.user.user_id, req.user.user_id, req.user.user_id, req.user.user_id]
                 );
+                
+                // If user has no leagues and isn't coming from a specific action, redirect to start page
+                if ((!leagues || leagues.length === 0) && !req.query.from && req.path === '/dashboard') {
+                    return res.redirect('/start');
+                }
+                
                 // Determine selected league - validate membership if league_id provided
                 let selectedLeagueId = req.query.league_id || req.session.joinedLeagueId || null;
                 
@@ -631,6 +637,19 @@ class Application {
                     commissionerMessages: [],
                     error: 'Failed to load some dashboard data'
                 });
+            }
+        });
+
+        // Start page for new users (after registration)
+        this.app.get('/start', authMiddleware.requireAuth, authMiddleware.loadUser, navigationMiddleware, async (req, res) => {
+            try {
+                res.render('start/index', {
+                    title: 'Get Started',
+                    user: req.user
+                });
+            } catch (error) {
+                logger.error('Start page error', { error: error.message, userId: req.user?.user_id });
+                res.redirect('/dashboard');
             }
         });
 

@@ -117,7 +117,6 @@ class LeagueController {
                     settings = confidenceSettings;
                 }
             } catch (error) {
-                console.error('Error fetching confidence pool settings:', error);
                 // Set defaults if settings don't exist
                 settings = {
                     primary_tiebreaker: 'mnf_total',
@@ -188,7 +187,6 @@ class LeagueController {
                     settings = confidenceSettings;
                 }
             } catch (error) {
-                console.error('Error fetching confidence pool settings:', error);
                 // Set defaults if settings don't exist
                 settings = {
                     primary_tiebreaker: 'mnf_total',
@@ -273,7 +271,6 @@ class LeagueController {
                         WHERE league_id = ?
                     `, [primary_tiebreaker || null, secondary_tiebreaker || null, league_id]);
                 } catch (settingsError) {
-                    console.error('Error updating confidence pool settings:', settingsError);
                     // If settings don't exist, create them
                     try {
                         await database.execute(`
@@ -281,7 +278,6 @@ class LeagueController {
                             VALUES (?, ?, ?)
                         `, [league_id, primary_tiebreaker || 'mnf_total', secondary_tiebreaker || 'highest_confidence_correct']);
                     } catch (createError) {
-                        console.error('Error creating confidence pool settings:', createError);
                         req.flash('warning', 'League updated but tiebreaker settings could not be saved');
                     }
                 }
@@ -335,7 +331,7 @@ class LeagueController {
                 try {
                     league = await League.findByJoinCode(joinCode.toUpperCase());
                 } catch (error) {
-                    console.log('Could not find league for join code:', joinCode);
+                    // Could not find league for join code
                 }
             }
             
@@ -824,11 +820,6 @@ class LeagueController {
         try {
             const league_id = parseInt(req.params.id);
             
-            // Debug logging
-            console.log('=== UPDATE MEMBER DEBUG ===');
-            console.log('Received data:', JSON.stringify(req.body, null, 2));
-            console.log('League ID:', league_id);
-            console.log('===========================');
             
             const { user_id, role, payment_status, amount_paid, payment_method, tier } = req.body;
 
@@ -954,12 +945,10 @@ class LeagueController {
             const { username, first_name, last_name, email, new_password } = req.body;
             
             if (username || first_name || last_name || email || new_password) {
-                console.log('Updating user profile fields for user_id:', user_id);
                 const User = require('../models/User');
                 const targetUser = await User.findById(user_id);
                 
                 if (!targetUser) {
-                    console.log('User not found:', user_id);
                     return res.status(404).json({ 
                         success: false, 
                         message: 'User not found' 
@@ -972,20 +961,14 @@ class LeagueController {
                 if (last_name !== undefined) updateData.last_name = last_name.trim() || null;
                 if (email && email.trim()) updateData.email = email.trim();
                 
-                console.log('Update data:', updateData);
-                
                 // Update basic profile fields
                 if (Object.keys(updateData).length > 0) {
-                    console.log('Calling targetUser.update...');
                     await targetUser.update(updateData);
-                    console.log('User profile updated successfully');
                 }
                 
                 // Update password if provided
                 if (new_password && new_password.trim()) {
-                    console.log('Updating password...');
                     await targetUser.updatePassword(new_password.trim());
-                    console.log('Password updated successfully');
                 }
             }
 

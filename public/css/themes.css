@@ -888,7 +888,7 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Responsive theme adjustments */
+/* Enhanced Mobile Responsive Layout */
 @media (max-width: 768px) {
   :root[data-theme="bold_gameday"] h1,
   :root[data-theme="bold_gameday"] h2 {
@@ -900,30 +900,36 @@
     --shadow-hover: 0 4px 8px -2px rgba(0, 0, 0, 0.2);
   }
   
-  /* Mobile adjustments - stacked layout to prevent overlap */
+  /* Mobile header adjustments with better touch targets */
   .results-header-enhanced {
-    padding: 0.5rem !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem;
   }
   
   .results-header-enhanced .header-single-row {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.75rem;
+    gap: 1rem;
   }
   
   .results-header-enhanced .header-left {
     text-align: center;
+    order: 1;
   }
   
   .results-header-enhanced .header-center {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.25rem;
+    order: 2;
   }
   
   .results-header-enhanced .header-right {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    order: 3;
   }
   
   .results-header-enhanced .breadcrumb {
@@ -931,94 +937,179 @@
   }
   
   .results-header-enhanced .title-main {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: white;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.3;
   }
   
   .results-header-enhanced .stat-card {
-    padding: 0.25rem 0.4rem;
-    min-width: auto;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    min-width: 80px;
+    min-height: 60px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
     text-align: center;
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .results-header-enhanced .stat-value {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: white;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  
+  .results-header-enhanced .stat-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .results-header-enhanced .week-navigation {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .results-header-enhanced .week-navigation .form-select {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    min-width: 100px;
+    min-height: 44px;
+    border-radius: 6px;
+  }
+  
+  .results-header-enhanced .week-navigation .btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* League switcher improvements */
+  .results-header-enhanced .league-switcher .form-select {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 44px;
+    max-width: 250px;
+    border-radius: 6px;
+  }
+}
+
+/* Extra small mobile adjustments with better usability */
+@media (max-width: 480px) {
+  .results-header-enhanced {
+    padding: 0.75rem !important;
+    border-radius: 8px;
+  }
+  
+  .results-header-enhanced .header-single-row {
+    gap: 0.75rem;
+  }
+  
+  .results-header-enhanced .title-main {
+    font-size: 1.1rem;
+    line-height: 1.2;
+  }
+  
+  .results-header-enhanced .header-center {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .results-header-enhanced .stat-card {
+    padding: 0.4rem 0.6rem;
+    min-width: 70px;
+    min-height: 50px;
+    font-size: 0.85rem;
+  }
+  
+  .results-header-enhanced .stat-value {
+    font-size: 0.9rem;
+    margin-bottom: 0.1rem;
   }
   
   .results-header-enhanced .stat-label {
     font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1;
-    margin-top: 0.1rem;
   }
   
   .results-header-enhanced .week-navigation .form-select {
     font-size: 0.8rem;
-    padding: 0.3rem 0.4rem;
+    padding: 0.4rem 0.6rem;
+    min-width: 90px;
+    min-height: 40px;
   }
   
   .results-header-enhanced .week-navigation .btn {
-    min-width: 32px;
-    height: 32px;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 0.9rem;
+  }
+  
+  .results-header-enhanced .week-navigation {
+    gap: 0.4rem;
+  }
+  
+  .results-header-enhanced .week-navigation .d-flex {
+    gap: 0.25rem;
+  }
+  
+  .results-header-enhanced .league-switcher .form-select {
     font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    min-height: 40px;
+    max-width: 200px;
   }
 }
 
-/* Extra small mobile adjustments */
-@media (max-width: 480px) {
+/* Ultra narrow screens */
+@media (max-width: 360px) {
   .results-header-enhanced {
     padding: 0.5rem !important;
   }
   
-  .results-header-enhanced .header-single-row {
-    gap: 0.5rem;
-  }
-  
   .results-header-enhanced .title-main {
-    font-size: 0.95rem;
-  }
-  
-  .results-header-enhanced .header-center {
-    gap: 0.5rem;
+    font-size: 1rem;
   }
   
   .results-header-enhanced .stat-card {
-    padding: 0.2rem 0.3rem;
+    padding: 0.3rem 0.5rem;
+    min-width: 60px;
+    min-height: 45px;
   }
   
   .results-header-enhanced .stat-value {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }
   
   .results-header-enhanced .stat-label {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
   }
   
   .results-header-enhanced .week-navigation .form-select {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.3rem;
+    min-width: 80px;
+    font-size: 0.75rem;
   }
   
   .results-header-enhanced .week-navigation .btn {
-    min-width: 28px;
-    height: 28px;
-    font-size: 0.7rem;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 0.8rem;
   }
   
-  .results-header-enhanced .week-navigation {
-    gap: 0.25rem;
-  }
-  
-  .results-header-enhanced .week-navigation .d-flex {
-    gap: 1px;
+  .results-header-enhanced .league-switcher .form-select {
+    max-width: 170px;
+    font-size: 0.75rem;
   }
 }

@@ -834,7 +834,7 @@
     cursor: not-allowed;
 }
 
-/* Mobile Responsiveness */
+/* Enhanced Mobile Responsiveness with Touch Targets */
 @media (max-width: 768px) {
     .whatsapp-chat,
     .whatsapp-thread {
@@ -847,8 +847,10 @@
         height: calc(100vh - 220px);
     }
     
+    /* Improved touch targets */
     .conversation-link {
         padding: 16px 20px;
+        min-height: 80px;
     }
     
     .conversation-avatar {
@@ -859,14 +861,19 @@
     
     .conversation-title {
         font-size: 1.1rem;
+        line-height: 1.3;
     }
     
     .conversation-preview {
         font-size: 0.95rem;
+        line-height: 1.4;
     }
     
     .message-bubble {
         max-width: 85%;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        line-height: 1.4;
     }
     
     .whatsapp-messages {
@@ -876,9 +883,158 @@
     .whatsapp-header,
     .whatsapp-thread-header {
         padding: 16px;
+        min-height: 72px;
     }
     
     .whatsapp-input-container {
         padding: 16px;
+    }
+    
+    .whatsapp-input {
+        padding: 16px 20px;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+    
+    .whatsapp-send-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 1.1rem;
+    }
+    
+    .header-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    
+    .back-btn {
+        padding: 12px;
+        font-size: 1.3rem;
+        margin-right: 16px;
+    }
+    
+    /* Poll interactions */
+    .poll-vote-btn {
+        padding: 16px 20px;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+    
+    .pinned-poll .poll-vote-btn {
+        padding: 12px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Extra small mobile improvements */
+@media (max-width: 480px) {
+    .whatsapp-header,
+    .whatsapp-thread-header {
+        padding: 12px;
+    }
+    
+    .whatsapp-input-container {
+        padding: 12px;
+    }
+    
+    .conversation-link {
+        padding: 12px 16px;
+        min-height: 72px;
+    }
+    
+    .conversation-avatar {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+        margin-right: 12px;
+    }
+    
+    .message-bubble {
+        max-width: 90%;
+        padding: 10px 14px;
+    }
+    
+    .whatsapp-messages {
+        padding: 8px 8px 90px 8px;
+    }
+    
+    .league-avatar,
+    .thread-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
+        margin-right: 12px;
+    }
+    
+    .league-name,
+    .thread-title {
+        font-size: 1rem;
+    }
+    
+    .members-info,
+    .thread-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .poll-vote-btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        min-height: 44px;
+    }
+}
+
+/* Ultra narrow screens */
+@media (max-width: 360px) {
+    .whatsapp-header,
+    .whatsapp-thread-header {
+        padding: 10px 12px;
+        min-height: 60px;
+    }
+    
+    .whatsapp-input-container {
+        padding: 10px 12px;
+    }
+    
+    .conversation-link {
+        padding: 10px 12px;
+        min-height: 68px;
+    }
+    
+    .conversation-avatar {
+        width: 44px;
+        height: 44px;
+        margin-right: 10px;
+    }
+    
+    .league-avatar,
+    .thread-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+        margin-right: 10px;
+    }
+    
+    .back-btn {
+        padding: 10px;
+        margin-right: 8px;
+        font-size: 1.2rem;
+    }
+    
+    .whatsapp-send-btn {
+        width: 44px;
+        height: 44px;
+        margin-left: 8px;
+    }
+    
+    .whatsapp-input {
+        padding: 12px 16px;
+        font-size: 0.95rem;
+    }
+    
+    .message-bubble {
+        padding: 8px 12px;
+        font-size: 0.9rem;
     }
 }

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

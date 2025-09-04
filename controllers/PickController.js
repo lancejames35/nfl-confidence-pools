@@ -2,6 +2,7 @@ const Pick = require('../models/Pick');
 const League = require('../models/League');
 const { validationResult } = require('express-validator');
 const database = require('../config/database');
+const { getCurrentNFLWeek } = require('../utils/getCurrentWeek');
 
 class PickController {
     /**
@@ -64,7 +65,7 @@ class PickController {
                 title: 'My Picks',
                 leagues: userLeagues,
                 user: req.user,
-                currentWeek: getCurrentNFLWeek()
+                currentWeek: await getCurrentNFLWeek(database)
             });
         } catch (error) {
             req.flash('error', 'Error loading picks dashboard');
@@ -78,7 +79,7 @@ class PickController {
     static async makePicks(req, res) {
         try {
             let { league_id, entry_id } = req.params;
-            const week = req.query.week || getCurrentNFLWeek();
+            const week = req.query.week || await getCurrentNFLWeek(database);
             
             // Verify user has access to this entry
             const league = await League.findById(league_id);
@@ -342,8 +343,17 @@ class PickController {
             
             // Auto-save operation initiated
             
-            // Use the same logic as regular save instead of draft
-            const result = await Pick.savePicks(entry_id, week, picks);
+            // Validate picks using autosave validation (allows partial picks)
+            const validation = await Pick.validatePicksForAutosave(entry_id, week, picks || []);
+            if (!validation.valid) {
+                return res.status(400).json({ 
+                    success: false, 
+                    errors: validation.errors 
+                });
+            }
+            
+            // Save picks (even if partial)
+            const result = await Pick.savePicks(entry_id, week, picks || []);
             
             // Save tiebreaker prediction if provided
             // Tiebreaker value received for processing
@@ -398,7 +408,7 @@ class PickController {
     static async viewPicks(req, res) {
         try {
             const { league_id, entry_id } = req.params;
-            const week = req.query.week || getCurrentNFLWeek();
+            const week = req.query.week || await getCurrentNFLWeek(database);
             
             const league = await League.findById(league_id);
             if (!league) {
@@ -433,7 +443,7 @@ class PickController {
     static async leaguePicks(req, res) {
         try {
             const { league_id } = req.params;
-            const week = req.query.week || getCurrentNFLWeek();
+            const week = req.query.week || await getCurrentNFLWeek(database);
             
             const league = await League.findById(league_id);
             if (!league) {
@@ -526,19 +536,39 @@ class PickController {
             res.redirect('/picks');
         }
     }
+
+    /**
+     * Reset unlocked picks for an entry
+     */
+    static async resetPicks(req, res) {
+        try {
+            const { entry_id } = req.params;
+            const { week } = req.body;
+            
+            // Delete all unlocked picks for this entry/week
+            const result = await database.execute(
+                'DELETE FROM picks WHERE entry_id = ? AND week = ? AND is_locked = 0',
+                [entry_id, week]
+            );
+            
+            const affectedRows = result[0]?.affectedRows || result.affectedRows || 0;
+            
+            res.json({
+                success: true,
+                message: `Reset ${affectedRows} unlocked picks`,
+                deleted_count: affectedRows
+            });
+            
+        } catch (error) {
+            res.status(500).json({ 
+                success: false, 
+                message: 'Error resetting picks',
+                error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+            });
+        }
+    }
 }
 
-/**
- * Helper function to get current NFL week
- */
-function getCurrentNFLWeek() {
-    const seasonStart = new Date(new Date().getFullYear(), 8, 5); // Sept 5
-    const now = new Date();
-    const diffTime = Math.abs(now - seasonStart);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const week = Math.ceil(diffDays / 7);
-    return Math.min(Math.max(1, week), 18); // NFL regular season is 18 weeks
-}
+// getCurrentNFLWeek is now imported from utils/getCurrentWeek
 
 module.exports = PickController;
-module.exports.getCurrentNFLWeek = getCurrentNFLWeek;

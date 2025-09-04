@@ -140,11 +140,44 @@
                             
                             <div id="sortable-picks" class="list-group list-group-flush">
                                 <% if (games && games.length > 0) { %>
-                                    <% games.forEach((game, index) => { 
+                                    <% 
+                                    // Step 1: Separate games with and without picks
+                                    const gamesWithPicks = games.filter(game => existingPicks.find(p => p.game_id === game.game_id));
+                                    const gamesWithoutPicks = games.filter(game => !existingPicks.find(p => p.game_id === game.game_id));
+                                    
+                                    // Step 2: Get used confidence values from existing picks
+                                    const usedConfidenceValues = new Set(existingPicks.map(p => p.confidence_points));
+                                    
+                                    // Step 3: Create array of available confidence values (excluding used ones)
+                                    const availableValues = [];
+                                    for (let i = games.length; i >= 1; i--) {
+                                        if (!usedConfidenceValues.has(i)) {
+                                            availableValues.push(i);
+                                        }
+                                    }
+                                    
+                                    // Step 4: Sort games with picks by confidence (highest first)
+                                    gamesWithPicks.sort((a, b) => {
+                                        const pickA = existingPicks.find(p => p.game_id === a.game_id);
+                                        const pickB = existingPicks.find(p => p.game_id === b.game_id);
+                                        return pickB.confidence_points - pickA.confidence_points;
+                                    });
+                                    
+                                    // Step 5: Assign available confidence values to games without picks
+                                    gamesWithoutPicks.forEach((game, index) => {
+                                        if (index < availableValues.length) {
+                                            game._assignedConfidence = availableValues[index];
+                                        }
+                                    });
+                                    
+                                    // Step 6: Combine all games in final order
+                                    const orderedGames = [...gamesWithPicks, ...gamesWithoutPicks];
+                                    %>
+                                    <% orderedGames.forEach((game, index) => { 
                                         const existingPick = existingPicks.find(p => p.game_id === game.game_id);
                                         const draftPick = draftPicks && draftPicks.picks ? draftPicks.picks.find(p => p.game_id === game.game_id) : null;
                                         const selectedTeam = existingPick ? existingPick.selected_team : (draftPick ? draftPick.selected_team : '');
-                                        const confidencePoints = existingPick ? existingPick.confidence_points : (draftPick ? draftPick.confidence_points : games.length - index);
+                                        const confidencePoints = existingPick ? existingPick.confidence_points : (draftPick ? draftPick.confidence_points : game._assignedConfidence);
                                     %>
                                         <div class="list-group-item pick-item<%= (gameEditStatus && gameEditStatus[game.game_id] === false) ? ' locked' : '' %>" 
                                              data-game-id="<%= game.game_id %>" 
@@ -1459,9 +1492,14 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Define variables from server-side data
+    const entryId = '<%= entry_id %>';
+    const currentWeek = <%= week %>;
+    
     const sortableEl = document.getElementById('sortable-picks');
     const form = document.getElementById('picks-form');
     let autoSaveTimeout;
+    
     
     // Convert game times to user's local timezone (using same logic as dashboard)
     function convertGameTimesToUserTimezone() {
@@ -1470,19 +1508,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const timestamp = element.getAttribute('data-timestamp');
             if (timestamp) {
                 try {
-                    // Apply the exact same transformation as the dashboard
-                    // Dashboard: firstGameKickoff.toISOString().replace("T", " ").substring(0, 19) + " ET"
-                    // Then: new Date(etTimeStr + " EDT")
-                    
-                    // Convert the timestamp to a Date object, then to ISO string (same as dashboard)
+                    // Parse the timestamp directly - MySQL timestamps are already in the server's timezone
                     const gameDate = new Date(timestamp);
-                    const etTimeStr = gameDate.toISOString().replace("T", " ").substring(0, 19);
-                    const etDate = new Date(etTimeStr + " EDT"); // Exactly like dashboard
                     
                     // Get user's timezone
                     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     
-                    // Format the time for user's display using same format as dashboard
+                    // Format the time for user's display
                     const formattedTime = new Intl.DateTimeFormat('en-US', {
                         timeZone: userTimezone,
                         weekday: 'short',
@@ -1491,7 +1523,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         hour: 'numeric',
                         minute: '2-digit',
                         timeZoneName: 'short'
-                    }).format(etDate);
+                    }).format(gameDate);
                     
                     element.textContent = formattedTime;
                 } catch (error) {
@@ -1777,23 +1809,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const picks = [];
             
-            // Collect all pick data
+            // Collect all pick data - only include picks with selected teams
             sortableEl.querySelectorAll('.pick-item').forEach((item, index) => {
                 const gameId = item.getAttribute('data-game-id');
                 const confidenceInput = item.querySelector('.confidence-input');
                 const confidence = confidenceInput ? confidenceInput.value : item.getAttribute('data-confidence');
                 const selectedTeam = item.querySelector('input[name*="[selected_team]"]:checked');
                 
-                if (gameId && confidence) {
+                // Only include picks where a team has been selected
+                if (gameId && confidence && selectedTeam && selectedTeam.value) {
                     const pickData = {
                         game_id: parseInt(gameId),
+                        selected_team: selectedTeam.value,
                         confidence_points: parseInt(confidence),
                         pick_type: 'confidence'
                     };
-                    
-                    if (selectedTeam) {
-                        pickData.selected_team = selectedTeam.value;
-                    }
                     
                     picks.push(pickData);
                 }
@@ -1816,6 +1846,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             console.log('About to send autosave request:', saveData);
+            console.log('Number of picks being saved:', picks.length);
+            
+            // Don't show misleading "saved" message if no picks to save
+            if (picks.length === 0) {
+                console.log('No picks to save (no teams selected)');
+                if (saveStatus) {
+                    saveStatus.innerHTML = '<i class="fas fa-info-circle text-muted me-1"></i><span class="text-muted">Ready</span>';
+                    setTimeout(() => {
+                        if (saveStatus) saveStatus.style.display = 'none';
+                    }, 2000);
+                }
+                return; // Exit early - no need to send empty request
+            }
 
             // Send auto-save request
             fetch(`/picks/entry/<%= entry_id %>/autosave`, {
@@ -1833,9 +1876,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data.success) {
-                    // Show brief success indicator
+                    // Show brief success indicator with count of picks saved
                     if (saveStatus) {
-                        saveStatus.innerHTML = '<i class="fas fa-check text-success me-1"></i><span class="text-success">Saved</span>';
+                        const pickCount = picks.length;
+                        saveStatus.innerHTML = `<i class="fas fa-check text-success me-1"></i><span class="text-success">Saved ${pickCount} pick${pickCount !== 1 ? 's' : ''}</span>`;
                         setTimeout(() => {
                             saveStatus.style.display = 'none';
                         }, 2000);
@@ -2041,7 +2085,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const dropdown = item.querySelector('.confidence-dropdown');
             if (dropdown) {
-                const currentValue = parseInt(dropdown.value);
+                // Get the current value from the data attribute, not the dropdown value
+                const currentValue = parseInt(item.getAttribute('data-confidence'));
                 
                 // Clear and rebuild options
                 dropdown.innerHTML = '';
@@ -2064,6 +2109,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     dropdown.appendChild(option);
                 }
+                
+                // Ensure the dropdown value matches the data attribute
+                dropdown.value = currentValue;
             }
         });
     }
@@ -2117,94 +2165,214 @@ document.addEventListener('DOMContentLoaded', function() {
         attachConfidenceHandlers();
     }
     
-    // Function to update all confidence values to match position
+    // Function to update all confidence values to match position - respects locked games
     function updateAllConfidenceValues() {
         const items = Array.from(sortableEl.querySelectorAll('.pick-item'));
         const totalGames = items.length;
         
+        
+        // Step 1: Identify locked games and their confidence values
+        const lockedConfidenceValues = new Set();
         items.forEach((item, index) => {
-            const newConfidenceValue = totalGames - index;
-            const dropdown = item.querySelector('.confidence-dropdown');
-            const input = item.querySelector('.confidence-input');
-            
-            // Update data attribute first
-            item.setAttribute('data-confidence', newConfidenceValue);
-            
-            // Update hidden input
-            if (input) {
-                input.value = newConfidenceValue;
+            const isLocked = item.classList.contains('locked') || item.getAttribute('data-locked') === 'true';
+            if (isLocked) {
+                const lockedConfidence = parseInt(item.getAttribute('data-confidence'));
+                lockedConfidenceValues.add(lockedConfidence);
             }
-            
-            // Force dropdown to update by setting value and forcing repaint
-            if (dropdown) {
-                dropdown.value = newConfidenceValue;
-                // Force the browser to repaint the dropdown
-                dropdown.style.display = 'none';
-                dropdown.offsetHeight; // Force reflow
-                dropdown.style.display = '';
-            }
-            
         });
-    }
-    
-    // Reset picks button - restore original database order
-    document.getElementById('reset-picks')?.addEventListener('click', function() {
-        if (confirm('Reset all picks and restore original game order? This will clear all selections.')) {
+        
+        // Step 2: Create list of available confidence values (excluding locked ones)
+        const availableValues = [];
+        for (let i = totalGames; i >= 1; i--) {
+            if (!lockedConfidenceValues.has(i)) {
+                availableValues.push(i);
+            }
+        }
+        
+        
+        // Step 3: Assign available values to unlocked games in position order
+        let availableIndex = 0;
+        items.forEach((item, index) => {
+            const isLocked = item.classList.contains('locked') || item.getAttribute('data-locked') === 'true';
             
-            // Clear the current list
-            sortableEl.innerHTML = '';
-            
-            // Restore original order from stored elements
-            originalOrder.forEach((gameData, index) => {
-                const restoredItem = gameData.element.cloneNode(true);
-                
-                // Clear any team selections
-                restoredItem.querySelectorAll('.team-option').forEach(teamOption => {
-                    teamOption.classList.remove('selected');
-                });
-                
-                restoredItem.querySelectorAll('input[name*="[selected_team]"]').forEach(radio => {
-                    radio.checked = false;
-                });
-                
-                // Add to list first
-                sortableEl.appendChild(restoredItem);
-            });
-            
-            // Now update all confidence values based on their final positions
-            const restoredItems = sortableEl.querySelectorAll('.pick-item');
-            const totalGames = restoredItems.length;
-            
-            restoredItems.forEach((item, index) => {
-                const correctConfidence = totalGames - index;
+            if (!isLocked && availableIndex < availableValues.length) {
+                const newConfidenceValue = availableValues[availableIndex];
                 const dropdown = item.querySelector('.confidence-dropdown');
                 const input = item.querySelector('.confidence-input');
                 
-                // Update data attribute and input first
-                item.setAttribute('data-confidence', correctConfidence);
-                if (input) input.value = correctConfidence;
+                // Update data attribute first
+                item.setAttribute('data-confidence', newConfidenceValue);
                 
-                // Force dropdown update
+                // Update hidden input
+                if (input) {
+                    input.value = newConfidenceValue;
+                }
+                
+                // Force dropdown to update by setting value and forcing repaint
                 if (dropdown) {
-                    dropdown.value = correctConfidence;
-                    // Force immediate visual update
+                    dropdown.value = newConfidenceValue;
+                    // Force the browser to repaint the dropdown
                     dropdown.style.display = 'none';
-                    dropdown.offsetHeight; // Trigger reflow
+                    dropdown.offsetHeight; // Force reflow
                     dropdown.style.display = '';
                 }
                 
+                availableIndex++;
+            }
+        });
+    }
+    
+    // Reset picks button - clears database and UI
+    document.getElementById('reset-picks')?.addEventListener('click', async function() {
+        if (confirm('Reset unlocked picks? This will clear team selections for unlocked games only.')) {
+            
+            // First, reset the database by calling the backend
+            try {
+                const response = await fetch(`/picks/entry/${entryId}/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ week: currentWeek })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Reset failed: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+            } catch (error) {
+                alert('Error resetting picks. Please try again.');
+                return;
+            }
+            
+            // Step 1: Capture the current state - what's at each position right now
+            const currentPositions = [];
+            const currentItems = sortableEl.querySelectorAll('.pick-item');
+            
+            currentItems.forEach((item, position) => {
+                const gameId = item.getAttribute('data-game-id');
+                const confidence = parseInt(item.getAttribute('data-confidence'));
+                const isLocked = item.classList.contains('locked') || item.getAttribute('data-locked') === 'true';
+                const selectedTeam = item.querySelector('input[name*="[selected_team]"]:checked')?.value;
+                
+                
+                currentPositions.push({
+                    position: position,
+                    gameId: gameId,
+                    confidence: confidence,
+                    isLocked: isLocked,
+                    selectedTeam: selectedTeam,
+                    element: item.cloneNode(true)
+                });
             });
             
+            // Step 2: Clear the list
+            sortableEl.innerHTML = '';
             
-            // Re-attach all event handlers
+            // Step 3: Rebuild the list in the EXACT same order, but reset unlocked games
+            currentPositions.forEach((positionData) => {
+                let elementToAdd;
+                
+                if (positionData.isLocked) {
+                    // Locked game: use exact same element (preserves everything)
+                    elementToAdd = positionData.element;
+                    console.log(`Restoring locked game ${positionData.gameId} at position ${positionData.position + 1} with confidence ${positionData.confidence}`);
+                } else {
+                    // Unlocked game: get original element and clear team selection
+                    const originalGame = originalOrder.find(og => og.gameId === positionData.gameId);
+                    if (originalGame) {
+                        elementToAdd = originalGame.element.cloneNode(true);
+                        // Clear team selections
+                        elementToAdd.querySelectorAll('.team-option').forEach(teamOption => {
+                            teamOption.classList.remove('selected');
+                        });
+                        elementToAdd.querySelectorAll('input[name*="[selected_team]"]').forEach(radio => {
+                            radio.checked = false;
+                        });
+                    } else {
+                        // Fallback: use current element but clear selections
+                        elementToAdd = positionData.element;
+                        elementToAdd.querySelectorAll('.team-option').forEach(teamOption => {
+                            teamOption.classList.remove('selected');
+                        });
+                        elementToAdd.querySelectorAll('input[name*="[selected_team]"]').forEach(radio => {
+                            radio.checked = false;
+                        });
+                    }
+                }
+                
+                sortableEl.appendChild(elementToAdd);
+            });
+            
+            // Step 4: Update confidence values to match positions (don't change positions, just update values)
+            const totalGames = currentPositions.length;
+            const restoredItems = sortableEl.querySelectorAll('.pick-item');
+            
+            // Get locked confidence values that we cannot use
+            const lockedConfidences = new Set();
+            currentPositions.forEach(pos => {
+                if (pos.isLocked) {
+                    lockedConfidences.add(pos.confidence);
+                }
+            });
+            
+            // Build available confidence values (excluding locked ones)
+            const availableConfidences = [];
+            for (let i = totalGames; i >= 1; i--) { // Start from highest
+                if (!lockedConfidences.has(i)) {
+                    availableConfidences.push(i);
+                }
+            }
+            
+            console.log(`Available confidences for unlocked games: [${availableConfidences.join(', ')}]`);
+            
+            // Assign confidence values: locked games keep theirs, unlocked games get next available
+            let availableIndex = 0;
+            restoredItems.forEach((item, position) => {
+                const gameId = item.getAttribute('data-game-id');
+                const isLocked = item.classList.contains('locked') || item.getAttribute('data-locked') === 'true';
+                
+                let confidenceValue;
+                if (isLocked) {
+                    // Keep existing confidence
+                    confidenceValue = parseInt(item.getAttribute('data-confidence'));
+                } else {
+                    // Assign next available confidence
+                    confidenceValue = availableConfidences[availableIndex++] || 1;
+                    
+                    // Update the DOM element
+                    item.setAttribute('data-confidence', confidenceValue);
+                    
+                    const dropdown = item.querySelector('.confidence-dropdown');
+                    const input = item.querySelector('.confidence-input');
+                    
+                    if (input) {
+                        input.value = confidenceValue;
+                    }
+                    
+                    if (dropdown) {
+                        dropdown.value = confidenceValue;
+                        // Ensure the option is selected
+                        const targetOption = dropdown.querySelector(`option[value="${confidenceValue}"]`);
+                        if (targetOption) {
+                            targetOption.selected = true;
+                        }
+                    }
+                }
+            });
+            
+            // Step 5: Re-attach event handlers and update UI
             attachTeamSelectionHandlers();
             attachConfidenceHandlers();
-            
-            // Update UI
+            updateDropdownOptions();
             updatePicksSummary();
             
-            // Auto-save the reset state
-            autoSave();
+            // Auto-save
+            setTimeout(() => {
+                autoSave();
+            }, 100);
             
         }
     });

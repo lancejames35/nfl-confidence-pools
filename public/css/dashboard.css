@@ -966,10 +966,12 @@
     .card {
         margin-left: 0.25rem;
         margin-right: 0.25rem;
+        border-radius: 8px;
     }
     
     .primary-action-card {
         padding: 0.75rem;
+        min-height: auto;
     }
     
     .action-stats {
@@ -982,19 +984,126 @@
     }
     
     .action-button {
-        margin-top: 0.5rem;
-        font-size: 0.75rem;
-        padding: 0.5rem 0.85rem;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        padding: 0.6rem 1rem;
         width: 100%;
+        min-height: 44px;
+        border-radius: 6px;
     }
     
     .welcome-banner h1 {
         font-size: 1.5rem;
+        line-height: 1.2;
     }
     
     .action-icon {
         width: 36px;
         height: 36px;
         font-size: 1.1rem;
+        border-radius: 8px;
+    }
+    
+    .action-title h6 {
+        font-size: 0.95rem;
+        line-height: 1.2;
+    }
+    
+    .action-description {
+        font-size: 0.8rem;
+        line-height: 1.3;
+    }
+}
+
+/* Ultra narrow screens */
+@media (max-width: 360px) {
+    .dashboard-container {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+    
+    .welcome-banner {
+        padding: 0.75rem;
+        text-align: center;
+    }
+    
+    .welcome-banner h1 {
+        font-size: 1.3rem;
+    }
+    
+    .welcome-banner p {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .primary-action-card {
+        padding: 0.6rem;
+    }
+    
+    .action-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+        margin-right: 0.75rem;
+    }
+    
+    .action-title h6 {
+        font-size: 0.9rem;
+    }
+    
+    .action-description {
+        font-size: 0.75rem;
+    }
+    
+    .action-button {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.8rem;
+        min-height: 40px;
+    }
+    
+    .action-stats {
+        top: 0.6rem;
+        right: 0.6rem;
+    }
+    
+    .action-content {
+        padding-right: 3rem;
+    }
+    
+    .league-selector-card {
+        padding: 0.5rem;
+    }
+    
+    .league-selector {
+        min-width: auto;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .commissioner-manage-btn,
+    #createNewLeagueBtn {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+    }
+    
+    .kickoff-countdown-card {
+        padding: 1rem;
+    }
+    
+    .countdown-title {
+        font-size: 1.2rem;
+    }
+    
+    .countdown-item {
+        min-width: 50px;
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .countdown-value {
+        font-size: 1.3rem;
+    }
+    
+    .countdown-label {
+        font-size: 0.6rem;
     }
 }

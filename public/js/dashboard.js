@@ -261,10 +261,10 @@ function initializeChat() {
 }
 
 function initializeKickoffCountdown() {
-    // Get first game kickoff time from server (as "YYYY-MM-DD HH:MM:SS ET")
-    const firstGameKickoffET = window.firstGameKickoffET;
+    // Get first game kickoff timestamp from server (ISO format)
+    const firstGameKickoffTimestamp = window.firstGameKickoffTimestamp;
     
-    if (!firstGameKickoffET) {
+    if (!firstGameKickoffTimestamp) {
         // No game data available, hide countdown
         const countdownEl = document.getElementById('kickoff-countdown');
         if (countdownEl) {
@@ -273,15 +273,30 @@ function initializeKickoffCountdown() {
         return;
     }
     
-    // Parse the ET time string and create a proper Date object
-    // Convert "2025-09-04 20:20:00 ET" to a Date that represents 8:20 PM Eastern
-    const etTimeStr = firstGameKickoffET.replace(" ET", "");
-    const etDate = new Date(etTimeStr + " EDT"); // Use EDT for daylight time
-    const actualET = etDate;
+    // Parse timestamp directly - same logic as picks page
+    const kickoffDate = new Date(firstGameKickoffTimestamp);
+    
+    // Display the time in user's timezone
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const formattedTime = new Intl.DateTimeFormat('en-US', {
+        timeZone: userTimezone,
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    }).format(kickoffDate);
+    
+    // Update the display
+    const kickoffTimeEl = document.getElementById('kickoff-time');
+    if (kickoffTimeEl) {
+        kickoffTimeEl.textContent = formattedTime;
+    }
     
     function updateCountdown() {
         const now = new Date().getTime();
-        const kickoffTime = actualET.getTime();
+        const kickoffTime = kickoffDate.getTime();
         const timeRemaining = kickoffTime - now;
         
         if (timeRemaining > 0) {
@@ -310,34 +325,8 @@ function initializeKickoffCountdown() {
         }
     }
     
-    // Display the kickoff time in user's timezone
-    function updateKickoffTimeDisplay() {
-        const kickoffTimeEl = document.getElementById('kickoff-time');
-        if (kickoffTimeEl) {
-            // Get user's timezone
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            
-            // Timezone conversion for user's display
-            
-            // Format the actual ET time for user's display
-            const formattedTime = new Intl.DateTimeFormat('en-US', {
-                timeZone: userTimezone,
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                timeZoneName: 'short'
-            }).format(actualET);
-            
-            
-            kickoffTimeEl.textContent = formattedTime;
-        }
-    }
-    
     // Update countdown immediately
     updateCountdown();
-    updateKickoffTimeDisplay();
     
     // Update countdown every second
     const countdownInterval = setInterval(updateCountdown, 1000);

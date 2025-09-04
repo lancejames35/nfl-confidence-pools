@@ -23,7 +23,7 @@ class Database {
                 connectionLimit: parseInt(process.env.DATABASE_CONNECTION_LIMIT) || 10,
                 queueLimit: 0,
                 charset: 'utf8mb4',
-                timezone: '+00:00'
+                timezone: '-04:00'  // EDT (Eastern Daylight Time) - Use -05:00 for EST in winter
             });
 
             // Test connection

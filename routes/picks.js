@@ -126,6 +126,9 @@ router.get('/', async (req, res, next) => {
 // Auto-save draft picks (AJAX endpoint) - Must come before generic routes  
 router.post('/entry/:entry_id/autosave', PickController.autoSave);
 
+// Reset unlocked picks (AJAX endpoint)
+router.post('/entry/:entry_id/reset', PickController.resetPicks);
+
 // Show pick selection interface for a specific league/week
 router.get('/:league_id/:entry_id', PickController.makePicks);
 

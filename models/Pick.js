@@ -56,6 +56,7 @@ class Pick {
                 [entry_id, week]
             );
             
+            
             const lockedGameIds = new Set(lockedPicks.map(row => row.game_id));
             
             // Filter out picks for locked games
@@ -66,34 +67,29 @@ class Pick {
                 return { success: true, message: 'No picks to update (all games locked)' };
             }
             
-            // Delete existing unlocked picks for this entry/week
-            await connection.execute(
-                'DELETE FROM picks WHERE entry_id = ? AND week = ? AND is_locked = 0',
-                [entry_id, week]
-            );
-            
-            // Batch insert new picks using bulk INSERT
-            const insertValues = validPicks.map(pick => [
-                entry_id,
-                week,
-                pick.game_id,
-                pick.selected_team,
-                pick.confidence_points,
-                pick.pick_type || 'confidence',
-                pick.is_locked || false
-            ]);
-            
-            if (insertValues.length > 0) {
-                const placeholders = insertValues.map(() => '(?, ?, ?, ?, ?, ?, ?)').join(', ');
+            // Use INSERT ... ON DUPLICATE KEY UPDATE for individual picks (preserves other unlocked picks)
+            for (const pick of validPicks) {
                 const query = `
                     INSERT INTO picks (
                         entry_id, week, game_id, selected_team, 
                         confidence_points, pick_type, is_locked
-                    ) VALUES ${placeholders}
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        selected_team = VALUES(selected_team),
+                        confidence_points = VALUES(confidence_points),
+                        pick_type = VALUES(pick_type),
+                        is_locked = VALUES(is_locked)
                 `;
                 
-                const flatValues = insertValues.flat();
-                await connection.execute(query, flatValues);
+                await connection.execute(query, [
+                    entry_id,
+                    week,
+                    pick.game_id,
+                    pick.selected_team,
+                    pick.confidence_points,
+                    pick.pick_type || 'confidence',
+                    pick.is_locked || false
+                ]);
             }
             
             await connection.commit();
@@ -196,6 +192,39 @@ class Pick {
         const availableGames = await this.getAvailableGames(week, new Date().getFullYear());
         if (picks.length !== availableGames.length) {
             errors.push('You must make a pick for every game');
+        }
+        
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+    
+    /**
+     * Validate picks for autosave (allows partial picks)
+     */
+    static async validatePicksForAutosave(entry_id, week, picks) {
+        const errors = [];
+        
+        if (picks.length > 0) {
+            // Check for duplicate confidence points only among submitted picks
+            const confidencePoints = picks.map(p => p.confidence_points);
+            const uniquePoints = new Set(confidencePoints);
+            
+            if (uniquePoints.size !== confidencePoints.length) {
+                errors.push('Each game must have a unique confidence point value');
+            }
+            
+            // Check confidence points are in valid range (based on total games, not picks made)
+            const availableGames = await this.getAvailableGames(week, new Date().getFullYear());
+            const maxPoints = availableGames.length;
+            
+            for (const pick of picks) {
+                if (pick.confidence_points < 1 || pick.confidence_points > maxPoints) {
+                    errors.push(`Confidence points must be between 1 and ${maxPoints}`);
+                    break;
+                }
+            }
         }
         
         return {

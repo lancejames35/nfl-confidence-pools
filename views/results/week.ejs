@@ -483,26 +483,20 @@ setInterval(() => {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Convert game times to user's local timezone (using same logic as dashboard)
+    // Convert game times to user's local timezone (same logic as picks page)
     function convertGameTimesToUserTimezone() {
         const gameTimeElements = document.querySelectorAll('.game-time-display');
         gameTimeElements.forEach(element => {
             const timestamp = element.getAttribute('data-timestamp');
             if (timestamp) {
                 try {
-                    // Apply the exact same transformation as the dashboard
-                    // Dashboard: firstGameKickoff.toISOString().replace("T", " ").substring(0, 19) + " ET"
-                    // Then: new Date(etTimeStr + " EDT")
-                    
-                    // Convert the timestamp to a Date object, then to ISO string (same as dashboard)
+                    // Parse the timestamp directly - MySQL timestamps are already in the server's timezone
                     const gameDate = new Date(timestamp);
-                    const etTimeStr = gameDate.toISOString().replace("T", " ").substring(0, 19);
-                    const etDate = new Date(etTimeStr + " EDT"); // Exactly like dashboard
                     
                     // Get user's timezone
                     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     
-                    // Format the time for user's display (slightly shorter format for results pages)
+                    // Format the time for user's display (shorter format for results pages)
                     const formattedTime = new Intl.DateTimeFormat('en-US', {
                         timeZone: userTimezone,
                         weekday: 'short',
@@ -510,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         day: 'numeric',
                         hour: 'numeric',
                         minute: '2-digit'
-                    }).format(etDate);
+                    }).format(gameDate);
                     
                     element.textContent = formattedTime;
                 } catch (error) {

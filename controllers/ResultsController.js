@@ -1,6 +1,7 @@
 const database = require('../config/database');
 const GameResultsProcessor = require('../services/GameResultsProcessor');
 const PickScoringService = require('../services/PickScoringService');
+const { getCurrentNFLWeek } = require('../utils/getCurrentWeek');
 
 class ResultsController {
     /**
@@ -8,7 +9,7 @@ class ResultsController {
      */
     static async weekResults(req, res) {
         try {
-            const currentWeek = req.query.week || getCurrentNFLWeek();
+            const currentWeek = req.query.week || await getCurrentNFLWeek(database);
             const seasonYear = req.query.season || new Date().getFullYear();
             const leagueId = req.params.league_id ? parseInt(req.params.league_id) : null;
             
@@ -100,12 +101,7 @@ class ResultsController {
                     let.tier_name,
                     let.tier_id,
                     g.kickoff_timestamp,
-                    CASE 
-                        WHEN CAST(u.user_id AS SIGNED) = CAST(? AS SIGNED) THEN 1
-                        WHEN p.is_locked = 1 THEN 1
-                        WHEN g.kickoff_timestamp <= NOW() THEN 1
-                        ELSE 0
-                    END as show_pick
+                    1 as show_pick
                 FROM picks p
                 JOIN league_entries le ON p.entry_id = le.entry_id
                 JOIN league_users lu ON le.league_user_id = lu.league_user_id
@@ -120,10 +116,16 @@ class ResultsController {
             // Prepare user parameters for pick visibility
             const currentUserId = req.user?.user_id || req.user?.id || 0;
             
+            console.log(`=== USER CONTEXT DEBUGGING ===`);
+            console.log(`req.user:`, req.user);
+            console.log(`req.user.user_id:`, req.user?.user_id);
+            console.log(`req.user.id:`, req.user?.id);
+            console.log(`Final currentUserId: ${currentUserId} (type: ${typeof currentUserId})`);
+            
             // Find current user's participation in this league
             const currentUserParticipant = participants.find(p => p.user_id == currentUserId);
             
-            const picks = await database.execute(picksQuery, [currentUserId, leagueId, currentWeek]);
+            const picks = await database.execute(picksQuery, [leagueId, currentWeek]);
             
             // Organize picks by game and calculate user totals dynamically
             const picksByGame = {};
@@ -170,11 +172,16 @@ class ResultsController {
                             status: pickResult.status
                         };
                         
-                        // Only add the pick to user's visible picks if it should be shown
-                        if (pick.show_pick) {
+                        // Show picks based on visibility rules:
+                        // 1. Always show current user's own picks
+                        // 2. Show other users' picks only if game has started or pick is locked
+                        const shouldShowPick = (pick.user_id == currentUserId) || 
+                                             (pick.is_locked === 1) || 
+                                             (game && game.kickoff_timestamp && new Date(game.kickoff_timestamp) <= new Date());
+                        
+                        if (shouldShowPick) {
                             userTotals[pick.entry_id].picks[pick.game_id] = enhancedPick;
-                            // Current user's pick added to visible picks
-                        } // Pick not shown due to visibility rules
+                        }
                         
                         // Only count games that have started toward record
                         const hasScores = game.home_score !== null && game.away_score !== null;
@@ -186,8 +193,9 @@ class ResultsController {
                             }
                         }
                     } else {
-                        // Fallback if game not found - only add if should be shown
-                        if (pick.show_pick) {
+                        // Fallback if game not found - apply same visibility rules
+                        const shouldShowPick = (pick.user_id == currentUserId) || (pick.is_locked === 1);
+                        if (shouldShowPick) {
                             userTotals[pick.entry_id].picks[pick.game_id] = pick;
                         }
                     }
@@ -221,9 +229,30 @@ class ResultsController {
             const userResults = Object.values(userTotals).map(user => {
                 const seasonData = seasonTotalsMap.get(user.entry_id) || { seasonPoints: 0, seasonPicks: 0, seasonCorrect: 0 };
                 
-                // Calculate possible points dynamically using the service
-                const userPicks = Object.values(user.picks);
-                const possiblePoints = PickScoringService.calculatePossiblePoints(userPicks, games);
+                // Calculate possible points based on visibility rules:
+                // For current user: use all their picks
+                // For other users: use full week total minus visible losses only
+                let possiblePoints;
+                
+                if (user.user_id == currentUserId) {
+                    // Current user: calculate normally from their visible picks
+                    const userPicks = Object.values(user.picks);
+                    possiblePoints = PickScoringService.calculatePossiblePoints(userPicks, games);
+                } else {
+                    // Other users: start with theoretical max (sum 1-16) minus visible losses
+                    const totalGames = games.length;
+                    const theoreticalMax = (totalGames * (totalGames + 1)) / 2; // Sum of 1+2+3...+n
+                    
+                    let lossDeductions = 0;
+                    Object.values(user.picks).forEach(pick => {
+                        // Only subtract points for visible games where they lost
+                        if (pick.is_correct === 0) {
+                            lossDeductions += pick.confidence_points || 0;
+                        }
+                    });
+                    
+                    possiblePoints = theoreticalMax - lossDeductions;
+                }
                 
                 return {
                     ...user,
@@ -241,31 +270,93 @@ class ResultsController {
                 const entryIds = userResults.map(user => user.entry_id);
                 // Gathering entry IDs for tiebreaker lookup
                 
+                // First, get the last game's kickoff time for this week
+                const lastGameQuery = `
+                    SELECT MAX(kickoff_timestamp) as last_kickoff
+                    FROM games 
+                    WHERE week = ? AND season_year = (SELECT season_year FROM leagues WHERE league_id = ?)
+                `;
+                
+                const [lastGameResult] = await database.execute(lastGameQuery, [currentWeek, leagueId]);
+                const lastGameKickoff = lastGameResult?.last_kickoff;
+                const lastGameHasStarted = lastGameKickoff && new Date(lastGameKickoff) <= new Date();
+                
+                console.log(`Last game kickoff: ${lastGameKickoff}, has started: ${lastGameHasStarted}`);
+                
                 const tiebreakerQuery = `
-                    SELECT entry_id, predicted_value
-                    FROM tiebreakers
-                    WHERE entry_id IN (${entryIds.map(() => '?').join(',')})
-                    AND week = ?
-                    AND tiebreaker_type = 'mnf_total_points'
-                    AND is_active = 1
+                    SELECT t.entry_id, t.predicted_value, u.user_id
+                    FROM tiebreakers t
+                    JOIN league_entries le ON t.entry_id = le.entry_id
+                    JOIN league_users lu ON le.league_user_id = lu.league_user_id
+                    JOIN users u ON lu.user_id = u.user_id
+                    WHERE t.entry_id IN (${entryIds.map(() => '?').join(',')})
+                    AND t.week = ?
+                    AND t.tiebreaker_type = 'mnf_total_points'
+                    AND t.is_active = 1
                 `;
                 
                 try {
-                    const [tiebreakers] = await database.execute(tiebreakerQuery, [...entryIds, currentWeek]);
-                    // Retrieved tiebreaker predictions
+                    console.log(`=== TIEBREAKER DEBUGGING ===`);
+                    console.log(`Current user ID: ${currentUserId} (type: ${typeof currentUserId})`);
+                    console.log(`Current week: ${currentWeek}`);
+                    console.log(`Last game kickoff: ${lastGameKickoff}`);
+                    console.log(`Last game has started: ${lastGameHasStarted}`);
+                    console.log(`Entry IDs: [${entryIds.join(', ')}]`);
+                    
+                    const tiebreakerResults = await database.execute(tiebreakerQuery, [...entryIds, currentWeek]);
+                    const tiebreakers = tiebreakerResults;
+                    console.log(`Tiebreaker raw results:`, tiebreakerResults);
+                    console.log(`Using full results as tiebreakers array:`, tiebreakers);
+                    console.log(`Extracted tiebreaker rows:`, tiebreakers);
+                    
                     const tiebreakerMap = {};
                     
                     // Ensure tiebreakers is always an array
                     const tiebreakerArray = Array.isArray(tiebreakers) ? tiebreakers : (tiebreakers ? [tiebreakers] : []);
                     
+                    console.log(`Found ${tiebreakerArray.length} tiebreaker predictions`);
+                    
                     tiebreakerArray.forEach(tb => {
-                        tiebreakerMap[tb.entry_id] = tb.predicted_value;
+                        console.log(`Processing tiebreaker:`, {
+                            entry_id: tb.entry_id,
+                            user_id: tb.user_id,
+                            user_id_type: typeof tb.user_id,
+                            predicted_value: tb.predicted_value
+                        });
+                        
+                        // Show tiebreaker if:
+                        // 1. It's the current user's own tiebreaker, OR
+                        // 2. The last game of the week has started
+                        const isCurrentUser = (tb.user_id == currentUserId);
+                        const strictComparison = (tb.user_id === currentUserId);
+                        const shouldShow = isCurrentUser || lastGameHasStarted;
+                        
+                        console.log(`User ID comparison for entry ${tb.entry_id}:`, {
+                            tb_user_id: tb.user_id,
+                            current_user_id: currentUserId,
+                            loose_equal: isCurrentUser,
+                            strict_equal: strictComparison,
+                            last_game_started: lastGameHasStarted,
+                            final_show_decision: shouldShow
+                        });
+                        
+                        if (shouldShow) {
+                            tiebreakerMap[tb.entry_id] = tb.predicted_value;
+                            console.log(`✅ Added tiebreaker for entry ${tb.entry_id}: ${tb.predicted_value}`);
+                        } else {
+                            console.log(`❌ Hiding tiebreaker for entry ${tb.entry_id}`);
+                        }
                     });
                     // Built tiebreaker mapping
                     
+                    console.log(`Final tiebreaker map:`, tiebreakerMap);
+                    
                     // Add MNF predictions to user results
                     userResults.forEach(user => {
-                        user.mnfPrediction = tiebreakerMap[user.entry_id] || null;
+                        const tiebreakerValue = tiebreakerMap[user.entry_id] || null;
+                        user.mnfPrediction = tiebreakerValue;
+                        
+                        console.log(`Assigning tiebreaker to user ${user.username} (entry ${user.entry_id}): ${tiebreakerValue}`);
                     });
                 } catch (error) {
                     // Error fetching tiebreakers
@@ -598,16 +689,6 @@ class ResultsController {
     }
 }
 
-/**
- * Helper function to get current NFL week
- */
-function getCurrentNFLWeek() {
-    const seasonStart = new Date(new Date().getFullYear(), 8, 5); // Sept 5
-    const now = new Date();
-    const diffTime = Math.abs(now - seasonStart);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const week = Math.ceil(diffDays / 7);
-    return Math.min(Math.max(1, week), 18); // NFL regular season is 18 weeks
-}
+// getCurrentNFLWeek is now imported from utils/getCurrentWeek
 
 module.exports = ResultsController;

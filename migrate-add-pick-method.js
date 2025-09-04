@@ -15,7 +15,7 @@ async function addPickMethodColumn() {
             charset: 'utf8mb4'
         });
 
-        console.log('✅ Connected to database');
+        // Connected to database
 
         // Check if column already exists
         const [columns] = await connection.execute(`
@@ -27,12 +27,12 @@ async function addPickMethodColumn() {
         `, [process.env.DATABASE_NAME || 'pools']);
 
         if (columns.length > 0) {
-            console.log('⚠️  pick_method column already exists in leagues table');
+            // pick_method column already exists in leagues table
             return;
         }
 
         // Add the column
-        console.log('📝 Adding pick_method column to leagues table...');
+        // Adding pick_method column to leagues table
         await connection.execute(`
             ALTER TABLE leagues 
             ADD COLUMN pick_method ENUM('straight_up', 'against_spread') 
@@ -41,7 +41,7 @@ async function addPickMethodColumn() {
         `);
 
         // Update existing leagues
-        console.log('🔄 Updating existing leagues with default value...');
+        // Updating existing leagues with default value
         const [updateResult] = await connection.execute(`
             UPDATE leagues 
             SET pick_method = 'straight_up' 
@@ -55,13 +55,12 @@ async function addPickMethodColumn() {
             LIMIT 5
         `);
 
-        console.log('✅ Migration completed successfully!');
-        console.log('📊 Updated leagues:', updateResult.affectedRows);
-        console.log('🔍 Sample leagues:');
-        console.table(leagues);
+        // Migration completed successfully
+        // Updated leagues count: ${updateResult.affectedRows}
+        // Sample leagues data available
 
     } catch (error) {
-        console.error('❌ Migration failed:', error.message);
+        // Migration failed
         process.exit(1);
     } finally {
         if (connection) {

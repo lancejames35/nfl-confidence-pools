@@ -63,7 +63,7 @@ router.get('/', async (req, res, next) => {
         return res.redirect(`/results/league/${leagueId}?week=${currentWeek}`);
         
     } catch (error) {
-        console.error('Results routing error:', error);
+        // Results routing error
         next(error);
     }
 });

@@ -37,70 +37,72 @@ class Pick {
     }
 
     /**
-     * Save or update picks for a week
+     * Save or update picks for a week - OPTIMIZED
      */
     static async savePicks(entry_id, week, picks) {
         const connection = await database.getPool().getConnection();
         
-        // Debug logging
-        console.log('DEBUG Pick.savePicks called:', { 
-            entry_id, 
-            week, 
-            picks_count: picks?.length,
-            picks_sample: picks?.slice(0, 2)
-        });
-        
         try {
             await connection.beginTransaction();
             
-            // Delete existing picks for this entry/week that aren't locked
+            if (picks.length === 0) {
+                await connection.commit();
+                return { success: true, message: 'No picks to save' };
+            }
+            
+            // Get all locked picks for this entry/week in one query
+            const [lockedPicks] = await connection.execute(
+                'SELECT game_id FROM picks WHERE entry_id = ? AND week = ? AND is_locked = 1',
+                [entry_id, week]
+            );
+            
+            const lockedGameIds = new Set(lockedPicks.map(row => row.game_id));
+            
+            // Filter out picks for locked games
+            const validPicks = picks.filter(pick => !lockedGameIds.has(pick.game_id));
+            
+            if (validPicks.length === 0) {
+                await connection.commit();
+                return { success: true, message: 'No picks to update (all games locked)' };
+            }
+            
+            // Delete existing unlocked picks for this entry/week
             await connection.execute(
                 'DELETE FROM picks WHERE entry_id = ? AND week = ? AND is_locked = 0',
                 [entry_id, week]
             );
             
-            // Insert new picks (skip locked picks to prevent changes)
-            for (const pick of picks) {
-                console.log('DEBUG Processing pick:', { 
-                    game_id: pick.game_id, 
-                    selected_team: pick.selected_team,
-                    confidence_points: pick.confidence_points
-                });
-                
-                // Check if this pick is already locked
-                const lockCheck = await connection.execute(
-                    'SELECT is_locked FROM picks WHERE entry_id = ? AND week = ? AND game_id = ? AND is_locked = 1',
-                    [entry_id, week, pick.game_id]
-                );
-                
-                console.log('DEBUG Lock check for game', pick.game_id, '- Query params:', [entry_id, week, pick.game_id], '- Results found:', lockCheck[0]?.length || 0);
-                console.log('DEBUG Lock check result:', lockCheck[0]?.length > 0 ? 'LOCKED - SKIPPING' : 'OK - INSERTING');
-                
-                // Skip inserting if pick is locked
-                if (lockCheck[0]?.length > 0) {
-                    continue;
-                }
-                
+            // Batch insert new picks using bulk INSERT
+            const insertValues = validPicks.map(pick => [
+                entry_id,
+                week,
+                pick.game_id,
+                pick.selected_team,
+                pick.confidence_points,
+                pick.pick_type || 'confidence',
+                pick.is_locked || false
+            ]);
+            
+            if (insertValues.length > 0) {
+                const placeholders = insertValues.map(() => '(?, ?, ?, ?, ?, ?, ?)').join(', ');
                 const query = `
                     INSERT INTO picks (
                         entry_id, week, game_id, selected_team, 
                         confidence_points, pick_type, is_locked
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES ${placeholders}
                 `;
                 
-                await connection.execute(query, [
-                    entry_id,
-                    week,
-                    pick.game_id,
-                    pick.selected_team,
-                    pick.confidence_points,
-                    pick.pick_type || 'confidence',
-                    pick.is_locked || false
-                ]);
+                const flatValues = insertValues.flat();
+                await connection.execute(query, flatValues);
             }
             
             await connection.commit();
-            return { success: true, message: 'Picks saved successfully' };
+            return { 
+                success: true, 
+                message: 'Picks saved successfully',
+                saved_count: validPicks.length,
+                locked_count: lockedGameIds.size
+            };
         } catch (error) {
             await connection.rollback();
             throw error;
@@ -454,7 +456,7 @@ class Pick {
             await database.execute(lockQuery, queryParams);
             return true;
         } catch (error) {
-            console.error('Error in lockStartedGames:', error);
+            // Error occurred in lockStartedGames
             return false;
         }
     }

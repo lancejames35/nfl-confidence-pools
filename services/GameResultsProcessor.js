@@ -98,8 +98,7 @@ class GameResultsProcessor {
                 updatedPicks: updatedPicks.length
             });
             
-            console.log(`✅ Processed result for ${game.away_team} @ ${game.home_team}: ${awayScore}-${homeScore}`);
-            console.log(`   Updated ${result.affectedRows} picks`);
+            // Processed game result and updated picks
             
             return {
                 success: true,
@@ -113,7 +112,7 @@ class GameResultsProcessor {
             
         } catch (error) {
             await connection.rollback();
-            console.error('Error processing game result:', error);
+            // Error processing game result
             throw error;
         } finally {
             connection.release();
@@ -142,7 +141,7 @@ class GameResultsProcessor {
             
             return await database.execute(query, [gameId]);
         } catch (error) {
-            console.error('Error getting game picks:', error);
+            // Error getting game picks
             throw error;
         }
     }
@@ -201,7 +200,7 @@ class GameResultsProcessor {
                     (summary.correct_picks / summary.total_picks * 100).toFixed(2) : 0
             };
         } catch (error) {
-            console.error('Error getting week summary:', error);
+            // Error getting week summary
             throw error;
         }
     }
@@ -236,7 +235,7 @@ class GameResultsProcessor {
             
             return standings;
         } catch (error) {
-            console.error('Error recalculating league standings:', error);
+            // Error recalculating league standings
             throw error;
         }
     }
@@ -262,7 +261,7 @@ class GameResultsProcessor {
             
             const games = await database.execute(gamesQuery, [week, seasonYear]);
             
-            console.log(`🔄 Found ${games.length} completed games to process for Week ${week}`);
+            // Found completed games to process for the week
             
             // Here you would integrate with NFL API to get actual scores
             // For now, we'll return the games that need processing
@@ -274,7 +273,7 @@ class GameResultsProcessor {
             };
             
         } catch (error) {
-            console.error('Error in auto-process:', error);
+            // Error in auto-process
             throw error;
         }
     }
@@ -301,7 +300,7 @@ class GameResultsProcessor {
             
             return { success: true, message: 'Game set to in progress and picks locked' };
         } catch (error) {
-            console.error('Error setting game in progress:', error);
+            // Error setting game in progress
             throw error;
         }
     }

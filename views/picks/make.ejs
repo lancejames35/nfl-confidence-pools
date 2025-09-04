@@ -180,14 +180,7 @@
                                                                 <div class="mobile-game-time d-md-none text-center mb-2 position-relative">
                                                                     <div class="game-time-mobile">
                                                                         <i class="fas fa-clock me-1"></i>
-                                                                        <%= new Date(game.kickoff_timestamp).toLocaleString('en-US', {
-                                                                            weekday: 'short',
-                                                                            month: 'short', 
-                                                                            day: 'numeric',
-                                                                            hour: 'numeric',
-                                                                            minute: '2-digit',
-                                                                            timeZoneName: 'short'
-                                                                        }) %>
+                                                                        <span class="game-time-display" data-timestamp="<%= game.kickoff_timestamp %>">Loading...</span>
                                                                     </div>
                                                                 </div>
                                                                 
@@ -271,14 +264,7 @@
                                                             <div class="game-details position-relative">
                                                                 <div class="game-time">
                                                                     <i class="fas fa-clock me-1"></i>
-                                                                    <%= new Date(game.kickoff_timestamp).toLocaleString('en-US', {
-                                                                        weekday: 'short',
-                                                                        month: 'short', 
-                                                                        day: 'numeric',
-                                                                        hour: 'numeric',
-                                                                        minute: '2-digit',
-                                                                        timeZoneName: 'short'
-                                                                    }) %>
+                                                                    <span class="game-time-display" data-timestamp="<%= game.kickoff_timestamp %>">Loading...</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1477,6 +1463,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('picks-form');
     let autoSaveTimeout;
     
+    // Convert game times to user's local timezone (using same logic as dashboard)
+    function convertGameTimesToUserTimezone() {
+        const gameTimeElements = document.querySelectorAll('.game-time-display');
+        gameTimeElements.forEach(element => {
+            const timestamp = element.getAttribute('data-timestamp');
+            if (timestamp) {
+                try {
+                    // Apply the exact same transformation as the dashboard
+                    // Dashboard: firstGameKickoff.toISOString().replace("T", " ").substring(0, 19) + " ET"
+                    // Then: new Date(etTimeStr + " EDT")
+                    
+                    // Convert the timestamp to a Date object, then to ISO string (same as dashboard)
+                    const gameDate = new Date(timestamp);
+                    const etTimeStr = gameDate.toISOString().replace("T", " ").substring(0, 19);
+                    const etDate = new Date(etTimeStr + " EDT"); // Exactly like dashboard
+                    
+                    // Get user's timezone
+                    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    
+                    // Format the time for user's display using same format as dashboard
+                    const formattedTime = new Intl.DateTimeFormat('en-US', {
+                        timeZone: userTimezone,
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        timeZoneName: 'short'
+                    }).format(etDate);
+                    
+                    element.textContent = formattedTime;
+                } catch (error) {
+                    console.error('Error converting game timestamp:', timestamp, error);
+                    element.textContent = 'Time unavailable';
+                }
+            }
+        });
+    }
+    
+    // Convert times immediately when page loads
+    convertGameTimesToUserTimezone();
+    
     // Store selections globally to preserve during drag operations
     let storedSelections = new Map();
     
@@ -1530,7 +1558,6 @@ document.addEventListener('DOMContentLoaded', function() {
         preventOnFilter: false, // Don't prevent events, just don't drag
         forceFallback: true, // Force fallback to avoid browser drag conflicts
         move: function(evt) {
-            // Prevent any movement that involves locked items
             const draggedItem = evt.dragged;
             const relatedItem = evt.related;
             
@@ -1539,68 +1566,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            // If the item we're trying to move past/before is locked, don't allow it
-            if (relatedItem && (relatedItem.classList.contains('locked') || relatedItem.getAttribute('data-locked') === 'true')) {
-                return false;
-            }
-            
+            // Allow movement around locked items - they will be handled in the confidence reassignment logic
             return true;
         },
         onStart: function(evt) {
             storeAllSelections();
-            // Store original positions of locked items
-            window.originalLockedPositions = new Map();
-            const container = evt.from;
-            Array.from(container.children).forEach((child, index) => {
-                if (child.classList.contains('locked')) {
-                    window.originalLockedPositions.set(child.dataset.gameId, index);
-                }
-            });
         },
         onEnd: function(evt) {
-            // Check if any locked items changed position
-            const container = evt.to;
-            let lockedItemMoved = false;
-            
-            if (window.originalLockedPositions && window.originalLockedPositions.size > 0) {
-                Array.from(container.children).forEach((child, index) => {
-                    if (child.classList.contains('locked')) {
-                        const gameId = child.dataset.gameId;
-                        const originalPosition = window.originalLockedPositions.get(gameId);
-                        if (originalPosition !== undefined && originalPosition !== index) {
-                            lockedItemMoved = true;
-                        }
-                    }
-                });
-            }
-            
-            // If a locked item moved, revert the entire operation
-            if (lockedItemMoved) {
-                console.log('Locked item position changed - reverting move');
-                // Find the moved element and put it back
-                const movedElement = evt.item;
-                const oldIndex = evt.oldIndex;
-                const newIndex = evt.newIndex;
-                
-                if (oldIndex !== newIndex) {
-                    // Move the element back to its original position
-                    const items = Array.from(container.children);
-                    if (oldIndex < items.length) {
-                        if (oldIndex === 0) {
-                            container.insertBefore(movedElement, items[0]);
-                        } else if (oldIndex >= items.length - 1) {
-                            container.appendChild(movedElement);
-                        } else {
-                            container.insertBefore(movedElement, items[oldIndex]);
-                        }
-                    }
-                }
-                
-                // Clean up
-                window.originalLockedPositions = null;
-                return;
-            }
-            
+            // With improved confidence assignment logic, we just need to reassign confidence values
             updateConfidencePoints();
             
             // Use setTimeout to ensure DOM is settled before restoring
@@ -1609,61 +1582,86 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatePicksSummary();
                 autoSave();
             }, 100);
-            
-            // Clean up
-            window.originalLockedPositions = null;
         }
     });
     
-    // Update confidence points after reordering
+    // Update confidence points after reordering - IMPROVED ALGORITHM
     function updateConfidencePoints() {
         const items = sortableEl.querySelectorAll('.pick-item');
         const totalGames = items.length;
         
-        // Simple approach: go through items and assign confidence from high to low, skipping locked games
-        let nextConfidence = totalGames;
+        // Step 1: Get all locked confidence values and their positions
+        const lockedConfidenceValues = new Set();
+        const lockedItems = [];
         
-        items.forEach((item, index) => {
-            // If this item is locked, keep its confidence unchanged
+        items.forEach((item, position) => {
+            if (item.classList.contains('locked') || item.getAttribute('data-locked') === 'true') {
+                const lockedConfidence = parseInt(item.getAttribute('data-confidence'));
+                if (!isNaN(lockedConfidence)) {
+                    lockedConfidenceValues.add(lockedConfidence);
+                    lockedItems.push({
+                        element: item,
+                        confidence: lockedConfidence,
+                        position: position
+                    });
+                }
+            }
+        });
+        
+        // Step 2: Create array of available confidence values (excluding locked ones)
+        const availableConfidenceValues = [];
+        for (let i = totalGames; i >= 1; i--) {
+            if (!lockedConfidenceValues.has(i)) {
+                availableConfidenceValues.push(i);
+            }
+        }
+        // Sort highest to lowest for proper assignment
+        availableConfidenceValues.sort((a, b) => b - a);
+        
+        // Step 3: Assign confidence values to unlocked items based on their position
+        let availableIndex = 0;
+        const itemsArray = Array.from(items);
+        
+        itemsArray.forEach((item, position) => {
+            // Skip locked items - they keep their confidence unchanged
             if (item.classList.contains('locked') || item.getAttribute('data-locked') === 'true') {
                 return;
             }
             
-            // Find the next available confidence value (skipping any taken by locked games)
-            while (nextConfidence > 0) {
-                // Check if any locked game is using this confidence value
-                const isConfidenceTaken = Array.from(items).some(otherItem => {
-                    return (otherItem.classList.contains('locked') || otherItem.getAttribute('data-locked') === 'true') &&
-                           parseInt(otherItem.getAttribute('data-confidence')) === nextConfidence;
-                });
-                
-                if (!isConfidenceTaken) {
-                    // This confidence value is available, use it
-                    break;
-                }
-                
-                nextConfidence--; // Try next lower value
-            }
-            
-            if (nextConfidence > 0) {
+            // Assign next available confidence value to this unlocked item
+            if (availableIndex < availableConfidenceValues.length) {
+                const newConfidence = availableConfidenceValues[availableIndex];
                 const dropdown = item.querySelector('.confidence-dropdown');
                 const input = item.querySelector('.confidence-input');
                 
                 // Update data attribute
-                item.setAttribute('data-confidence', nextConfidence);
+                item.setAttribute('data-confidence', newConfidence);
                 
                 // Update hidden input
                 if (input) {
-                    input.value = nextConfidence;
+                    input.value = newConfidence;
                 }
                 
                 // Update dropdown
                 if (dropdown) {
-                    dropdown.value = nextConfidence;
+                    dropdown.value = newConfidence;
                 }
                 
-                nextConfidence--; // Move to next confidence value for next unlocked game
+                availableIndex++;
             }
+        });
+        
+        // Step 4: Re-sort all items by confidence value to maintain proper visual order
+        const allItems = Array.from(sortableEl.querySelectorAll('.pick-item'));
+        allItems.sort((a, b) => {
+            const confA = parseInt(a.getAttribute('data-confidence')) || 0;
+            const confB = parseInt(b.getAttribute('data-confidence')) || 0;
+            return confB - confA; // Highest to lowest
+        });
+        
+        // Re-append items in correct order
+        allItems.forEach(item => {
+            sortableEl.appendChild(item);
         });
         
         // Update dropdown options after confidence changes
@@ -1904,7 +1902,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial attachment
     attachTeamSelectionHandlers();
     
-    // Define the confidence change handler function
+    // Define the confidence change handler function - IMPROVED FOR LOCKED PICKS
     function handleConfidenceChange(e) {
         const dropdown = e.target;
         
@@ -1926,55 +1924,74 @@ document.addEventListener('DOMContentLoaded', function() {
         const newConfidence = parseInt(dropdown.value);
         const oldConfidence = parseInt(pickItem.getAttribute('data-confidence'));
         
+        if (newConfidence === oldConfidence) return; // No change needed
         
-        // Get all items and their current confidence values
+        // Get all items and identify locked ones
         const allItems = Array.from(sortableEl.querySelectorAll('.pick-item'));
-        const totalGames = allItems.length;
+        const lockedConfidenceValues = new Set();
         
-        // Update this item's confidence first
+        allItems.forEach(item => {
+            if ((item.classList.contains('locked') || item.getAttribute('data-locked') === 'true') && item !== pickItem) {
+                const lockedConf = parseInt(item.getAttribute('data-confidence'));
+                if (!isNaN(lockedConf)) {
+                    lockedConfidenceValues.add(lockedConf);
+                }
+            }
+        });
+        
+        // Check if the new confidence value is locked by another item
+        if (lockedConfidenceValues.has(newConfidence)) {
+            // Reset to original value
+            dropdown.value = oldConfidence;
+            return;
+        }
+        
+        // Update this item's confidence
         pickItem.setAttribute('data-confidence', newConfidence);
         const confidenceInput = pickItem.querySelector('.confidence-input');
         if (confidenceInput) confidenceInput.value = newConfidence;
         
-        // Force the dropdown to visually update immediately
-        dropdown.value = newConfidence;
-        dropdown.style.display = 'none';
-        dropdown.offsetHeight; // Force reflow
-        dropdown.style.display = '';
-        
-        // Now adjust all OTHER items based on the change
-        allItems.forEach(item => {
-            if (item === pickItem) return; // Skip the changed item
-            
-            const currentConf = parseInt(item.getAttribute('data-confidence'));
-            let newConf = currentConf;
-            
-            if (newConfidence > oldConfidence) {
-                // Moving up in confidence (lower position to higher position)
-                // All items between oldConfidence and newConfidence move down by 1
-                if (currentConf > oldConfidence && currentConf <= newConfidence) {
-                    newConf = currentConf - 1;
-                }
-            } else if (newConfidence < oldConfidence) {
-                // Moving down in confidence (higher position to lower position)  
-                // All items between newConfidence and oldConfidence move up by 1
-                if (currentConf >= newConfidence && currentConf < oldConfidence) {
-                    newConf = currentConf + 1;
-                }
+        // Now we need to reassign all unlocked items to available confidence values
+        // Step 1: Get all available confidence values (excluding locked ones and the new value)
+        const totalGames = allItems.length;
+        const availableValues = [];
+        for (let i = totalGames; i >= 1; i--) {
+            if (!lockedConfidenceValues.has(i) && i !== newConfidence) {
+                availableValues.push(i);
             }
-            
-            // Update the item if confidence changed
-            if (newConf !== currentConf) {
-                item.setAttribute('data-confidence', newConf);
+        }
+        availableValues.sort((a, b) => b - a); // Highest to lowest
+        
+        // Step 2: Get all unlocked items (excluding the one we just changed)
+        const unlockedItems = allItems.filter(item => 
+            item !== pickItem && 
+            !item.classList.contains('locked') && 
+            item.getAttribute('data-locked') !== 'true'
+        );
+        
+        // Step 3: Sort unlocked items by their position in DOM (top to bottom = higher to lower confidence)
+        unlockedItems.sort((a, b) => {
+            const aIndex = Array.from(sortableEl.children).indexOf(a);
+            const bIndex = Array.from(sortableEl.children).indexOf(b);
+            return aIndex - bIndex;
+        });
+        
+        // Step 4: Assign available confidence values to unlocked items
+        unlockedItems.forEach((item, index) => {
+            if (index < availableValues.length) {
+                const assignedConfidence = availableValues[index];
+                item.setAttribute('data-confidence', assignedConfidence);
+                
                 const input = item.querySelector('.confidence-input');
-                const dropdown = item.querySelector('.confidence-dropdown');
-                if (input) input.value = newConf;
-                if (dropdown) {
-                    dropdown.value = newConf;
+                const itemDropdown = item.querySelector('.confidence-dropdown');
+                
+                if (input) input.value = assignedConfidence;
+                if (itemDropdown) {
+                    itemDropdown.value = assignedConfidence;
                     // Force visual update
-                    dropdown.style.display = 'none';
-                    dropdown.offsetHeight;
-                    dropdown.style.display = '';
+                    itemDropdown.style.display = 'none';
+                    itemDropdown.offsetHeight;
+                    itemDropdown.style.display = '';
                 }
             }
         });
@@ -1982,8 +1999,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reorder all items by their new confidence values
         reorderItemsByConfidence();
         
-        // Use the same update logic as drag and drop
-        updateConfidencePoints();
+        // Update dropdown options
+        updateDropdownOptions();
         
         updatePicksSummary();
         autoSave();

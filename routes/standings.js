@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
         // Redirect to league-specific standings
         return res.redirect(`/standings/${leagueId}`);
     } catch (error) {
-        console.error('Standings routing error:', error);
+        // Standings routing error
         res.redirect('/dashboard');
     }
 });

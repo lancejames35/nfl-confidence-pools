@@ -32,14 +32,12 @@ class StandingsController {
             
             if (view === 'grid') {
                 // Get weekly totals for grid view
-                console.log('DEBUG: Rendering grid view for league', leagueId);
                 weeklyTotals = await StandingsController.getWeeklyTotals(leagueId);
                 
                 // Get tier information for multi-tier leagues
                 let tierInfo = null;
                 if (league.enable_multi_tier) {
                     tierInfo = await StandingsController.getTierSummary(leagueId);
-                    console.log('DEBUG: Tier info for league', leagueId, ':', tierInfo);
                 }
                 
                 res.render('standings/grid', {
@@ -69,11 +67,6 @@ class StandingsController {
                 tierInfo = await StandingsController.getTierSummary(leagueId);
             }
             
-            console.log(`Standings for league ${leagueId} (${view}):`, standings.slice(0, 3).map(s => ({ 
-                username: s.username, 
-                total_points: s.total_points, 
-                current_week_points: s.current_week_points 
-            })));
             
             res.render('standings/index', {
                 title: `${league.league_name} - Standings`,
@@ -95,106 +88,90 @@ class StandingsController {
     }
     
     /**
-     * Get overall season standings
+     * Get overall season standings - OPTIMIZED
      */
     static async getOverallStandings(leagueId) {
         try {
-            const query = `
-                SELECT 
-                    le.entry_id,
-                    u.username,
-                    u.user_id,
-                    COUNT(DISTINCT p.week) as weeks_played,
-                    COUNT(p.pick_id) as total_picks,
-                    SUM(CASE WHEN p.is_correct = 1 THEN 1 ELSE 0 END) as correct_picks,
-                    SUM(p.points_earned) as total_points,
-                    AVG(CASE WHEN p.is_correct = 1 THEN p.confidence_points ELSE NULL END) as avg_correct_confidence,
-                    MAX(p.points_earned) as best_pick,
-                    AVG(weekly_totals.weekly_points) as avg_weekly_points,
-                    STDDEV(weekly_totals.weekly_points) as consistency_score,
-                    
-                    -- Current week performance
-                    current_week.week_points as current_week_points,
-                    current_week.week_correct as current_week_correct,
-                    current_week.week_picks as current_week_picks,
-                    
-                    -- Trend (last 3 weeks average)
-                    recent_avg.recent_points as recent_avg_points,
-                    
-                    -- Tier information
-                    let.tier_name,
-                    let.tier_id,
-                    let.tier_order,
-                    let.tier_description,
-                    let.entry_fee,
-                    let.eligible_for_weekly,
-                    let.eligible_for_season_total,
-                    let.eligible_for_bonuses,
-                    lut.payment_status
-                    
-                FROM league_entries le
-                JOIN league_users lu ON le.league_user_id = lu.league_user_id
-                JOIN users u ON lu.user_id = u.user_id
-                LEFT JOIN league_user_tiers lut ON lu.league_user_id = lut.league_user_id
-                LEFT JOIN league_entry_tiers let ON lut.tier_id = let.tier_id
-                LEFT JOIN picks p ON le.entry_id = p.entry_id
-                
-                -- Weekly totals for consistency calculation
-                LEFT JOIN (
+            const currentWeek = getCurrentNFLWeek();
+            
+            // Optimized single query using window functions and CTEs
+            const optimizedQuery = `
+                WITH weekly_stats AS (
                     SELECT 
                         entry_id,
                         week,
-                        SUM(points_earned) as weekly_points
+                        SUM(points_earned) as weekly_points,
+                        SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as weekly_correct,
+                        COUNT(pick_id) as weekly_picks,
+                        SUM(CASE WHEN is_correct = 1 THEN confidence_points ELSE 0 END) as correct_confidence_sum,
+                        SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_count
                     FROM picks
                     GROUP BY entry_id, week
-                ) weekly_totals ON le.entry_id = weekly_totals.entry_id
-                
-                -- Current week performance
-                LEFT JOIN (
+                ),
+                user_aggregates AS (
                     SELECT 
-                        entry_id,
-                        SUM(points_earned) as week_points,
-                        SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as week_correct,
-                        COUNT(*) as week_picks
-                    FROM picks
-                    WHERE week = ?
-                    GROUP BY entry_id
-                ) current_week ON le.entry_id = current_week.entry_id
-                
-                -- Recent performance (last 3 weeks)
-                LEFT JOIN (
-                    SELECT 
-                        entry_id,
-                        AVG(weekly_points) as recent_points
-                    FROM (
-                        SELECT 
-                            entry_id,
-                            week,
-                            SUM(points_earned) as weekly_points
-                        FROM picks
-                        WHERE week >= ? - 2
-                        GROUP BY entry_id, week
-                    ) recent_weeks
-                    GROUP BY entry_id
-                ) recent_avg ON le.entry_id = recent_avg.entry_id
-                
-                WHERE lu.league_id = ?
-                GROUP BY le.entry_id, u.username, u.user_id, let.tier_name, let.tier_id, let.tier_order, let.tier_description, let.entry_fee, let.eligible_for_weekly, let.eligible_for_season_total, let.eligible_for_bonuses, lut.payment_status
+                        le.entry_id,
+                        u.username,
+                        u.user_id,
+                        let.tier_name,
+                        let.tier_id,
+                        let.tier_order,
+                        let.tier_description,
+                        let.entry_fee,
+                        let.eligible_for_weekly,
+                        let.eligible_for_season_total,
+                        let.eligible_for_bonuses,
+                        lut.payment_status,
+                        
+                        -- Season totals
+                        COALESCE(SUM(ws.weekly_points), 0) as total_points,
+                        COALESCE(SUM(ws.weekly_correct), 0) as correct_picks,
+                        COALESCE(SUM(ws.weekly_picks), 0) as total_picks,
+                        COUNT(DISTINCT ws.week) as weeks_played,
+                        
+                        -- Averages and stats
+                        COALESCE(AVG(ws.weekly_points), 0) as avg_weekly_points,
+                        COALESCE(STDDEV(ws.weekly_points), 0) as consistency_score,
+                        COALESCE(MAX(ws.weekly_points), 0) as best_week_points,
+                        COALESCE(SUM(ws.correct_confidence_sum) / NULLIF(SUM(ws.correct_count), 0), 0) as avg_correct_confidence,
+                        
+                        -- Current week performance
+                        COALESCE(SUM(CASE WHEN ws.week = ? THEN ws.weekly_points ELSE 0 END), 0) as current_week_points,
+                        COALESCE(SUM(CASE WHEN ws.week = ? THEN ws.weekly_correct ELSE 0 END), 0) as current_week_correct,
+                        COALESCE(SUM(CASE WHEN ws.week = ? THEN ws.weekly_picks ELSE 0 END), 0) as current_week_picks,
+                        
+                        -- Recent performance (last 3 weeks)
+                        COALESCE(AVG(CASE WHEN ws.week >= ? - 2 THEN ws.weekly_points ELSE NULL END), 0) as recent_avg_points
+                        
+                    FROM league_entries le
+                    JOIN league_users lu ON le.league_user_id = lu.league_user_id
+                    JOIN users u ON lu.user_id = u.user_id
+                    LEFT JOIN league_user_tiers lut ON lu.league_user_id = lut.league_user_id
+                    LEFT JOIN league_entry_tiers let ON lut.tier_id = let.tier_id
+                    LEFT JOIN weekly_stats ws ON le.entry_id = ws.entry_id
+                    
+                    WHERE lu.league_id = ? AND le.status = 'active'
+                    GROUP BY le.entry_id, u.username, u.user_id, let.tier_name, let.tier_id, let.tier_order, let.tier_description, let.entry_fee, let.eligible_for_weekly, let.eligible_for_season_total, let.eligible_for_bonuses, lut.payment_status
+                )
+                SELECT 
+                    *,
+                    ROW_NUMBER() OVER (ORDER BY total_points DESC, correct_picks DESC, avg_correct_confidence DESC) as position
+                FROM user_aggregates
                 ORDER BY total_points DESC, correct_picks DESC, avg_correct_confidence DESC
             `;
             
-            const currentWeek = getCurrentNFLWeek();
-            const standings = await database.execute(query, [currentWeek, currentWeek, leagueId]);
+            const standings = await database.execute(optimizedQuery, [
+                currentWeek, currentWeek, currentWeek, currentWeek, leagueId
+            ]);
             
-            // Add position and calculate streaks
-            return standings.map((entry, index) => ({
+            // Add calculated fields
+            return standings.map((entry) => ({
                 ...entry,
-                position: index + 1,
                 accuracy: entry.total_picks > 0 ? 
-                    ((entry.correct_picks / entry.total_picks) * 100).toFixed(1) : 0,
-                consistency_rank: StandingsController.calculateConsistencyRank(entry.consistency_score, standings),
+                    ((entry.correct_picks / entry.total_picks) * 100).toFixed(1) : '0.0',
                 current_week_accuracy: entry.current_week_picks > 0 ? 
-                    ((entry.current_week_correct / entry.current_week_picks) * 100).toFixed(1) : 0
+                    ((entry.current_week_correct / entry.current_week_picks) * 100).toFixed(1) : '0.0',
+                consistency_rank: StandingsController.calculateConsistencyRank(entry.consistency_score, standings)
             }));
         } catch (error) {
             throw error;
@@ -385,106 +362,96 @@ class StandingsController {
     }
     
     /**
-     * Get weekly totals for grid view (all weeks, all users)
+     * Get weekly totals for grid view (all weeks, all users) - OPTIMIZED
      */
     static async getWeeklyTotals(leagueId) {
         try {
-            // Get all users in the league with tier information
-            const usersQuery = `
-                SELECT DISTINCT
+            // Single optimized query that gets all user data and weekly totals
+            const optimizedQuery = `
+                SELECT 
                     le.entry_id,
                     u.username,
                     u.user_id,
                     let.tier_id,
                     let.tier_name,
                     let.tier_order,
-                    let.tier_description
+                    let.tier_description,
+                    
+                    -- Weekly aggregated data using JSON
+                    COALESCE(GROUP_CONCAT(
+                        DISTINCT CONCAT(weekly_stats.week, ':', weekly_stats.week_points, ':', weekly_stats.week_correct, ':', weekly_stats.week_picks)
+                        ORDER BY weekly_stats.week
+                        SEPARATOR ','
+                    ), '') as weekly_data,
+                    
+                    -- Season totals
+                    COALESCE(SUM(weekly_stats.week_points), 0) as seasonTotal,
+                    COALESCE(SUM(weekly_stats.week_correct), 0) as seasonCorrect,
+                    COALESCE(SUM(weekly_stats.week_picks), 0) as seasonPicks
+                    
                 FROM league_entries le
                 JOIN league_users lu ON le.league_user_id = lu.league_user_id
                 JOIN users u ON lu.user_id = u.user_id
                 LEFT JOIN league_user_tiers lut ON lu.league_user_id = lut.league_user_id
                 LEFT JOIN league_entry_tiers let ON lut.tier_id = let.tier_id
-                WHERE lu.league_id = ? AND le.status = 'active'
-                ORDER BY u.username
-            `;
-            
-            const users = await database.execute(usersQuery, [leagueId]);
-            
-            // Get weekly totals for all users
-            const weeklyQuery = `
-                SELECT 
-                    p.entry_id,
-                    p.week,
-                    SUM(p.points_earned) as week_points,
-                    SUM(CASE WHEN p.is_correct = 1 THEN 1 ELSE 0 END) as week_correct,
-                    COUNT(p.pick_id) as week_picks
-                FROM picks p
-                JOIN league_entries le ON p.entry_id = le.entry_id
-                JOIN league_users lu ON le.league_user_id = lu.league_user_id
-                WHERE lu.league_id = ?
-                GROUP BY p.entry_id, p.week
-                ORDER BY p.entry_id, p.week
-            `;
-            
-            const weeklyData = await database.execute(weeklyQuery, [leagueId]);
-            
-            // Organize data by user
-            const userTotals = {};
-            
-            // Initialize users
-            users.forEach(user => {
-                userTotals[user.entry_id] = {
-                    entry_id: user.entry_id,
-                    username: user.username,
-                    user_id: user.user_id,
-                    tier_id: user.tier_id,
-                    tier_name: user.tier_name,
-                    tier_order: user.tier_order,
-                    weeks: {},
-                    seasonTotal: 0,
-                    seasonCorrect: 0,
-                    seasonPicks: 0
-                };
+                LEFT JOIN (
+                    SELECT 
+                        entry_id,
+                        week,
+                        SUM(points_earned) as week_points,
+                        SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as week_correct,
+                        COUNT(pick_id) as week_picks
+                    FROM picks
+                    WHERE week BETWEEN 1 AND 18
+                    GROUP BY entry_id, week
+                ) weekly_stats ON le.entry_id = weekly_stats.entry_id
                 
-                // Initialize all 18 weeks
+                WHERE lu.league_id = ? AND le.status = 'active'
+                GROUP BY le.entry_id, u.username, u.user_id, let.tier_id, let.tier_name, let.tier_order, let.tier_description
+                ORDER BY seasonTotal DESC, seasonCorrect DESC, u.username
+            `;
+            
+            const results = await database.execute(optimizedQuery, [leagueId]);
+            
+            // Process the results into the expected format
+            const processedUsers = results.map((row, index) => {
+                // Initialize weeks structure
+                const weeks = {};
                 for (let week = 1; week <= 18; week++) {
-                    userTotals[user.entry_id].weeks[week] = {
-                        points: 0,
-                        correct: 0,
-                        picks: 0
-                    };
+                    weeks[week] = { points: 0, correct: 0, picks: 0 };
                 }
+                
+                // Parse weekly data from the concatenated string
+                if (row.weekly_data) {
+                    const weeklyEntries = row.weekly_data.split(',');
+                    weeklyEntries.forEach(entry => {
+                        const [week, points, correct, picks] = entry.split(':');
+                        if (week && weeks[parseInt(week)]) {
+                            weeks[parseInt(week)] = {
+                                points: parseInt(points) || 0,
+                                correct: parseInt(correct) || 0,
+                                picks: parseInt(picks) || 0
+                            };
+                        }
+                    });
+                }
+                
+                return {
+                    entry_id: row.entry_id,
+                    username: row.username,
+                    user_id: row.user_id,
+                    tier_id: row.tier_id,
+                    tier_name: row.tier_name,
+                    tier_order: row.tier_order,
+                    weeks: weeks,
+                    seasonTotal: parseInt(row.seasonTotal) || 0,
+                    seasonCorrect: parseInt(row.seasonCorrect) || 0,
+                    seasonPicks: parseInt(row.seasonPicks) || 0,
+                    rank: index + 1 // Since we already ordered by seasonTotal DESC
+                };
             });
             
-            // Fill in weekly data
-            weeklyData.forEach(row => {
-                if (userTotals[row.entry_id]) {
-                    userTotals[row.entry_id].weeks[row.week] = {
-                        points: parseInt(row.week_points) || 0,
-                        correct: parseInt(row.week_correct) || 0,
-                        picks: parseInt(row.week_picks) || 0
-                    };
-                    userTotals[row.entry_id].seasonTotal += parseInt(row.week_points) || 0;
-                    userTotals[row.entry_id].seasonCorrect += parseInt(row.week_correct) || 0;
-                    userTotals[row.entry_id].seasonPicks += parseInt(row.week_picks) || 0;
-                }
-            });
-            
-            // Convert to array and sort by season total
-            const sortedUsers = Object.values(userTotals).sort((a, b) => b.seasonTotal - a.seasonTotal);
-            
-            // Add rankings
-            let currentRank = 1;
-            let previousTotal = null;
-            sortedUsers.forEach((user, index) => {
-                if (previousTotal !== null && user.seasonTotal < previousTotal) {
-                    currentRank = index + 1;
-                }
-                user.rank = currentRank;
-                previousTotal = user.seasonTotal;
-            });
-            
-            return sortedUsers;
+            return processedUsers;
         } catch (error) {
             throw error;
         }
@@ -551,7 +518,7 @@ class StandingsController {
             // For this database setup, result is directly the array of rows
             return result || [];
         } catch (error) {
-            console.error('Error getting tier summary:', error);
+            // Error getting tier summary - return empty array for fallback
             return [];
         }
     }

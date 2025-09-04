@@ -13,35 +13,35 @@ const CACHE_ASSETS = [
 
 // Install Event
 self.addEventListener('install', (event) => {
-    console.log('Service Worker: Installed');
+    // Service Worker: Installed
     
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('Service Worker: Caching Files');
+                // Service Worker: Caching Files
                 // Cache files one by one to handle failures gracefully
                 return Promise.allSettled(
                     CACHE_ASSETS.map(url => 
                         cache.add(url).catch(error => {
-                            console.log(`Failed to cache ${url}:`, error);
+                            // Failed to cache file
                         })
                     )
                 );
             })
             .then(() => {
-                console.log('Service Worker: Initial caching complete');
+                // Service Worker: Initial caching complete
                 // Force the waiting service worker to become the active service worker
                 self.skipWaiting();
             })
             .catch((error) => {
-                console.log('Service Worker: Cache setup failed', error);
+                // Service Worker: Cache setup failed
             })
     );
 });
 
 // Activate Event
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker: Activated');
+    // Service Worker: Activated
     
     // Remove old caches and take control immediately
     event.waitUntil(
@@ -51,7 +51,7 @@ self.addEventListener('activate', (event) => {
                 return Promise.all(
                     cacheNames.map((cache) => {
                         if (cache !== CACHE_NAME) {
-                            console.log('Service Worker: Clearing Old Cache:', cache);
+                            // Service Worker: Clearing Old Cache
                             return caches.delete(cache);
                         }
                     })
@@ -60,7 +60,7 @@ self.addEventListener('activate', (event) => {
             // Take control of all clients immediately
             self.clients.claim()
         ]).then(() => {
-            console.log('Service Worker: Now controlling all clients');
+            // Service Worker: Now controlling all clients
         })
     );
 });
@@ -104,7 +104,7 @@ self.addEventListener('fetch', (event) => {
                             cache.put(event.request, responseToCache);
                         })
                         .catch((error) => {
-                            console.log('Cache put failed:', error);
+                            // Cache put failed
                         });
                 }
                 
@@ -207,12 +207,12 @@ async function syncPicks() {
                         await removePendingPick(pick.id);
                     }
                 } catch (error) {
-                    console.error('Failed to sync pick:', error);
+                    // Failed to sync pick
                 }
             }
         }
     } catch (error) {
-        console.error('Background sync failed:', error);
+        // Background sync failed
     }
 }
 

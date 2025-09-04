@@ -42,7 +42,7 @@ async function getCurrentNFLWeek(database) {
         return 1; // Default to week 1
         
     } catch (error) {
-        console.error('Error getting current week:', error);
+        // Error getting current week
         return 1; // Default to week 1 on error
     }
 }
@@ -62,7 +62,7 @@ async function getWeekDeadline(database, week) {
         
         return null;
     } catch (error) {
-        console.error('Error getting week deadline:', error);
+        // Error getting week deadline
         return null;
     }
 }

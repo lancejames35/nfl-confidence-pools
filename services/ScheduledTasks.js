@@ -15,31 +15,31 @@ class ScheduledTasks {
      */
     start() {
         if (this.isRunning) {
-            console.log('⚠️ Scheduled tasks already running');
+            // Scheduled tasks already running
             return;
         }
         
-        console.log('🚀 Starting scheduled tasks...');
+        // Starting scheduled tasks
         this.isRunning = true;
         
-        // Pick locking service - runs every minute
+        // Pick locking service - runs every 5 minutes (reduced frequency)
         const pickLockingInterval = setInterval(async () => {
             try {
                 await this.processPickLocking();
             } catch (error) {
-                console.error('❌ Pick locking task error:', error);
+                // Pick locking task error
             }
-        }, 60 * 1000); // 60 seconds
+        }, 5 * 60 * 1000); // 5 minutes
         
         this.intervals.set('pickLocking', pickLockingInterval);
-        console.log('✅ Pick locking task scheduled (every 60 seconds)');
+        // Pick locking task scheduled successfully
         
         // Run pick locking immediately on startup
         this.processPickLocking().catch(error => {
-            console.error('❌ Initial pick locking error:', error);
+            // Initial pick locking error
         });
         
-        console.log('✅ All scheduled tasks started');
+        // All scheduled tasks started successfully
     }
     
     /**
@@ -47,22 +47,22 @@ class ScheduledTasks {
      */
     stop() {
         if (!this.isRunning) {
-            console.log('⚠️ Scheduled tasks not running');
+            // Scheduled tasks not currently running
             return;
         }
         
-        console.log('🛑 Stopping scheduled tasks...');
+        // Stopping scheduled tasks
         
         // Clear all intervals
         for (const [name, interval] of this.intervals) {
             clearInterval(interval);
-            console.log(`✅ Stopped ${name} task`);
+            // Task stopped successfully
         }
         
         this.intervals.clear();
         this.isRunning = false;
         
-        console.log('✅ All scheduled tasks stopped');
+        // All scheduled tasks stopped
     }
     
     /**
@@ -81,13 +81,28 @@ class ScheduledTasks {
      */
     async processPickLocking() {
         try {
-            console.log('🔒 Processing pick locking...');
-            
             // Get current NFL week
             const currentWeek = this.getCurrentNFLWeek();
+            const database = require('../config/database');
+            
+            // First check if there are any games starting soon or in progress
+            const upcomingGames = await database.execute(`
+                SELECT COUNT(*) as count
+                FROM games 
+                WHERE week = ? 
+                AND season_year = YEAR(CURDATE())
+                AND status IN ('scheduled', 'in_progress')
+                AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+            `, [currentWeek]);
+            
+            if (upcomingGames[0].count === 0) {
+                // No games starting soon, skip processing
+                return;
+            }
+            
+            // Processing pick locking
             
             // Get all active league entries for current week
-            const database = require('../config/database');
             const entries = await database.execute(`
                 SELECT DISTINCT le.entry_id, lu.league_id
                 FROM league_entries le
@@ -104,16 +119,16 @@ class ScheduledTasks {
                     await Pick.lockStartedGames(entry.entry_id, currentWeek);
                     totalLocked++;
                 } catch (error) {
-                    console.error(`❌ Error locking picks for entry ${entry.entry_id}:`, error);
+                    // Error locking picks for entry
                 }
             }
             
             if (totalLocked > 0) {
-                console.log(`🔐 Processed ${totalLocked} entries for pick locking`);
+                // Processed entries for pick locking
             }
             
         } catch (error) {
-            console.error('❌ Pick locking process error:', error);
+            // Pick locking process error
         }
     }
     
@@ -133,12 +148,12 @@ class ScheduledTasks {
      * Manually trigger pick locking (for testing)
      */
     async triggerPickLocking() {
-        console.log('🔧 Manual trigger: Pick locking service');
+        // Manual trigger: Pick locking service
         try {
             await this.processPickLocking();
-            console.log('✅ Manual pick locking completed');
+            // Manual pick locking completed
         } catch (error) {
-            console.error('❌ Manual pick locking error:', error);
+            // Manual pick locking error
             throw error;
         }
     }

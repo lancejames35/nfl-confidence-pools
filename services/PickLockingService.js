@@ -9,7 +9,7 @@ class PickLockingService {
      */
     static async processAllLeagues() {
         try {
-            console.log('🔒 Pick Locking Service: Starting league processing...');
+            // Pick Locking Service: Starting league processing
             
             // Get all active leagues with their deadline settings
             const leagues = await database.execute(`
@@ -27,10 +27,10 @@ class PickLockingService {
                 await this.processLeague(league);
             }
             
-            console.log(`✅ Pick Locking Service: Processed ${leagues.length} leagues`);
+            // Pick Locking Service: Completed processing leagues
             
         } catch (error) {
-            console.error('❌ Pick Locking Service Error:', error);
+            // Pick Locking Service Error occurred
         }
     }
     
@@ -61,7 +61,7 @@ class PickLockingService {
                 const firstGame = games[0];
                 if (this.hasGameStarted(firstGame.kickoff_timestamp)) {
                     gamesToLock = games.map(g => g.game_id);
-                    console.log(`🔒 League ${league.league_id} (${league.league_name}): Locking ALL games (first-game deadline)`);
+                    // League locking ALL games due to first-game deadline
                 }
             } else {
                 // Per-game deadline: lock each game individually at its kickoff time
@@ -72,7 +72,7 @@ class PickLockingService {
                 });
                 
                 if (gamesToLock.length > 0) {
-                    console.log(`🔒 League ${league.league_id} (${league.league_name}): Locking ${gamesToLock.length} games (per-game deadline)`);
+                    // League locking individual games with per-game deadline
                 }
             }
             
@@ -82,7 +82,7 @@ class PickLockingService {
             }
             
         } catch (error) {
-            console.error(`❌ Error processing league ${league.league_id}:`, error);
+            // Error processing league
         }
     }
     
@@ -125,13 +125,13 @@ class PickLockingService {
                 AND p.is_locked = 0
             `, params);
             
-            console.log(`🔐 Locked ${result.affectedRows} picks for league ${leagueId}, games: ${gameIds.join(', ')}`);
+            // Locked picks for league and games successfully
             
             // Log the locking action for audit trail
             await this.logLockingAction(leagueId, gameIds, result.affectedRows);
             
         } catch (error) {
-            console.error(`❌ Error locking picks for league ${leagueId}:`, error);
+            // Error locking picks for league
         }
     }
     
@@ -163,7 +163,7 @@ class PickLockingService {
                 })
             ]);
         } catch (error) {
-            console.error('Error logging lock action:', error);
+            // Error logging lock action
         }
     }
     
@@ -251,7 +251,7 @@ class PickLockingService {
             };
             
         } catch (error) {
-            console.error('Error getting league status:', error);
+            // Error getting league status
             return { error: error.message };
         }
     }

@@ -106,7 +106,7 @@ class PickController {
                     settings = confidenceSettings;
                 }
             } catch (error) {
-                console.error('Error fetching confidence pool settings:', error);
+                // Error fetching confidence pool settings
                 settings = {
                     primary_tiebreaker: 'mnf_total',
                     secondary_tiebreaker: 'highest_confidence_correct'
@@ -228,7 +228,7 @@ class PickController {
                     tiebreakerValue = tiebreaker.predicted_value;
                 }
             } catch (error) {
-                console.error('Error fetching tiebreaker value:', error);
+                // Error fetching tiebreaker value
             }
             
             res.render('picks/make', {
@@ -258,16 +258,7 @@ class PickController {
             const { league_id, entry_id } = req.params;
             const { week, picks, tiebreaker_prediction } = req.body;
             
-            // Debug logging
-            console.log('DEBUG PICK SAVE - Parameters:', { 
-                league_id, 
-                entry_id, 
-                week, 
-                user_id: req.user.user_id,
-                picks_count: picks?.length,
-                has_tiebreaker: tiebreaker_prediction !== undefined
-            });
-            console.log('DEBUG PICK SAVE - First few picks:', picks?.slice(0, 3));
+            // Pick save operation parameters validated
             
             // Validate user has access
             const isMember = await League.isUserMember(league_id, req.user.user_id);
@@ -316,7 +307,7 @@ class PickController {
                         `, [entry_id, week, parseInt(tiebreaker_prediction)]);
                     }
                 } catch (tiebreakerError) {
-                    console.error('Error saving tiebreaker:', tiebreakerError);
+                    // Error saving tiebreaker
                     // Don't fail the entire save for tiebreaker issues
                 }
             }
@@ -349,20 +340,20 @@ class PickController {
             const { entry_id } = req.params;
             const { week, picks, tiebreaker_prediction } = req.body;
             
-            console.log('AutoSave called:', { entry_id, week, picks: picks?.length, tiebreaker_prediction });
+            // Auto-save operation initiated
             
             // Use the same logic as regular save instead of draft
             const result = await Pick.savePicks(entry_id, week, picks);
             
             // Save tiebreaker prediction if provided
-            console.log('Tiebreaker value received:', tiebreaker_prediction, 'Type:', typeof tiebreaker_prediction);
+            // Tiebreaker value received for processing
             if (tiebreaker_prediction !== undefined && tiebreaker_prediction !== '') {
                 try {
                     const entryIdInt = parseInt(entry_id);
                     const weekInt = parseInt(week);
                     const predictionValue = parseFloat(tiebreaker_prediction);
                     
-                    console.log('Saving tiebreaker - entry_id:', entryIdInt, 'week:', weekInt, 'value:', predictionValue);
+                    // Saving tiebreaker prediction
                     
                     // First try to update existing record (whether tiebreaker_rank is NULL or 1)
                     const updateResult = await database.execute(`
@@ -382,13 +373,12 @@ class PickController {
                             INSERT INTO tiebreakers (entry_id, week, tiebreaker_type, predicted_value, question, is_active, tiebreaker_rank)
                             VALUES (?, ?, 'mnf_total_points', ?, 'Monday Night Football Total Points', 1, 1)
                         `, [entryIdInt, weekInt, predictionValue]);
-                        console.log('Tiebreaker inserted:', tiebreakerResult);
+                        // Tiebreaker record inserted
                     } else {
-                        console.log('Tiebreaker updated:', updateResult);
+                        // Tiebreaker record updated
                     }
                 } catch (tiebreakerError) {
-                    console.error('Error saving tiebreaker - Full error:', tiebreakerError);
-                    console.error('Error details:', tiebreakerError.message, tiebreakerError.code);
+                    // Error saving tiebreaker with details
                     // Don't fail the entire autosave for tiebreaker issues
                 }
             }

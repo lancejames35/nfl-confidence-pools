@@ -20,12 +20,14 @@ const database = require('./config/database');
 const socketManager = require('./config/socket');
 const { themeMiddleware } = require('./config/themes');
 const scheduledTasks = require('./services/ScheduledTasks');
+const logger = require('./config/logger');
 
 // Import middleware
 const authMiddleware = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
 const rateLimiter = require('./middleware/rateLimit');
 const navigationMiddleware = require('./middleware/navigation');
+const SecurityConfig = require('./config/security');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -66,21 +68,28 @@ class Application {
             // Configure error handling
             this.configureErrorHandling();
             
-            // Initialize Socket.io
-            socketManager.initialize(this.server);
+            // Initialize Socket.io with session middleware
+            socketManager.initialize(this.server, this.sessionMiddleware);
             
             // Start scheduled tasks
             scheduledTasks.start();
             
-            console.log('✅ Application initialized successfully');
+            logger.info('Application initialized successfully');
         } catch (error) {
-            console.error('❌ Application initialization failed:', error);
+            logger.error('Application initialization failed', { error: error.message, stack: error.stack });
             process.exit(1);
         }
     }
 
     configureMiddleware() {
-        // Security middleware
+        // Enhanced security middleware
+        this.app.use(SecurityConfig.securityHeaders);
+        this.app.use(SecurityConfig.validateRequestSize);
+        this.app.use(SecurityConfig.sanitizeInput);
+        this.app.use(SecurityConfig.ipSecurity);
+        this.app.use(SecurityConfig.securityLogger);
+        
+        // Helmet security headers
         this.app.use(helmet({
             contentSecurityPolicy: {
                 directives: {
@@ -92,7 +101,12 @@ class Application {
                     connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"]
                 }
             },
-            crossOriginEmbedderPolicy: false
+            crossOriginEmbedderPolicy: false,
+            hsts: {
+                maxAge: 31536000,
+                includeSubDomains: true,
+                preload: true
+            }
         }));
 
         // CORS configuration
@@ -169,7 +183,7 @@ class Application {
                     // Check for new results (simplified for now)
                     res.locals.newResultsCount = 0; // Will be implemented with results system
                 } catch (error) {
-                    console.error('Error loading navigation context:', error);
+                    logger.error('Error loading navigation context', { error: error.message });
                     res.locals.activeLeaguesCount = 0;
                     res.locals.pendingPicksCount = 0;
                     res.locals.newResultsCount = 0;
@@ -187,26 +201,19 @@ class Application {
     }
 
     configureSession() {
+        // Use enhanced secure session configuration
         const sessionConfig = {
-            secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
-            store: database.getSessionStore(),
-            resave: false,
-            saveUninitialized: false,
-            rolling: true,
-            cookie: {
-                secure: process.env.NODE_ENV === 'production',
-                httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000, // 24 hours
-                sameSite: 'lax'
-            },
-            name: 'pools.sid'
+            ...SecurityConfig.getSecureSessionConfig(),
+            store: database.getSessionStore()
         };
 
         if (process.env.NODE_ENV === 'production') {
             this.app.set('trust proxy', 1);
         }
 
-        this.app.use(session(sessionConfig));
+        // Store session middleware for Socket.IO sharing
+        this.sessionMiddleware = session(sessionConfig);
+        this.app.use(this.sessionMiddleware);
         this.app.use(flash());
     }
 
@@ -253,7 +260,7 @@ class Application {
                 res.redirect(`/dashboard?league_id=${league.league_id}`);
                 
             } catch (error) {
-                console.error('Join error:', error);
+                logger.error('Join error', { error: error.message });
                 req.flash('error', 'Error joining league. Please try again.');
                 res.redirect('/dashboard');
             }
@@ -320,7 +327,7 @@ class Application {
                 res.redirect(`/auth/register?action=join-league&code=${joinCode}&league=${encodeURIComponent(league.league_name)}`);
 
             } catch (error) {
-                console.error('Invite landing error:', error);
+                logger.error('Invite landing error', { error: error.message });
                 req.flash('error', 'An error occurred processing your invite');
                 res.redirect('/start');
             }
@@ -384,7 +391,7 @@ class Application {
                     const isMember = leagues && leagues.some(l => l.league_id == selectedLeagueId);
                     if (!isMember) {
                         // User is not a member of this league - clear the selection
-                        console.log(`Security: User ${req.user.user_id} attempted to access league ${selectedLeagueId} without membership`);
+                        logger.security('User attempted to access league without membership', { userId: req.user.user_id, leagueId: selectedLeagueId });
                         selectedLeagueId = null;
                         req.flash('error', 'You do not have access to that league');
                     }
@@ -413,7 +420,7 @@ class Application {
                     [currentWeek, new Date().getFullYear()]
                 ) || [];
                 const gamesThisWeek = gamesCountRow ? gamesCountRow.count : 16;
-                console.log('Dashboard - Games this week:', gamesThisWeek);
+                // Dashboard metrics logging removed for production
                 
                 // Get picks to make count
                 const [picksNeededRow] = await database.execute(
@@ -427,7 +434,6 @@ class Application {
                     [req.user.user_id, currentWeek]
                 ) || [];
                 const picksToMake = picksNeededRow ? picksNeededRow.count : 0;
-                console.log('Dashboard - Picks to make:', picksToMake);
                 
                 // Get user stats - filter by selected league if specified
                 let statsQuery;
@@ -468,7 +474,6 @@ class Application {
                 const correctPicks = userStats ? (parseInt(userStats.correct_picks) || 0) : 0;
                 const totalPicks = userStats ? (parseInt(userStats.total_picks) || 0) : 0;
                 const winPercentage = totalPicks > 0 ? Math.round((correctPicks / totalPicks) * 100) : 0;
-                console.log('Dashboard - User stats:', { totalPoints, correctPicks, totalPicks, winPercentage });
                 
                 // Get recent activity - filter by selected league if specified
                 let activityQuery;
@@ -510,7 +515,6 @@ class Application {
                     text: a.text,
                     time: a.time ? formatTimeAgo(a.time) : 'Unknown'
                 }));
-                console.log('Dashboard - Recent activities:', recentActivity.length);
                 
                 // Get league settings for selected league
                 let leagueSettings = null;
@@ -596,7 +600,7 @@ class Application {
                     commissionerMessages
                 });
             } catch (error) {
-                console.error('Dashboard error:', error);
+                logger.error('Dashboard error', { error: error.message, userId: req.user?.user_id });
                 
                 // Get current week even in error case
                 const { getCurrentNFLWeek } = require('./utils/getCurrentWeek');
@@ -604,7 +608,7 @@ class Application {
                 try {
                     currentWeek = await getCurrentNFLWeek(database) || 1;
                 } catch (e) {
-                    console.error('Failed to get current week:', e);
+                    logger.error('Failed to get current week', { error: e.message });
                 }
                 
                 res.render('dashboard/index', {
@@ -652,18 +656,18 @@ class Application {
     }
 
     configureErrorHandling() {
-        // Global error handler
-        this.app.use(errorHandler);
+        // Enhanced global error handler
+        this.app.use(SecurityConfig.handleError);
 
         // Uncaught exception handler
         process.on('uncaughtException', (error) => {
-            console.error('Uncaught Exception:', error);
+            logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
             this.gracefulShutdown('UNCAUGHT_EXCEPTION');
         });
 
         // Unhandled rejection handler
         process.on('unhandledRejection', (reason, promise) => {
-            console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+            logger.error('Unhandled Promise Rejection', { reason, stack: reason?.stack });
             this.gracefulShutdown('UNHANDLED_REJECTION');
         });
 
@@ -677,33 +681,30 @@ class Application {
             await this.initialize();
             
             this.server.listen(this.port, () => {
-                console.log(`🚀 Server running on port ${this.port}`);
-                console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-                console.log(`📱 Mobile-first responsive design enabled`);
-                console.log(`⚡ Real-time features active`);
-                console.log(`🎨 Multi-theme system ready`);
-                
-                if (process.env.NODE_ENV === 'development') {
-                    console.log(`🔧 Development server: http://localhost:${this.port}`);
-                }
+                logger.info('Server started successfully', {
+                    port: this.port,
+                    environment: process.env.NODE_ENV || 'development',
+                    features: ['mobile-responsive', 'real-time', 'multi-theme'],
+                    url: process.env.NODE_ENV === 'development' ? `http://localhost:${this.port}` : undefined
+                });
             });
         } catch (error) {
-            console.error('❌ Failed to start server:', error);
+            logger.error('Failed to start server', { error: error.message, stack: error.stack });
             process.exit(1);
         }
     }
 
     async gracefulShutdown(signal) {
-        console.log(`\n📝 Received ${signal}. Starting graceful shutdown...`);
+        logger.info('Graceful shutdown initiated', { signal });
         
         // Close server to stop accepting new connections
         this.server.close(async (error) => {
             if (error) {
-                console.error('❌ Error during server close:', error);
+                logger.error('Error during server close', { error: error.message });
                 process.exit(1);
             }
             
-            console.log('✅ HTTP server closed');
+            logger.info('HTTP server closed successfully');
             
             try {
                 // Stop scheduled tasks
@@ -711,19 +712,19 @@ class Application {
                 
                 // Close database connections
                 await database.close();
-                console.log('✅ Database connections closed');
+                logger.info('Database connections closed successfully');
                 
-                console.log('✅ Graceful shutdown completed');
+                logger.info('Graceful shutdown completed successfully');
                 process.exit(0);
             } catch (error) {
-                console.error('❌ Error during graceful shutdown:', error);
+                logger.error('Error during graceful shutdown', { error: error.message });
                 process.exit(1);
             }
         });
         
         // Force close after timeout
         setTimeout(() => {
-            console.error('❌ Graceful shutdown timeout, forcing exit');
+            logger.error('Graceful shutdown timeout, forcing exit');
             process.exit(1);
         }, 10000);
     }
@@ -735,7 +736,7 @@ const app = new Application();
 // Only start if this file is run directly (not imported)
 if (require.main === module) {
     app.start().catch(error => {
-        console.error('❌ Application startup failed:', error);
+        logger.error('Application startup failed', { error: error.message, stack: error.stack });
         process.exit(1);
     });
 }

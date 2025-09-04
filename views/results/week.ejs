@@ -293,13 +293,7 @@
                                         <div class="text-center">
                                             <small class="text-muted">
                                                 <i class="fas fa-calendar me-1"></i>
-                                                <%= new Date(game.kickoff_timestamp).toLocaleDateString('en-US', { 
-                                                    weekday: 'short', 
-                                                    month: 'short', 
-                                                    day: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit'
-                                                }) %>
+                                                <span class="game-time-display" data-timestamp="<%= game.kickoff_timestamp %>">Loading...</span>
                                             </small>
                                         </div>
                                         <div class="row g-2 mt-2">
@@ -485,4 +479,49 @@ setInterval(() => {
     }
 }, 120000); // 2 minutes for in-progress games
 <% } %>
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Convert game times to user's local timezone (using same logic as dashboard)
+    function convertGameTimesToUserTimezone() {
+        const gameTimeElements = document.querySelectorAll('.game-time-display');
+        gameTimeElements.forEach(element => {
+            const timestamp = element.getAttribute('data-timestamp');
+            if (timestamp) {
+                try {
+                    // Apply the exact same transformation as the dashboard
+                    // Dashboard: firstGameKickoff.toISOString().replace("T", " ").substring(0, 19) + " ET"
+                    // Then: new Date(etTimeStr + " EDT")
+                    
+                    // Convert the timestamp to a Date object, then to ISO string (same as dashboard)
+                    const gameDate = new Date(timestamp);
+                    const etTimeStr = gameDate.toISOString().replace("T", " ").substring(0, 19);
+                    const etDate = new Date(etTimeStr + " EDT"); // Exactly like dashboard
+                    
+                    // Get user's timezone
+                    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    
+                    // Format the time for user's display (slightly shorter format for results pages)
+                    const formattedTime = new Intl.DateTimeFormat('en-US', {
+                        timeZone: userTimezone,
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    }).format(etDate);
+                    
+                    element.textContent = formattedTime;
+                } catch (error) {
+                    console.error('Error converting game timestamp:', timestamp, error);
+                    element.textContent = 'Time unavailable';
+                }
+            }
+        });
+    }
+    
+    // Convert times immediately when page loads
+    convertGameTimesToUserTimezone();
+});
 </script>

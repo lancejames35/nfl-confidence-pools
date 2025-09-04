@@ -117,15 +117,11 @@ class ResultsController {
                 ORDER BY p.game_id, p.confidence_points DESC
             `;
             
-            // Debug: log the user_id being passed
+            // Prepare user parameters for pick visibility
             const currentUserId = req.user?.user_id || req.user?.id || 0;
-            console.log('DEBUG - Current user ID being passed:', currentUserId, 'Full req.user:', req.user);
-            console.log('DEBUG - Query parameters:', { currentUserId, leagueId, currentWeek });
-            console.log('DEBUG - Participants found:', participants.length);
             
-            // Debug: log current user's entry_id in this league
+            // Find current user's participation in this league
             const currentUserParticipant = participants.find(p => p.user_id == currentUserId);
-            console.log('DEBUG - Current user participant:', currentUserParticipant);
             
             const picks = await database.execute(picksQuery, [currentUserId, leagueId, currentWeek]);
             
@@ -148,18 +144,8 @@ class ResultsController {
             const gameMap = new Map();
             games.forEach(game => gameMap.set(game.game_id, game));
             
-            // Debug: log picks for current user
+            // Filter picks for current user analysis
             const currentUserPicks = picks.filter(p => p.user_id == currentUserId);
-            console.log(`DEBUG - Found ${currentUserPicks.length} picks for current user (ID: ${currentUserId})`);
-            if (currentUserPicks.length > 0) {
-                console.log('First few current user picks:', currentUserPicks.slice(0, 3).map(p => ({
-                    game_id: p.game_id,
-                    selected_team: p.selected_team,
-                    confidence_points: p.confidence_points,
-                    show_pick: p.show_pick,
-                    user_id: p.user_id
-                })));
-            }
 
             // Process picks with dynamic scoring
             picks.forEach(pick => {
@@ -187,17 +173,8 @@ class ResultsController {
                         // Only add the pick to user's visible picks if it should be shown
                         if (pick.show_pick) {
                             userTotals[pick.entry_id].picks[pick.game_id] = enhancedPick;
-                            // Debug: log when current user's pick is added
-                            if (pick.user_id == currentUserId) {
-                                console.log(`DEBUG - Added current user pick for game ${pick.game_id}:`, {
-                                    selected_team: pick.selected_team,
-                                    confidence_points: pick.confidence_points,
-                                    show_pick: pick.show_pick
-                                });
-                            }
-                        } else if (pick.user_id == currentUserId) {
-                            console.log(`DEBUG - SKIPPED current user pick for game ${pick.game_id} because show_pick = ${pick.show_pick}`);
-                        }
+                            // Current user's pick added to visible picks
+                        } // Pick not shown due to visibility rules
                         
                         // Only count games that have started toward record
                         const hasScores = game.home_score !== null && game.away_score !== null;
@@ -259,10 +236,10 @@ class ResultsController {
 
             // Get MNF tiebreaker predictions if the league uses MNF as a tiebreaker
             const tiebreakerSettings = await ResultsController.getLeagueSettings(league.league_id);
-            console.log('Tiebreaker settings:', tiebreakerSettings);
+            // Loaded tiebreaker settings for league
             if (tiebreakerSettings && (tiebreakerSettings.primary_tiebreaker === 'mnf_total' || tiebreakerSettings.secondary_tiebreaker === 'mnf_total')) {
                 const entryIds = userResults.map(user => user.entry_id);
-                console.log('Entry IDs for tiebreaker lookup:', entryIds);
+                // Gathering entry IDs for tiebreaker lookup
                 
                 const tiebreakerQuery = `
                     SELECT entry_id, predicted_value
@@ -275,7 +252,7 @@ class ResultsController {
                 
                 try {
                     const [tiebreakers] = await database.execute(tiebreakerQuery, [...entryIds, currentWeek]);
-                    console.log('Tiebreakers found:', tiebreakers);
+                    // Retrieved tiebreaker predictions
                     const tiebreakerMap = {};
                     
                     // Ensure tiebreakers is always an array
@@ -284,15 +261,14 @@ class ResultsController {
                     tiebreakerArray.forEach(tb => {
                         tiebreakerMap[tb.entry_id] = tb.predicted_value;
                     });
-                    console.log('Tiebreaker map:', tiebreakerMap);
+                    // Built tiebreaker mapping
                     
                     // Add MNF predictions to user results
                     userResults.forEach(user => {
                         user.mnfPrediction = tiebreakerMap[user.entry_id] || null;
-                        console.log(`User ${user.entry_id} MNF prediction: ${user.mnfPrediction}`);
                     });
                 } catch (error) {
-                    console.error('Error fetching tiebreakers:', error);
+                    // Error fetching tiebreakers
                     // Add null values if error occurs
                     userResults.forEach(user => {
                         user.mnfPrediction = null;
@@ -314,7 +290,7 @@ class ResultsController {
             // Get tier summary for filtering (only if multi-tier is enabled)
             let tierSummary = null;
             if (league.enable_multi_tier) {
-                tierSummary = ResultsController.getTierSummary(participants);
+                tierSummary = await ResultsController.getTierSummary(leagueId, participants);
             }
             
             res.render('results/week-confidence', {
@@ -407,20 +383,7 @@ class ResultsController {
                         `;
                         picks = await database.execute(leaguePicksQuery, [req.user?.user_id || 0, gameId, leagueId]);
                         
-                        // Debug logging for pick visibility
-                        console.log('Pick visibility debug:', {
-                            currentUserId: req.user?.user_id,
-                            gameId: gameId,
-                            leagueId: leagueId,
-                            picksCount: picks.length,
-                            picks: picks.map(p => ({
-                                username: p.username,
-                                user_id: p.user_id,
-                                is_locked: p.is_locked,
-                                show_pick: p.show_pick,
-                                kickoff_timestamp: p.kickoff_timestamp
-                            }))
-                        });
+                        // Pick visibility determined for game details
                     }
                 }
             }
@@ -538,7 +501,7 @@ class ResultsController {
             
             return settings || null;
         } catch (error) {
-            console.error('Error fetching league settings:', error);
+            // Error fetching league settings
             return null;
         }
     }
@@ -546,24 +509,62 @@ class ResultsController {
     /**
      * Get tier summary from participants
      */
-    static getTierSummary(participants) {
-        const tierMap = new Map();
-        
-        participants.forEach(participant => {
-            if (participant.tier_name) {
-                if (!tierMap.has(participant.tier_id)) {
-                    tierMap.set(participant.tier_id, {
-                        tier_id: participant.tier_id,
-                        tier_name: participant.tier_name,
-                        tier_description: participant.tier_description,
-                        count: 0
-                    });
+    static async getTierSummary(leagueId, participants) {
+        try {
+            // Get tier order from database (same as StandingsController)
+            const query = `
+                SELECT 
+                    let.tier_id,
+                    let.tier_name,
+                    let.tier_order,
+                    let.tier_description
+                FROM league_entry_tiers let
+                WHERE let.league_id = ? AND let.is_active = 1
+                ORDER BY let.tier_order ASC
+            `;
+            
+            const tiers = await database.execute(query, [leagueId]);
+            
+            // Count participants for each tier
+            const tierMap = new Map();
+            participants.forEach(participant => {
+                if (participant.tier_name) {
+                    if (!tierMap.has(participant.tier_id)) {
+                        tierMap.set(participant.tier_id, 0);
+                    }
+                    tierMap.set(participant.tier_id, tierMap.get(participant.tier_id) + 1);
                 }
-                tierMap.get(participant.tier_id).count++;
-            }
-        });
-        
-        return Array.from(tierMap.values()).sort((a, b) => a.tier_name.localeCompare(b.tier_name));
+            });
+            
+            // Build tier summary with proper ordering
+            return tiers.map(tier => ({
+                tier_id: tier.tier_id,
+                tier_name: tier.tier_name,
+                tier_description: tier.tier_description,
+                tier_order: tier.tier_order,
+                count: tierMap.get(tier.tier_id) || 0
+            }));
+            
+        } catch (error) {
+            // Fallback to old method if database query fails
+            const tierMap = new Map();
+            
+            participants.forEach(participant => {
+                if (participant.tier_name) {
+                    if (!tierMap.has(participant.tier_id)) {
+                        tierMap.set(participant.tier_id, {
+                            tier_id: participant.tier_id,
+                            tier_name: participant.tier_name,
+                            tier_description: participant.tier_description,
+                            count: 0
+                        });
+                    }
+                    tierMap.get(participant.tier_id).count++;
+                }
+            });
+            
+            return Array.from(tierMap.values()).sort((a, b) => a.tier_name.localeCompare(b.tier_name));
+        }
     }
     
     /**

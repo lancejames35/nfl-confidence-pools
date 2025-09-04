@@ -11,7 +11,7 @@ async function addUserToLeague() {
         );
         
         if (leagues.length === 0) {
-            console.log('No active leagues found. Creating a test league...');
+            // No active leagues found. Creating a test league...
             
             // Create a test league
             const [result] = await database.execute(
@@ -21,7 +21,7 @@ async function addUserToLeague() {
             );
             
             const leagueId = result.insertId;
-            console.log('Created league with ID:', leagueId);
+            // Created league successfully
             
             // Add user to the league
             const [userResult] = await database.execute(
@@ -30,7 +30,7 @@ async function addUserToLeague() {
                 [leagueId, userId]
             );
             
-            console.log('Added user to league as commissioner');
+            // Added user to league as commissioner
             
             // Create an entry for the user
             const [entryResult] = await database.execute(
@@ -39,10 +39,10 @@ async function addUserToLeague() {
                 [userResult.insertId]
             );
             
-            console.log('Created entry for user with ID:', entryResult.insertId);
+            // Created entry for user
         } else {
             const league = leagues[0];
-            console.log('Found league:', league.league_name);
+            // Found existing league
             
             // Check if user is already in the league
             const [existing] = await database.execute(
@@ -58,7 +58,7 @@ async function addUserToLeague() {
                     [league.league_id, userId]
                 );
                 
-                console.log('Added user to existing league');
+                // Added user to existing league
                 
                 // Create an entry for the user
                 const [entryResult] = await database.execute(
@@ -67,9 +67,9 @@ async function addUserToLeague() {
                     [userResult.insertId, 'My Team']
                 );
                 
-                console.log('Created entry for user');
+                // Created entry for user
             } else {
-                console.log('User is already in the league');
+                // User is already in the league
                 
                 // Check if user has an entry
                 const [entries] = await database.execute(
@@ -85,17 +85,17 @@ async function addUserToLeague() {
                         [existing[0].league_user_id, 'My Team']
                     );
                     
-                    console.log('Created entry for existing user');
+                    // Created entry for existing user
                 } else {
-                    console.log('User already has an entry');
+                    // User already has an entry
                 }
             }
         }
         
-        console.log('Setup complete!');
+        // Setup complete!
         process.exit(0);
     } catch (error) {
-        console.error('Error:', error);
+        // Error occurred
         process.exit(1);
     }
 }

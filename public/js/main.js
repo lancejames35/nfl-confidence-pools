@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
             navigator.clipboard.writeText(text).then(function() {
                 showToast('Copied to clipboard!', 'success');
             }).catch(function(err) {
-                console.error('Failed to copy: ', err);
+                // Failed to copy
                 fallbackCopyTextToClipboard(text);
             });
         } else {
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Copied to clipboard!', 'success');
             }
         } catch (err) {
-            console.error('Fallback: Oops, unable to copy', err);
+            // Fallback copy failed
         }
         
         document.body.removeChild(textArea);
@@ -285,7 +285,7 @@ if ('serviceWorker' in navigator && window.location.protocol === 'https:' || win
         navigator.serviceWorker.register('/sw.js', {
             scope: '/'
         }).then(function(registration) {
-            console.log('SW registered: ', registration);
+            // Service worker registered
             
             // Handle updates
             registration.addEventListener('updatefound', () => {
@@ -300,7 +300,7 @@ if ('serviceWorker' in navigator && window.location.protocol === 'https:' || win
                 });
             });
         }).catch(function(registrationError) {
-            console.log('SW registration failed: ', registrationError);
+            // Service worker registration failed
             // Don't show error to user - service worker is optional
         });
     });
@@ -321,7 +321,7 @@ window.addEventListener('offline', function() {
 
 // Global error handler
 window.addEventListener('error', function(e) {
-    console.error('Global error:', e.error);
+    // Global error occurred
     // Don't show toast for every error in production
     if (window.location.hostname === 'localhost' && window.PoolsApp) {
         window.PoolsApp.showToast('An error occurred', 'danger');
@@ -341,7 +341,7 @@ if (typeof performance !== 'undefined') {
     window.addEventListener('load', function() {
         setTimeout(function() {
             const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-            console.log('Page load time:', loadTime + 'ms');
+            // Page loaded
         }, 0);
     });
 }

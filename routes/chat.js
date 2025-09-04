@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
         return res.redirect(`/leagues/${userLeagues[0].league_id}/chat`);
 
     } catch (error) {
-        console.error('Error loading chat page:', error);
+        // Error loading chat page
         req.flash('error', 'Error loading chat');
         res.redirect('/dashboard');
     }

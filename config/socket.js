@@ -1,5 +1,6 @@
 const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
+const session = require('express-session');
+const database = require('./database');
 
 class SocketManager {
     constructor() {
@@ -9,7 +10,7 @@ class SocketManager {
         this.leagueRooms = new Map(); // leagueId -> Set of socket.ids
     }
 
-    initialize(server) {
+    initialize(server, sessionMiddleware = null) {
         this.io = new Server(server, {
             cors: {
                 origin: process.env.CLIENT_URL || "http://localhost:3000",
@@ -18,43 +19,64 @@ class SocketManager {
             },
             transports: ['websocket', 'polling']
         });
+        
+        // Store session middleware for Socket.IO session access
+        this.sessionMiddleware = sessionMiddleware;
 
-        // Authentication middleware (optional for now)
+        // Use session middleware with Socket.IO if provided
+        if (sessionMiddleware) {
+            this.io.use((socket, next) => {
+                // Create a fake response object for session middleware
+                const fakeRes = {
+                    getHeader: () => null,
+                    setHeader: () => {},
+                    end: () => {}
+                };
+                sessionMiddleware(socket.request, fakeRes, next);
+            });
+        }
+
+        // Session-based authentication middleware
         this.io.use(async (socket, next) => {
             try {
-                const token = socket.handshake.auth.token || 
-                             socket.handshake.headers.authorization?.split(' ')[1] ||
-                             socket.handshake.query.token;
+                // Access session data from the socket request
+                const session = socket.request.session;
                 
-                if (token) {
+                // Socket session debug information available in development mode
+                
+                if (session && session.userId) {
+                    // User is authenticated via session (using session.userId, not session.user)
+                    socket.userId = session.userId;
+                    socket.username = session.username || 'User';
+                    socket.isAuthenticated = true;
+                    
+                    // Load full user data from database for socket operations
                     try {
-                        // Try to verify JWT token
-                        const secret = process.env.JWT_SECRET || 'fallback-secret';
-                        const decoded = jwt.verify(token, secret);
-                        socket.userId = decoded.userId || decoded.user_id || decoded.id;
-                        socket.username = decoded.username || decoded.name || 'User';
-                        socket.isAuthenticated = true;
-                        console.log(`✅ JWT authenticated: ${socket.username} (${socket.userId})`);
-                    } catch (jwtError) {
-                        console.warn('Invalid JWT token:', jwtError.message);
-                        // Fall back to session-based auth if available
-                        socket.isAuthenticated = false;
-                        socket.userId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                        socket.username = 'Guest';
+                        const userResult = await database.execute(
+                            'SELECT user_id, username, email, first_name, last_name FROM users WHERE user_id = ?',
+                            [session.userId]
+                        );
+                        
+                        if (userResult[0]) {
+                            socket.user = userResult[0];
+                            socket.username = userResult[0].username;
+                        }
+                    } catch (error) {
+                        // Error loading user data for socket connection
                     }
+                    
+                    // Session authenticated successfully
                 } else {
-                    // Allow anonymous connections for public features
-                    socket.userId = 'anonymous_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    socket.username = 'Anonymous';
-                    socket.isAuthenticated = false;
+                    // No valid session - REJECT the connection for unauthenticated users
+                    // Rejecting unauthenticated connection - no userId in session
+                    return next(new Error('Authentication required'));
                 }
                 
                 next();
             } catch (error) {
-                console.error('Socket authentication error:', error);
-                // Allow connection but mark as unauthenticated
-                socket.isAuthenticated = false;
-                next();
+                // Socket authentication error occurred
+                // Reject unauthenticated connections
+                return next(new Error('Authentication failed'));
             }
         });
 
@@ -63,19 +85,21 @@ class SocketManager {
             this.handleConnection(socket);
         });
 
-        console.log('✅ Socket.io server initialized');
+        // Socket.io server initialized successfully
         return this.io;
     }
 
     handleConnection(socket) {
         const userId = socket.userId;
         const username = socket.username;
+        const isAuthenticated = socket.isAuthenticated;
 
-        console.log(`🔌 User connected: ${username} (${userId})`);
-
+        // Since we now reject unauthenticated connections, this should always be true
+        // Authenticated user connected
+        
         // Store user connection
         this.connectedUsers.set(userId, socket.id);
-        this.userSockets.set(socket.id, { userId, username });
+        this.userSockets.set(socket.id, { userId, username, isAuthenticated: true });
 
         // Join user to their personal room
         socket.join(`user_${userId}`);
@@ -127,6 +151,17 @@ class SocketManager {
             });
         });
 
+        // Authentication check
+        socket.on('auth_check', (data, callback) => {
+            if (callback) {
+                callback({
+                    authenticated: socket.isAuthenticated,
+                    userId: socket.userId,
+                    username: socket.username
+                });
+            }
+        });
+
         // Handle disconnection
         socket.on('disconnect', () => {
             this.handleDisconnection(socket);
@@ -134,6 +169,12 @@ class SocketManager {
     }
 
     handleJoinLeague(socket, data) {
+        // Only allow authenticated users to join league rooms
+        if (!socket.isAuthenticated) {
+            // Unauthenticated user attempted to join league room
+            return;
+        }
+
         const { leagueId } = data;
         const userId = socket.userId;
         const username = socket.username;
@@ -156,7 +197,7 @@ class SocketManager {
             timestamp: new Date().toISOString()
         });
 
-        console.log(`👥 ${username} joined league ${leagueId}`);
+        // User joined league successfully
     }
 
     handleLeaveLeague(socket, data) {
@@ -185,10 +226,16 @@ class SocketManager {
             timestamp: new Date().toISOString()
         });
 
-        console.log(`👋 ${username} left league ${leagueId}`);
+        // User left league
     }
 
     handleChatMessage(socket, data) {
+        // Only authenticated users can send chat messages
+        if (!socket.isAuthenticated) {
+            // Unauthenticated user attempted to send chat message
+            return;
+        }
+
         const { leagueId, message, parentMessageId } = data;
         const userId = socket.userId;
         const username = socket.username;
@@ -217,7 +264,7 @@ class SocketManager {
         // Broadcast to league room
         this.io.to(`league_${leagueId}`).emit('new_message', messageData);
 
-        console.log(`💬 Chat message in league ${leagueId}: ${username}: ${message.substring(0, 50)}...`);
+        // Chat message sent successfully
     }
 
     handleMessageReaction(socket, data) {
@@ -244,6 +291,12 @@ class SocketManager {
     }
 
     handlePickUpdate(socket, data) {
+        // Only authenticated users can update picks
+        if (!socket.isAuthenticated) {
+            // Unauthenticated user attempted to update picks
+            return;
+        }
+
         const { leagueId, entryId, gameId, selectedTeam, confidencePoints } = data;
         const userId = socket.userId;
 
@@ -264,7 +317,7 @@ class SocketManager {
         // Regular users should not see others' picks until deadline
         socket.to(`league_${leagueId}_commissioners`).emit('live_pick_update', pickUpdate);
 
-        console.log(`🏈 Pick update: League ${leagueId}, Entry ${entryId}, Game ${gameId}`);
+        // Pick update processed
     }
 
     handleTiebreakerUpdate(socket, data) {
@@ -292,16 +345,17 @@ class SocketManager {
         if (userData) {
             const { userId, username } = userData;
             
-            // Clean up tracking
+            // Clean up user tracking (all connections are now authenticated)
             this.connectedUsers.delete(userId);
             this.userSockets.delete(socket.id);
+            // Authenticated user disconnected
             
             // Remove from league rooms
             for (const [leagueId, socketIds] of this.leagueRooms.entries()) {
                 if (socketIds.has(socket.id)) {
                     socketIds.delete(socket.id);
                     
-                    // Notify league members
+                    // Notify league members of disconnection
                     socket.to(`league_${leagueId}`).emit('user_left_league', {
                         userId,
                         username,
@@ -313,8 +367,6 @@ class SocketManager {
                     }
                 }
             }
-            
-            console.log(`🔌 User disconnected: ${username} (${userId})`);
         }
     }
 

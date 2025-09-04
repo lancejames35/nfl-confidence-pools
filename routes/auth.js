@@ -76,7 +76,7 @@ router.post('/register',
             authMiddleware.createSession(req, { user_id: userId, username, email });
 
             // Log successful registration
-            console.log(`✅ New user registered: ${username} (${email})`);
+            // New user registered successfully
 
             // Save session synchronously to ensure it's persisted before redirect
             await new Promise((resolve, reject) => {
@@ -119,11 +119,11 @@ router.post('/register',
                             req.flash('success', `Welcome to League Station Pools, ${username}! Please confirm joining ${league.league_name}.`);
                             redirectTo = `/leagues/join?code=${joinCode}&from=register`;
                             
-                            console.log(`✅ User ${username} (ID: ${userId}) registered and needs to confirm joining league ${league.league_name} (ID: ${league.league_id}) with code ${joinCode}`);
+                            // User registered and needs to confirm joining league
                         }
                     }
                 } catch (error) {
-                    console.error('Error joining league during registration:', error);
+                    // Error joining league during registration
                     req.flash('success', `Welcome to League Station Pools, ${username}!`);
                     req.flash('error', 'Could not join league automatically due to an error. Please try joining manually.');
                     redirectTo = `/leagues/join?code=${joinCode}&from=register`;
@@ -138,7 +138,7 @@ router.post('/register',
             res.redirect(redirectTo);
 
         } catch (error) {
-            console.error('Registration error:', error);
+            // Registration error occurred
             req.flash('error', 'Registration failed. Please try again.');
             res.redirect('/auth/register');
         }
@@ -222,7 +222,7 @@ router.post('/login',
                 });
             }
 
-            console.log(`✅ User logged in: ${userData.username}`);
+            // User logged in successfully
 
             // Handle post-login actions
             const { action, joinCode } = req.body;
@@ -265,12 +265,12 @@ router.post('/login',
                                 req.flash('success', `Welcome back, ${userData.username}! Please confirm joining ${league.league_name}.`);
                                 redirectTo = `/leagues/join?code=${joinCode}`;
                                 
-                                console.log(`✅ User ${userData.username} (ID: ${userData.user_id}) logged in and needs to confirm joining league ${league.league_name} (ID: ${league.league_id}) with code ${joinCode}`);
+                                // User logged in and needs to confirm joining league
                             }
                         }
                     }
                 } catch (error) {
-                    console.error('Error joining league during login:', error);
+                    // Error joining league during login
                     req.flash('success', `Welcome back, ${userData.username}!`);
                     req.flash('error', 'Could not join league automatically due to an error. Please try joining manually.');
                     redirectTo = `/leagues/join?code=${joinCode}`;
@@ -285,7 +285,7 @@ router.post('/login',
             res.redirect(redirectTo);
 
         } catch (error) {
-            console.error('Login error:', error);
+            // Login error occurred
             req.flash('error', 'Login failed. Please try again.');
             res.redirect('/auth/login');
         }
@@ -303,13 +303,13 @@ router.post('/logout', authMiddleware.requireAuth, async (req, res) => {
         // Destroy session
         await authMiddleware.destroySession(req);
 
-        console.log(`👋 User logged out: ${username}`);
+        // User logged out successfully
 
         req.flash('success', 'You have been logged out successfully');
         res.redirect('/');
 
     } catch (error) {
-        console.error('Logout error:', error);
+        // Logout error occurred
         res.redirect('/dashboard');
     }
 });
@@ -354,7 +354,7 @@ router.post('/forgot-password',
 
                 // TODO: Send email with reset link
                 // For now, just log the reset token (remove in production)
-                console.log(`🔑 Password reset token for ${email}: ${resetToken}`);
+                // Password reset token generated for user
 
                 // In production, you would send an email like:
                 // await emailService.sendPasswordReset(userData.email, resetToken);
@@ -363,7 +363,7 @@ router.post('/forgot-password',
             res.redirect('/auth/login');
 
         } catch (error) {
-            console.error('Forgot password error:', error);
+            // Forgot password error occurred
             req.flash('error', 'An error occurred. Please try again.');
             res.redirect('/auth/forgot-password');
         }
@@ -393,7 +393,7 @@ router.get('/reset-password/:token', authMiddleware.requireGuest, async (req, re
         });
 
     } catch (error) {
-        console.error('Reset password page error:', error);
+        // Reset password page error
         req.flash('error', 'An error occurred. Please try again.');
         res.redirect('/auth/forgot-password');
     }
@@ -429,13 +429,13 @@ router.post('/reset-password/:token',
                 [passwordHash, userData.user_id]
             );
 
-            console.log(`🔐 Password reset completed for: ${userData.username}`);
+            // Password reset completed successfully
 
             req.flash('success', 'Password reset successfully. You can now log in with your new password.');
             res.redirect('/auth/login');
 
         } catch (error) {
-            console.error('Reset password error:', error);
+            // Reset password error occurred
             req.flash('error', 'An error occurred. Please try again.');
             res.redirect(`/auth/reset-password/${req.params.token}`);
         }
@@ -453,7 +453,7 @@ router.get('/verify-email/:token', async (req, res) => {
         res.redirect('/auth/login');
 
     } catch (error) {
-        console.error('Email verification error:', error);
+        // Email verification error
         req.flash('error', 'Email verification failed.');
         res.redirect('/auth/login');
     }
@@ -481,7 +481,7 @@ router.post('/api/check-username', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Username check error:', error);
+        // Username check error
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -506,7 +506,7 @@ router.post('/api/check-email', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Email check error:', error);
+        // Email check error
         res.status(500).json({ error: 'Server error' });
     }
 });

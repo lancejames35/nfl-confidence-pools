@@ -59,7 +59,7 @@ class AuthMiddleware {
                 }
             }
         } catch (error) {
-            console.error('Error loading user:', error);
+            // Error loading user data
         }
         
         next();

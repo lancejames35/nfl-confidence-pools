@@ -5,33 +5,33 @@ async function checkUserEntries() {
     try {
         const userId = 1; // Your user ID
         
-        console.log('=== Checking User League Entries ===');
+        // === Checking User League Entries ===
         
         // Check league_users table
         const [leagueUsers] = await database.execute(
             `SELECT * FROM league_users WHERE user_id = ?`,
             [userId]
         );
-        console.log('League Users:', leagueUsers);
+        // Found league user memberships
         
         if (leagueUsers.length === 0) {
-            console.log('❌ No league memberships found');
+            // ❌ No league memberships found
             return;
         }
         
         // Check entries for each league membership
         for (const membership of leagueUsers) {
-            console.log(`\n--- League: ${membership.league_id} ---`);
+            // Checking league membership
             
             const [entries] = await database.execute(
                 `SELECT * FROM league_entries WHERE league_user_id = ?`,
                 [membership.league_user_id]
             );
             
-            console.log(`Entries for league_user_id ${membership.league_user_id}:`, entries);
+            // Retrieved league entries
             
             if (entries.length === 0) {
-                console.log('⚠️  No entry found, creating one...');
+                // ⚠️  No entry found, creating one...
                 
                 // Create entry
                 const [result] = await database.execute(
@@ -40,13 +40,13 @@ async function checkUserEntries() {
                     [membership.league_user_id]
                 );
                 
-                console.log('✅ Created entry with ID:', result.insertId);
+                // ✅ Created entry successfully
             } else {
-                console.log('✅ Entry exists:', entries[0]);
+                // ✅ Entry already exists
             }
         }
         
-        console.log('\n=== Final Check ===');
+        // === Final Check ===
         
         // Run the same query as the picks route
         const [finalCheck] = await database.execute(
@@ -60,13 +60,13 @@ async function checkUserEntries() {
             [userId]
         );
         
-        console.log('Final query result (what picks route sees):', finalCheck);
+        // Retrieved final query result
         
-        console.log('\n✅ Done!');
+        // ✅ Done!
         process.exit(0);
         
     } catch (error) {
-        console.error('Error:', error);
+        // Error occurred
         process.exit(1);
     }
 }

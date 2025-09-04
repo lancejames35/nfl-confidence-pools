@@ -137,7 +137,7 @@ async function postGeneralThread(message, title) {
             throw new Error(result.message || 'Failed to post thread');
         }
     } catch (error) {
-        console.error('Error posting thread:', error);
+        // Error posting thread
         showToast('Failed to post thread: ' + error.message, 'error');
     } finally {
         postThreadBtn.disabled = false;
@@ -208,7 +208,7 @@ async function postPollThread() {
             throw new Error(result.message || 'Failed to create poll');
         }
     } catch (error) {
-        console.error('Error creating poll:', error);
+        // Error creating poll
         showToast('Failed to create poll: ' + error.message, 'error');
     } finally {
         postThreadBtn.disabled = false;
@@ -312,7 +312,7 @@ function initializeThreadReplies() {
                 throw new Error(result.message || 'Failed to post reply');
             }
         } catch (error) {
-            console.error('Error posting reply:', error);
+            // Error posting reply
             showToast('Failed to post reply: ' + error.message, 'error');
         } finally {
             sendBtn.disabled = false;
@@ -367,7 +367,7 @@ function initializePollVoting() {
                     throw new Error(result.message || 'Failed to vote');
                 }
             } catch (error) {
-                console.error('Error voting:', error);
+                // Error voting
                 showToast('Failed to vote: ' + error.message, 'error');
                 this.innerHTML = originalContent;
                 this.disabled = false;
@@ -544,7 +544,7 @@ function initializeThreadView() {
                     throw new Error(result.message || 'Failed to post reply');
                 }
             } catch (error) {
-                console.error('Error posting reply:', error);
+                // Error posting reply
                 showToast('Failed to post reply: ' + error.message, 'error');
             } finally {
                 postReplyBtn.disabled = false;

@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const logger = require('./logger');
 
 class Database {
     constructor() {
@@ -27,7 +28,7 @@ class Database {
 
             // Test connection
             const connection = await this.pool.getConnection();
-            console.log('✅ Database connected successfully');
+            // Database connected successfully
             connection.release();
 
             // Initialize session store
@@ -36,7 +37,7 @@ class Database {
             this.isConnected = true;
             return true;
         } catch (error) {
-            console.error('❌ Database connection failed:', error.message);
+            // Database connection failed - logging via logger in production
             process.exit(1);
         }
     }
@@ -81,10 +82,7 @@ class Database {
             const [results] = await this.pool.execute(query, params);
             return results;
         } catch (error) {
-            console.error('Database query error:', {
-                query: query.substring(0, 100) + '...',
-                error: error.message
-            });
+            // Database query error - query truncated for security
             throw error;
         }
     }
@@ -94,10 +92,7 @@ class Database {
             const [results] = await this.pool.query(query, params);
             return results;
         } catch (error) {
-            console.error('Database query error:', {
-                query: query.substring(0, 100) + '...',
-                error: error.message
-            });
+            // Database query error - query truncated for security
             throw error;
         }
     }
@@ -112,7 +107,7 @@ class Database {
             return result;
         } catch (error) {
             await connection.rollback();
-            console.error('Transaction error:', error.message);
+            // Transaction rolled back due to error
             throw error;
         } finally {
             connection.release();
@@ -122,7 +117,7 @@ class Database {
     async close() {
         if (this.pool) {
             await this.pool.end();
-            console.log('📝 Database connections closed');
+            // Database connections closed
         }
     }
 

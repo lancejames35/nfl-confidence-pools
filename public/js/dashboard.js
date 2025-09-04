@@ -215,7 +215,7 @@ function initializeChat() {
                 throw new Error('Failed to send message');
             }
         } catch (error) {
-            console.error('Error sending message:', error);
+            // Error sending message
             showToast('Failed to send message. Please try again.', 'error');
         } finally {
             // Re-enable input
@@ -317,11 +317,7 @@ function initializeKickoffCountdown() {
             // Get user's timezone
             const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             
-            // DEBUG: Log the conversion steps
-            console.log('DEBUG Timezone Conversion:');
-            console.log('- Raw database time:', firstGameKickoffET);
-            console.log('- Parsed as Date:', actualET.toISOString());
-            console.log('- User timezone:', userTimezone);
+            // Timezone conversion for user's display
             
             // Format the actual ET time for user's display
             const formattedTime = new Intl.DateTimeFormat('en-US', {
@@ -334,7 +330,6 @@ function initializeKickoffCountdown() {
                 timeZoneName: 'short'
             }).format(actualET);
             
-            console.log('- Formatted for user:', formattedTime);
             
             kickoffTimeEl.textContent = formattedTime;
         }
@@ -411,7 +406,7 @@ function saveLeagueSettings() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // Error occurred
         showToast('Error updating league settings', 'error');
     });
 }
@@ -445,7 +440,7 @@ function inviteMember() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // Error occurred
         showToast('Error sending invite', 'error');
     });
 }
@@ -508,7 +503,7 @@ function postCommissionerMessage() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // Error occurred
         showToast('Error posting message', 'error');
     });
 }
@@ -533,7 +528,7 @@ function copyToClipboard(inputId, button) {
         
         showToast('Copied to clipboard!', 'success');
     }).catch(err => {
-        console.error('Failed to copy: ', err);
+        // Failed to copy
         // Fallback method
         input.select();
         document.execCommand('copy');
@@ -583,7 +578,7 @@ function copyInviteMessage() {
         
         showToast('Message copied to clipboard!', 'success');
     }).catch(err => {
-        console.error('Failed to copy: ', err);
+        // Failed to copy
         // Fallback method
         const textArea = document.createElement('textarea');
         textArea.value = message;

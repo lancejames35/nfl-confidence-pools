@@ -614,7 +614,7 @@ class UserProfileController {
             });
 
         } catch (error) {
-            console.error('Settings update error:', error);
+            // Settings update error
             res.status(500).json({
                 success: false,
                 message: 'An error occurred while updating settings'

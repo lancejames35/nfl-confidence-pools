@@ -120,7 +120,7 @@ $(document).ready(function() {
                         feedback.text(data.message || 'Username not available');
                     }
                 } catch (error) {
-                    console.error('Username check error:', error);
+                    // Username check error
                 }
             }, 500);
         } else if (username.length > 0) {
@@ -163,7 +163,7 @@ $(document).ready(function() {
                         feedback.text(data.message || 'Email already registered');
                     }
                 } catch (error) {
-                    console.error('Email check error:', error);
+                    // Email check error
                 }
             }, 300);
         }
@@ -269,7 +269,7 @@ $(document).ready(function() {
                 $('#timezone').val(mapping[timezone]);
             }
         } catch (error) {
-            console.log('Could not detect timezone:', error);
+            // Could not detect timezone
         }
     }
 });

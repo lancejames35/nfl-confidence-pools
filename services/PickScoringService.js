@@ -238,7 +238,7 @@ class PickScoringService {
             };
             
         } catch (error) {
-            console.error('Error calculating season totals:', error);
+            // Error calculating season totals
             return { seasonPoints: 0, seasonPicks: 0, seasonCorrect: 0, seasonWinPercentage: 0 };
         }
     }

@@ -1134,13 +1134,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confidenceInput) confidenceInput.value = newConfidence;
         
         // Now we need to reassign all unlocked items to available confidence values
-        // Step 1: Get all available confidence values (excluding locked ones and the new value)
+        // Step 1: Get all available confidence values (excluding locked ones)
         const totalGames = allItems.length;
         const availableValues = [];
         for (let i = totalGames; i >= 1; i--) {
-            if (!lockedConfidenceValues.has(i) && i !== newConfidence) {
+            if (!lockedConfidenceValues.has(i)) {
                 availableValues.push(i);
             }
+        }
+        
+        // Remove the newConfidence value since it's already assigned to the current item
+        const newConfidenceIndex = availableValues.indexOf(newConfidence);
+        if (newConfidenceIndex > -1) {
+            availableValues.splice(newConfidenceIndex, 1);
         }
         availableValues.sort((a, b) => b - a); // Highest to lowest
         

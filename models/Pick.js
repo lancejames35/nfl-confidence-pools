@@ -118,7 +118,7 @@ class Pick {
                 SET p.is_locked = 1, p.locked_at = NOW()
                 WHERE p.entry_id = ? 
                 AND p.week = ?
-                AND g.kickoff_timestamp <= NOW()
+                AND g.kickoff_timestamp <= CONVERT_TZ(NOW(), "UTC", "America/New_York")
                 AND p.is_locked = 0
             `;
             
@@ -338,7 +338,7 @@ class Pick {
                     MIN(g.kickoff_timestamp) as earliest_kickoff,
                     MAX(g.kickoff_timestamp) as latest_kickoff,
                     COUNT(*) as total_games,
-                    SUM(CASE WHEN g.kickoff_timestamp <= NOW() THEN 1 ELSE 0 END) as started_games
+                    SUM(CASE WHEN g.kickoff_timestamp <= CONVERT_TZ(NOW(), "UTC", "America/New_York") THEN 1 ELSE 0 END) as started_games
                 FROM league_entries le
                 JOIN league_users lu ON le.league_user_id = lu.league_user_id
                 JOIN confidence_pool_settings cps ON lu.league_id = cps.league_id
@@ -453,7 +453,7 @@ class Pick {
                     JOIN games g ON p.game_id = g.game_id
                     SET p.is_locked = 1, p.locked_at = NOW()
                     WHERE p.entry_id = ? AND p.week = ? AND p.is_locked = 0
-                        AND g.kickoff_timestamp <= NOW()
+                        AND g.kickoff_timestamp <= CONVERT_TZ(NOW(), "UTC", "America/New_York")
                 `;
                 queryParams = [entry_id, week];
                 
@@ -463,7 +463,7 @@ class Pick {
                     UPDATE picks p
                     SET p.is_locked = 1, p.locked_at = NOW()
                     WHERE p.entry_id = ? AND p.week = ? AND p.is_locked = 0
-                        AND ? <= NOW()
+                        AND ? <= CONVERT_TZ(NOW(), "UTC", "America/New_York")
                 `;
                 queryParams = [entry_id, week, settings.earliest_kickoff];
                 
@@ -474,7 +474,7 @@ class Pick {
                     UPDATE picks p
                     SET p.is_locked = 1, p.locked_at = NOW()
                     WHERE p.entry_id = ? AND p.week = ? AND p.is_locked = 0
-                        AND ? <= NOW()
+                        AND ? <= CONVERT_TZ(NOW(), "UTC", "America/New_York")
                 `;
                 queryParams = [entry_id, week, customDeadline];
             } else {

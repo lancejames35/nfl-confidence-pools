@@ -413,12 +413,12 @@ class Application {
                 const currentWeek = await getCurrentNFLWeek(database) || 1;
                 const hoursToDeadline = await getHoursUntilDeadline(database, currentWeek) || 48;
                 
-                // Get first game kickoff time for countdown (stored in ET, needs conversion)
-                const [firstGameRow] = await database.execute(
-                    'SELECT kickoff_timestamp FROM games WHERE week = ? AND season_year = ? ORDER BY kickoff_timestamp ASC LIMIT 1',
-                    [currentWeek, new Date().getFullYear()]
+                // Get next pick deadline time for countdown (next upcoming game kickoff)
+                const nextGameRows = await database.execute(
+                    'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1',
+                    [new Date().getFullYear()]
                 ) || [];
-                const firstGameKickoff = firstGameRow ? firstGameRow.kickoff_timestamp : null;
+                const nextPickDeadline = (nextGameRows && nextGameRows.length > 0) ? new Date(nextGameRows[0].kickoff_timestamp) : null;
                 
                 // Get number of games this week
                 const [gamesCountRow] = await database.execute(
@@ -595,7 +595,7 @@ class Application {
                     picksToMake,
                     gamesThisWeek,
                     hoursToDeadline,
-                    firstGameKickoff, // Pass the first game kickoff time
+                    nextPickDeadline, // Pass the next pick deadline time
                     activeLeaguesCount: leagues ? leagues.length : 0,
                     totalWins: 0,  // This would need a more complex query
                     winPercentage,
@@ -626,7 +626,7 @@ class Application {
                     picksToMake: 0,
                     gamesThisWeek: 16,
                     hoursToDeadline: 48,
-                    firstGameKickoff: null, // No game data in error case
+                    nextPickDeadline: null, // No game data in error case
                     activeLeaguesCount: 0,
                     totalWins: 0,
                     winPercentage: 0,
@@ -650,6 +650,54 @@ class Application {
             } catch (error) {
                 logger.error('Start page error', { error: error.message, userId: req.user?.user_id });
                 res.redirect('/dashboard');
+            }
+        });
+
+        // API endpoint to get next pick deadline
+        this.app.get('/api/next-deadline', authMiddleware.requireAuth, async (req, res) => {
+            try {
+                const excludeDeadline = req.query.exclude;
+                
+                let query;
+                let params;
+                
+                if (excludeDeadline) {
+                    // Find the next deadline AFTER the one that just expired
+                    query = 'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > ? ORDER BY kickoff_timestamp ASC LIMIT 1';
+                    params = [new Date().getFullYear(), excludeDeadline];
+                } else {
+                    // Use the normal logic for initial load
+                    query = 'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1';
+                    params = [new Date().getFullYear()];
+                }
+                
+                const nextGameRows = await database.execute(query, params) || [];
+                
+                let nextPickDeadline = null;
+                if (nextGameRows && nextGameRows.length > 0) {
+                    nextPickDeadline = new Date(nextGameRows[0].kickoff_timestamp);
+                }
+                
+                // Get count of games at this deadline for info
+                let gameCount = 0;
+                if (nextPickDeadline) {
+                    const [countRow] = await database.execute(
+                        'SELECT COUNT(*) as count FROM games WHERE kickoff_timestamp = ?',
+                        [nextGameRows[0].kickoff_timestamp]
+                    ) || [];
+                    gameCount = countRow ? countRow.count : 0;
+                }
+                
+                res.json({
+                    success: true,
+                    nextDeadline: nextPickDeadline ? nextPickDeadline.toISOString() : null,
+                    gamesAtDeadline: gameCount
+                });
+            } catch (error) {
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to get next deadline'
+                });
             }
         });
 

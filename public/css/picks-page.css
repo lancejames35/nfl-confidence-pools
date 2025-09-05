@@ -1,0 +1,1271 @@
+/* ==============================================
+   NFL CONFIDENCE POOL - PICKS PAGE STYLES
+   ============================================== */
+
+/* ==============================================
+   1. BASE PICK ITEM STYLES
+   ============================================== */
+
+.pick-item {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 4px solid transparent;
+    cursor: grab;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    min-height: 70px; /* Fixed height for all games */
+    padding: 8px 12px; /* Consistent padding */
+}
+
+/* Drag styling consolidated - see main sortable-chosen rule below */
+
+/* ==============================================
+   2. DRAG INDICATOR STYLES
+   ============================================== */
+
+.drag-indicator {
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.pick-item:hover .drag-indicator {
+    opacity: 0.7;
+}
+
+.drag-handle {
+    display: none; /* Hide right-side drag handle */
+}
+
+/* ==============================================
+   3. PICK ITEM STATES (Hover, Dragging, Ghost)
+   ============================================== */
+
+.pick-item:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left-color: #007bff;
+    border-left-width: 5px;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+    transition: all 0.2s ease;
+}
+
+.pick-item.sortable-chosen {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+    border-left-color: #2196f3 !important;
+    border-left-width: 6px !important;
+    border-radius: 8px !important;
+    cursor: grabbing !important;
+    transform: scale(1.02) !important;
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3), 0 0 0 2px rgba(33, 150, 243, 0.2) !important;
+    z-index: 1000 !important;
+    transition: all 0.2s ease !important;
+}
+
+.pick-item.sortable-ghost {
+    opacity: 0.3 !important;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+    border: 2px dashed #2196f3 !important;
+    border-radius: 8px !important;
+    transform: scale(0.98) !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3) !important;
+}
+
+/* ==============================================
+   4. CONFIDENCE DROPDOWN STYLES
+   ============================================== */
+
+.confidence-dropdown-container {
+    text-align: center;
+    position: relative;
+}
+
+.pick-item .confidence-dropdown {
+    width: 60px !important;
+    height: 45px !important;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem !important;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    margin: 0 auto;
+    cursor: pointer !important;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: #007bff url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M8 11L3 6h10z'/%3E%3C/svg%3E") no-repeat;
+    background-position: right 5px center;
+    background-size: 10px;
+    padding: 0 20px 0 8px;
+}
+
+.pick-item .confidence-dropdown:hover,
+.pick-item .confidence-dropdown:focus,
+.pick-item .confidence-dropdown:active {
+    cursor: pointer !important;
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
+}
+
+.confidence-dropdown:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    color: white;
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.confidence-dropdown option {
+    background: white;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* ==============================================
+   5. TEAM SELECTION STYLES
+   ============================================== */
+
+.pick-item .teams-container,
+.pick-item .teams-container *,
+.pick-item .confidence-dropdown-container,
+.pick-item .confidence-dropdown-container * {
+    cursor: pointer !important;
+}
+
+.teams-container .d-flex {
+    width: 100%;
+    display: flex !important;
+    gap: 8px;
+    min-height: 44px;
+    align-items: center;
+    flex-wrap: nowrap; /* Never wrap team options */
+    justify-content: stretch; /* Distribute space evenly */
+}
+
+.teams-container .d-flex > .team-option.flex-fill {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.team-option {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background-color: #ffffff;
+    text-align: center;
+    flex: 1 1 0;
+    min-width: 60px; /* Minimum width to fit 3-character team abbreviations */
+    max-width: none;
+    height: 44px; /* Keep consistent height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+.team-option:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.team-option.selected {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+}
+
+/* For pools without spreads */
+.team-option:not(.has-spread) {
+    justify-content: center;
+}
+
+.team-option:not(.has-spread) .team-info-container {
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.team-option:not(.has-spread) .team-name-line {
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+}
+
+.team-option:not(.has-spread) .team-abbr,
+.team-option:not(.has-spread) .team-name {
+    text-align: center;
+    width: 100%;
+}
+
+/* ==============================================
+   6. SPREAD BETTING STYLES
+   ============================================== */
+
+.team-option.has-spread {
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.team-option.selected.has-spread {
+    background-color: transparent;
+}
+
+.team-option.selected.has-spread .spread-edge {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50px;
+    border-radius: 0 6px 6px 0;
+}
+
+.team-option.selected.has-spread .team-content {
+    background-color: #e3f2fd;
+    border-radius: 6px 0 0 6px;
+}
+
+.team-option.has-spread .spread-edge {
+    position: absolute;
+    top: 0;
+    right: 0; 
+    bottom: 0;
+    width: 50px;
+    border-radius: 0 6px 6px 0;
+    margin: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+}
+
+.spread-edge.favorite {
+    background-color: #dc3545;
+}
+
+.spread-edge.underdog {
+    background-color: #28a745;
+}
+
+.team-label.has-spread {
+    display: flex;
+    position: static;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    border-radius: inherit;
+    overflow: visible;
+    z-index: 1;
+}
+
+.team-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    padding: 10px 8px 10px 12px;
+    min-width: 0;
+    max-width: calc(100% - 50px);
+    overflow: visible;
+    background: inherit;
+}
+
+.team-label:not(.has-spread) {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* ==============================================
+   7. TEAM INFO AND LOGO STYLES
+   ============================================== */
+
+.team-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+    overflow: visible;
+}
+
+.team-name-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    white-space: nowrap;
+    width: 100%;
+    min-width: 0;
+}
+
+.team-name, .team-abbr {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.team-name {
+    display: none !important; /* Always use abbreviations */
+}
+
+.team-abbr {
+    display: inline !important;
+    overflow: visible;
+    max-width: none;
+    flex-shrink: 0;
+}
+
+.team-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.team-option input[type="radio"] {
+    display: none;
+}
+
+.team-label {
+    cursor: pointer;
+    margin: 0;
+    width: 100%;
+}
+
+/* ==============================================
+   8. GAME TIME AND DETAILS
+   ============================================== */
+
+.game-details {
+    font-size: 0.85rem;
+}
+
+.game-time {
+    font-weight: 500;
+}
+
+.mobile-game-time {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.game-time-mobile {
+    font-weight: 500;
+    color: #495057;
+}
+
+.spread-mobile {
+    margin-top: 2px;
+    font-size: 0.75rem;
+}
+
+/* AT Symbol */
+.at-symbol {
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    padding: 0 8px;
+    width: 30px;
+    text-align: center;
+    min-width: 20px;
+}
+
+/* ==============================================
+   9. ANIMATIONS
+   ============================================== */
+
+@keyframes confidenceBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes dragPulse {
+    0% { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.3); }
+}
+
+.pick-item.sortable-chosen .confidence-dropdown {
+    animation: confidenceBounce 0.4s ease-in-out;
+    border-color: #2196f3;
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
+}
+
+.pick-item.sortable-chosen .team-option {
+    border-color: rgba(33, 150, 243, 0.3);
+    box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.1);
+}
+
+/* ==============================================
+   10. DISABLED/LOCKED STATES
+   ============================================== */
+
+.pick-item.locked {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-left: 4px solid #6c757d !important;
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+}
+
+.pick-item.locked:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-left-color: #6c757d !important;
+    border-left-width: 4px !important;
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .drag-indicator {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    color: #6c757d !important;
+}
+
+.pick-item.locked .drag-indicator:hover {
+    opacity: 0.3 !important;
+    background: transparent !important;
+    transform: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .confidence-dropdown {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.pick-item.locked .team-option {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .teams-container {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+/* Legacy lock indicators removed - using prominent red styling from main sections */
+
+/* ==============================================
+   11. RESPONSIVE DESIGN - DESKTOP
+   ============================================== */
+
+@media (min-width: 1400px) {
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 992px) {
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+    }
+}
+
+@media (max-width: 991px) and (min-width: 768px) {
+    .team-option {
+        padding: 6px 10px;
+    }
+    
+    .team-name, .team-abbr {
+        font-size: 0.9rem;
+    }
+    
+    .team-abbr {
+        overflow: visible;
+        max-width: none;
+    }
+    
+    .teams-section {
+        padding-left: 30px;
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 768px) {
+    .teams-section {
+        padding-left: 25px;
+    }
+}
+
+.teams-section {
+    padding-left: 20px;
+}
+
+/* ==============================================
+   12. RESPONSIVE DESIGN - TABLET
+   ============================================== */
+
+@media (max-width: 768px) {
+    .confidence-badge {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .confidence-number {
+        font-size: 1rem;
+    }
+    
+    .team-name {
+        font-size: 0.8rem;
+    }
+    
+    .pick-item .confidence-dropdown {
+        width: 50px !important;
+        height: 40px !important;
+        min-width: 50px;
+        max-width: 50px;
+        font-size: 1rem !important;
+    }
+}
+
+/* ==============================================
+   13. RESPONSIVE DESIGN - MOBILE
+   ============================================== */
+
+/* ==============================================
+   15. LOCKED PICK STYLES
+   ============================================== */
+
+/* Locked Pick Styles - Visual indicators and interaction prevention */
+.pick-item.locked {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-left: 4px solid #6c757d !important;
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important; /* Allow some interaction for display */
+}
+
+.pick-item.locked:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-left-color: #6c757d !important;
+    border-left-width: 4px !important;
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .drag-indicator {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    color: #6c757d !important;
+}
+
+.pick-item.locked .drag-indicator:hover {
+    opacity: 0.3 !important;
+    background: transparent !important;
+    transform: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .confidence-dropdown {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.pick-item.locked .team-option {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.pick-item.locked .teams-container {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+/* Add locked indicator positioned below game time - SOFT BLUE STYLING */
+.pick-item.locked .game-details::after,
+.pick-item.locked .mobile-game-time::after {
+    content: "🔒 LOCKED";
+    position: absolute;
+    top: 100%;
+    right: 0;
+    font-size: 0.75rem;
+    color: #495057;
+    font-weight: bold;
+    background: rgba(173, 216, 230, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #87ceeb;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* For mobile, locked indicator all the way right, date/time stays centered */
+@media (max-width: 767px) {
+    .pick-item.locked .mobile-game-time::after {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 2px;
+        white-space: nowrap;
+        /* Inherit prominent styling from base rule */
+    }
+    
+    .pick-item.locked .mobile-game-time {
+        /* Date/time stays centered, no transform needed */
+    }
+    
+    .pick-item.locked .drag-indicator {
+        cursor: not-allowed !important;
+        opacity: 0.3 !important;
+        background: rgba(108, 117, 125, 0.1) !important;
+        pointer-events: none !important;
+    }
+    
+    .pick-item.locked .drag-indicator:hover {
+        opacity: 0.3 !important;
+        background: rgba(108, 117, 125, 0.1) !important;
+        transform: none !important;
+    }
+}
+
+/* ==============================================
+   16. ADDITIONAL RESPONSIVE STYLES
+   ============================================== */
+
+/* Extra small screens (narrow phones like iPhone SE) */
+@media (max-width: 380px) {
+    /* Even smaller confidence dropdown */
+    .confidence-select {
+        width: 55px !important;
+        padding: 3px 2px !important;
+        font-size: 0.8rem !important;
+        min-height: 34px !important;
+    }
+    
+    /* Smaller drag handle */
+    .drag-indicator {
+        padding: 6px 2px !important;
+        margin-right: 4px !important;
+    }
+    
+    /* Even smaller game time text */
+    .game-time-mobile {
+        font-size: 0.7rem !important;
+    }
+    
+    .game-time-mobile i {
+        font-size: 0.65rem !important;
+        margin-right: 2px !important;
+    }
+    
+    /* Reduce padding on game time container */
+    .mobile-game-time {
+        padding: 2px 4px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    /* Smaller team text */
+    .team-name {
+        font-size: 0.75rem !important;
+    }
+    
+    .team-abbr {
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Ultra narrow screens (below 350px) */
+@media (max-width: 350px) {
+    /* Minimum viable dropdown */
+    .confidence-select {
+        width: 50px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Hide clock icon on very small screens to save space */
+    .game-time-mobile i {
+        display: none !important;
+    }
+    
+    /* Even more compact */
+    .game-time-mobile {
+        font-size: 0.65rem !important;
+        letter-spacing: -0.5px;
+    }
+}
+
+/* HIGH SPECIFICITY OVERRIDES FOR MOBILE LAYOUT FIXES */
+
+/* Game section outlines for visual separation */
+.list-group .pick-item.list-group-item {
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    margin-bottom: 2px !important;
+    background: rgba(255, 255, 255, 1) !important;
+}
+
+/* Desktop improvements */
+@media (min-width: 768px) {
+    .pick-item .game-details {
+        padding-top: 0px !important;
+        margin-top: -18px !important;
+    }
+    
+    .pick-item .game-time {
+        margin-top: -8px !important;
+    }
+    
+    /* Position desktop lock section to avoid overlap with date/time */
+    .pick-item.locked .game-details::after {
+        top: 100% !important;
+        margin-top: 4px !important;
+    }
+}
+
+/* Tablet/medium screen fixes - prevent text wrapping before mobile breakpoint */
+@media (max-width: 991px) and (min-width: 768px) {
+    .pick-item .game-time-display {
+        font-size: 0.8rem !important;
+        white-space: nowrap !important;
+    }
+    
+    .pick-item .mobile-game-time .game-time-mobile {
+        font-size: 0.7rem !important;
+        white-space: nowrap !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .list-group .pick-item.list-group-item {
+        font-size: 0.9rem !important;
+        cursor: default !important;
+        margin-bottom: 2px !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+        background: rgba(255, 255, 255, 1) !important;
+    }
+    
+    .pick-item .row {
+        flex-wrap: nowrap !important;
+    }
+    
+    /* Drag indicator positioning */
+    .pick-item .col-auto:first-child {
+        position: absolute !important;
+        left: 20px !important;
+        top: 8px !important;
+        z-index: 10 !important;
+        flex: 0 0 auto !important;
+        max-width: 80px !important;
+        padding-right: 6px !important;
+    }
+    
+    /* Drag indicator rotation */
+    .pick-item .drag-indicator {
+        transform: rotate(-90deg) !important;
+    }
+    
+    .pick-item .drag-indicator:hover {
+        transform: rotate(-90deg) scale(1.1) !important;
+    }
+    
+    /* Orange drag styling now handled in main section */
+    
+    /* Team buttons constraints */
+    .pick-item .teams-container {
+        padding: 0 8px !important;
+        max-width: 100% !important;
+    }
+    
+    .pick-item .teams-container .d-flex {
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+    
+    .pick-item .teams-container .d-flex > .team-option.flex-fill {
+        flex: 0 1 38% !important;
+        max-width: 38% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Mobile game time styling */
+    .pick-item .mobile-game-time {
+        padding: 2px 0 !important;
+        margin-bottom: 6px !important;
+        background-color: #f8f9fa !important;
+        border-radius: 6px !important;
+        position: relative !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 28px !important;
+    }
+    
+    /* Prevent text wrapping in mobile game time */
+    .pick-item .game-time-mobile {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .pick-item .game-time-display {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Locked section positioning - SOFT BLUE STYLING */
+    .pick-item.locked .mobile-game-time::after {
+        content: "🔒 LOCKED" !important;
+        position: absolute !important;
+        top: 50% !important;
+        right: 8px !important;
+        transform: translateY(-50%) !important;
+        font-size: 0.65rem !important;
+        color: #495057 !important;
+        font-weight: bold !important;
+        background: rgba(173, 216, 230, 0.9) !important;
+        padding: 1px 4px !important;
+        border-radius: 4px !important;
+        border: 1px solid #87ceeb !important;
+        margin-top: 0 !important;
+        white-space: nowrap !important;
+        z-index: 10 !important;
+        line-height: 1 !important;
+    }
+    
+    .pick-item .col-auto:first-child {
+        flex: 0 0 auto;
+        max-width: 80px;
+        padding-right: 6px;
+        position: absolute;
+        left: 20px;
+        top: 8px;
+        z-index: 10;
+    }
+    
+    /* Constrain team buttons within game section */
+    .teams-container {
+        padding: 0 8px; /* Add padding to prevent edge overflow */
+        max-width: 100%;
+    }
+    
+    .teams-container .d-flex {
+        max-width: 100%;
+        overflow: hidden;
+    }
+    
+    .teams-container .d-flex > .team-option.flex-fill {
+        flex: 0 1 38%;
+        max-width: 38%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .confidence-select {
+        width: 60px !important;
+        padding: 4px 4px !important;
+        font-size: 0.85rem !important;
+        min-height: 36px !important;
+    }
+    
+    .pick-item .teams-section {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-left: 0;
+    }
+    
+    .mobile-game-time {
+        padding: 2px 0 !important;
+        margin-bottom: 6px !important;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 28px;
+    }
+    
+    .game-time-mobile {
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .game-time-mobile i {
+        font-size: 0.7rem !important;
+    }
+    
+    .mobile-locked-indicator {
+        position: absolute;
+        top: -8px;
+        left: 8px;
+        z-index: 10;
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid #dc3545;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    
+    .drag-indicator {
+        cursor: grab;
+        opacity: 0.8;
+        padding: 6px 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        background: rgba(0, 123, 255, 0.1);
+        font-size: 1rem;
+        transform: rotate(-90deg);
+    }
+    
+    .drag-indicator:hover {
+        opacity: 1;
+        background: rgba(0, 123, 255, 0.2);
+        transform: rotate(-90deg) scale(1.1);
+    }
+    
+    /* sortable-chosen styling handled by main rule */
+    
+    /* sortable-ghost styling handled by main rule */
+    
+    .pick-item:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.2);
+    }
+    
+    .team-option {
+        padding: 6px 4px;
+        height: 40px;
+        white-space: nowrap;
+    }
+    
+    .team-abbr {
+        font-size: 0.9rem;
+        overflow: visible;
+        max-width: none;
+    }
+    
+    .team-logo {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+        background-position: right 5px center !important;
+    }
+    
+    .at-symbol {
+        margin: 0 4px !important;
+        font-size: 1rem;
+        width: auto;
+        padding: 0 4px;
+    }
+    
+    .pick-item.sortable-chosen .drag-indicator {
+        color: #2196f3;
+        font-size: 1.2rem;
+        background: rgba(33, 150, 243, 0.3);
+        animation: dragPulse 0.6s ease-in-out infinite alternate;
+    }
+    
+    .game-details {
+        padding: 10px 5px;
+        background: rgba(0,0,0,0.02);
+        border-radius: 4px;
+        margin-top: 8px;
+    }
+    
+    /* Mobile locked indicator positioning is handled by base style above */
+    
+    .pick-item.locked .drag-indicator {
+        cursor: not-allowed !important;
+        opacity: 0.3 !important;
+        background: rgba(108, 117, 125, 0.1) !important;
+        pointer-events: none !important;
+    }
+    
+    .pick-item.locked .drag-indicator:hover {
+        opacity: 0.3 !important;
+        background: rgba(108, 117, 125, 0.1) !important;
+        transform: rotate(-90deg) !important;
+    }
+    
+    /* Spread adjustments for mobile */
+    .spread-edge {
+        width: 42px;
+        font-size: 0.75rem;
+        min-height: 40px;
+    }
+    
+    .team-content {
+        padding: 6px 4px 6px 8px;
+        max-width: calc(100% - 42px);
+    }
+    
+    .team-name-line {
+        gap: 4px;
+    }
+}
+
+/* Very small screens - aggressively reduce team button padding */
+@media (max-width: 480px) {
+    .pick-item .teams-container .d-flex > .team-option.flex-fill {
+        padding: 4px 1px !important;
+        flex: 0 1 45% !important;
+        max-width: 45% !important;
+    }
+    
+    .pick-item .team-content {
+        padding: 4px 0 !important;
+    }
+    
+    .pick-item .team-label {
+        padding: 4px 1px !important;
+    }
+    
+    .pick-item .team-abbr {
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 380px) {
+    /* Reduce gap and team button sizes to prevent cutoff */
+    .pick-item .teams-container .d-flex {
+        gap: 4px !important;
+    }
+    
+    .pick-item .teams-container .d-flex > .team-option.flex-fill {
+        padding: 2px 0 !important;
+        flex: 0 1 46% !important;
+        max-width: 46% !important;
+    }
+    
+    .pick-item .team-content {
+        padding: 2px 0 !important;
+    }
+    
+    .pick-item .team-label {
+        padding: 2px 0 !important;
+        font-size: 0.7rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    .pick-item .team-abbr {
+        font-size: 0.7rem !important;
+    }
+    
+    .pick-item .teams-container {
+        padding: 0 2px !important;
+    }
+}
+
+/* Ultra small screens - even more aggressive constraints */
+@media (max-width: 320px) {
+    .pick-item .teams-container .d-flex {
+        gap: 2px !important;
+    }
+    
+    .pick-item .teams-container .d-flex > .team-option.flex-fill {
+        padding: 1px 0 !important;
+        flex: 0 1 45% !important;
+        max-width: 45% !important;
+        font-size: 0.65rem !important;
+    }
+    
+    .pick-item .teams-container {
+        padding: 0 1px !important;
+    }
+    
+    .pick-item .team-label {
+        font-size: 0.65rem !important;
+    }
+    
+    .pick-item .team-abbr {
+        font-size: 0.6rem !important;
+    }
+}
+
+/* ==============================================
+   14. RESPONSIVE DESIGN - SMALL MOBILE (ORIGINAL)
+   ============================================== */
+
+@media (max-width: 480px) {
+    .confidence-dropdown {
+        width: 60px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        background-size: 10px !important;
+        background-position: right 5px center !important;
+    }
+    
+    .team-option {
+        padding: 4px 3px;
+    }
+    
+    .team-abbr {
+        font-size: 0.8rem;
+        overflow: visible;
+        max-width: none;
+    }
+    
+    .team-logo {
+        width: 20px;
+        height: 20px;
+        margin-right: 4px;
+    }
+    
+    .drag-indicator {
+        font-size: 0.8rem;
+    }
+    
+    .spread-edge {
+        width: 35px;
+        font-size: 0.7rem;
+        min-height: 36px;
+    }
+    
+    .team-content {
+        padding: 4px 2px 4px 6px;
+        max-width: calc(100% - 35px);
+    }
+    
+    /* sortable-chosen styling handled by main rule */
+}
+
+@media (max-width: 400px) {
+    .team-logo {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .spread-edge {
+        width: 40px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 40px) !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .confidence-select {
+        width: 55px !important;
+        padding: 3px 2px !important;
+        font-size: 0.8rem !important;
+        min-height: 34px !important;
+    }
+    
+    .drag-indicator {
+        padding: 6px 2px !important;
+        margin-right: 4px !important;
+    }
+    
+    .game-time-mobile {
+        font-size: 0.7rem !important;
+    }
+    
+    .game-time-mobile i {
+        font-size: 0.65rem !important;
+        margin-right: 2px !important;
+    }
+    
+    .mobile-game-time {
+        padding: 2px 4px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .team-name {
+        font-size: 0.75rem !important;
+    }
+    
+    .team-abbr {
+        font-size: 0.7rem !important;
+    }
+    
+    .pick-item .col-auto:first-child {
+        max-width: 75px;
+        padding-right: 4px;
+    }
+}
+
+@media (max-width: 350px) {
+    .confidence-select {
+        width: 50px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .game-time-mobile i {
+        display: none !important;
+    }
+    
+    .game-time-mobile {
+        font-size: 0.65rem !important;
+        letter-spacing: -0.5px;
+    }
+    
+    .spread-edge {
+        width: 35px !important;
+        font-size: 0.65rem !important;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 35px) !important;
+        padding: 6px 4px !important;
+    }
+}
+
+@media (max-width: 320px) {
+    .team-logo {
+        display: none;
+    }
+    
+    .team-content {
+        padding: 8px 6px;
+    }
+    
+    .spread-edge {
+        width: 30px !important;
+        font-size: 0.6rem !important;
+    }
+    
+    .team-content {
+        max-width: calc(100% - 30px) !important;
+        padding: 4px 2px !important;
+    }
+}

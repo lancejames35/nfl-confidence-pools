@@ -101,6 +101,7 @@ class ResultsController {
                     let.tier_name,
                     let.tier_id,
                     g.kickoff_timestamp,
+                    g.kickoff_timestamp as kickoff_raw,
                     1 as show_pick
                 FROM picks p
                 JOIN league_entries le ON p.entry_id = le.entry_id
@@ -167,12 +168,16 @@ class ResultsController {
                             status: pickResult.status
                         };
                         
+                        // Check if game is locked - no timezone adjustment needed as database timestamp is already converted
+                        const kickoffTime = new Date(pick.kickoff_timestamp);
+                        const currentTime = new Date();
+                        const isGameLocked = currentTime >= kickoffTime;
+                        
+                        
                         // Show picks based on visibility rules:
                         // 1. Always show current user's own picks
-                        // 2. Show other users' picks only if game has started or pick is locked
-                        const shouldShowPick = (pick.user_id == currentUserId) || 
-                                             (pick.is_locked === 1) || 
-                                             (game && game.kickoff_timestamp && new Date(game.kickoff_timestamp) <= new Date());
+                        // 2. Show other users' picks only if pick is locked (which happens at game kickoff)
+                        const shouldShowPick = (pick.user_id == currentUserId) || isGameLocked;
                         
                         if (shouldShowPick) {
                             userTotals[pick.entry_id].picks[pick.game_id] = enhancedPick;
@@ -189,7 +194,11 @@ class ResultsController {
                         }
                     } else {
                         // Fallback if game not found - apply same visibility rules
-                        const shouldShowPick = (pick.user_id == currentUserId) || (pick.is_locked === 1);
+                        const kickoffTime = new Date(pick.kickoff_timestamp);
+                        const currentTime = new Date();
+                        const isGameLocked = currentTime >= kickoffTime;
+                        
+                        const shouldShowPick = (pick.user_id == currentUserId) || isGameLocked;
                         if (shouldShowPick) {
                             userTotals[pick.entry_id].picks[pick.game_id] = pick;
                         }
@@ -423,7 +432,6 @@ class ResultsController {
                                 CASE 
                                     WHEN CAST(u.user_id AS SIGNED) = CAST(? AS SIGNED) THEN 1
                                     WHEN p.is_locked = 1 THEN 1
-                                    WHEN g.kickoff_timestamp <= NOW() THEN 1
                                     ELSE 0
                                 END as show_pick
                             FROM picks p

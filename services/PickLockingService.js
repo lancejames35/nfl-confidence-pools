@@ -97,10 +97,8 @@ class PickLockingService {
         const easternKickoff = new Date(kickoffTimestamp.getTime() + (60 * 60 * 1000));
         const currentTime = new Date();
         
-        // Add small buffer (1 minute) to ensure picks are locked before kickoff
-        const lockingTime = new Date(easternKickoff.getTime() - (1 * 60 * 1000));
-        
-        return currentTime >= lockingTime;
+        // Lock picks exactly at kickoff time
+        return currentTime >= easternKickoff;
     }
     
     /**
@@ -126,6 +124,16 @@ class PickLockingService {
             `, params);
             
             // Locked picks for league and games successfully
+            
+            // Emit real-time update for deadline passed
+            const socketManager = require('../config/socket');
+            if (socketManager && result.affectedRows > 0) {
+                socketManager.emitToAll('deadlinePassed', { 
+                    gameIds, 
+                    leagueId, 
+                    lockedPicksCount: result.affectedRows 
+                });
+            }
             
             // Log the locking action for audit trail
             await this.logLockingAction(leagueId, gameIds, result.affectedRows);

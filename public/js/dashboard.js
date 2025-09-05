@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize chat functionality
     initializeChat();
     
-    // Initialize NFL kickoff countdown
-    initializeKickoffCountdown();
+    // Initialize pick deadline countdown
+    initializePickDeadlineCountdown();
     
     // Initialize invite modal copy button
     const copyMessageBtn = document.getElementById('copyMessageBtn');
@@ -260,87 +260,240 @@ function initializeChat() {
     }
 }
 
-function initializeKickoffCountdown() {
-    // Get first game kickoff timestamp from server (ISO format)
-    const firstGameKickoffTimestamp = window.firstGameKickoffTimestamp;
+function initializePickDeadlineCountdown() {
+    // Get next pick deadline timestamp from server (ISO format)
+    let nextPickDeadlineTimestamp = window.nextPickDeadlineTimestamp;
+    let currentCountdownInterval = null;
+    let isFetchingNextDeadline = false; // Prevent multiple simultaneous fetches
+    let retryCount = 0; // Track retry attempts
+    const MAX_RETRIES = 5; // Maximum number of retries
     
-    
-    if (!firstGameKickoffTimestamp || firstGameKickoffTimestamp === '') {
-        // No game data available - show helpful message instead of hiding
-        const kickoffTimeEl = document.getElementById('kickoff-time');
-        const countdownEl = document.getElementById('kickoff-countdown');
-        
-        if (kickoffTimeEl) {
-            kickoffTimeEl.textContent = 'No upcoming games scheduled';
+    function startCountdownForDeadline(deadlineTimestamp) {
+        // Clear any existing interval first
+        if (currentCountdownInterval) {
+            clearInterval(currentCountdownInterval);
+            currentCountdownInterval = null;
         }
         
+        if (!deadlineTimestamp || deadlineTimestamp === '') {
+            // No game data available - show helpful message and STOP
+            const kickoffTimeEl = document.getElementById('kickoff-time');
+            const countdownEl = document.getElementById('kickoff-countdown');
+            
+            if (kickoffTimeEl) {
+                kickoffTimeEl.textContent = 'No upcoming games scheduled';
+            }
+            
+            if (countdownEl) {
+                countdownEl.innerHTML = '<div class="game-started">No more games this season!</div>';
+            }
+            return;
+        }
+        
+        // Parse timestamp directly
+        const deadlineDate = new Date(deadlineTimestamp);
+        
+        // Display the time in user's timezone
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const formattedTime = new Intl.DateTimeFormat('en-US', {
+            timeZone: userTimezone,
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        }).format(deadlineDate);
+        
+        // Update the display
+        const kickoffTimeEl = document.getElementById('kickoff-time');
+        if (kickoffTimeEl) {
+            kickoffTimeEl.textContent = formattedTime;
+        }
+        
+        // Reset countdown display elements to ensure they're visible
+        const countdownEl = document.getElementById('kickoff-countdown');
         if (countdownEl) {
-            // Hide countdown numbers but keep the container visible with message
-            const countdownNumbers = countdownEl.querySelector('.countdown-numbers');
-            if (countdownNumbers) {
-                countdownNumbers.style.display = 'none';
+            // Make sure countdown timer structure is there
+            if (!countdownEl.querySelector('.countdown-item')) {
+                countdownEl.innerHTML = `
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-days">--</span>
+                        <span class="countdown-label">Days</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-hours">--</span>
+                        <span class="countdown-label">Hours</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-minutes">--</span>
+                        <span class="countdown-label">Minutes</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="countdown-seconds">--</span>
+                        <span class="countdown-label">Seconds</span>
+                    </div>
+                `;
             }
         }
-        return;
-    }
-    
-    // Parse timestamp directly - same logic as picks page
-    const kickoffDate = new Date(firstGameKickoffTimestamp);
-    
-    // Display the time in user's timezone
-    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const formattedTime = new Intl.DateTimeFormat('en-US', {
-        timeZone: userTimezone,
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZoneName: 'short'
-    }).format(kickoffDate);
-    
-    // Update the display
-    const kickoffTimeEl = document.getElementById('kickoff-time');
-    if (kickoffTimeEl) {
-        kickoffTimeEl.textContent = formattedTime;
-    }
-    
-    function updateCountdown() {
-        const now = new Date().getTime();
-        const kickoffTime = kickoffDate.getTime();
-        const timeRemaining = kickoffTime - now;
         
-        if (timeRemaining > 0) {
-            const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const deadlineTime = deadlineDate.getTime();
+            const timeRemaining = deadlineTime - now;
             
-            // Update countdown display
-            const daysEl = document.getElementById('countdown-days');
-            const hoursEl = document.getElementById('countdown-hours');
-            const minutesEl = document.getElementById('countdown-minutes');
-            const secondsEl = document.getElementById('countdown-seconds');
-            
-            if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
-            if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
-            if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
-            if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
-        } else {
-            // Game has started or passed
+            if (timeRemaining > 0) {
+                const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                
+                // Update countdown display
+                const daysEl = document.getElementById('countdown-days');
+                const hoursEl = document.getElementById('countdown-hours');
+                const minutesEl = document.getElementById('countdown-minutes');
+                const secondsEl = document.getElementById('countdown-seconds');
+                
+                if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
+                if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+                if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
+                if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+            } else {
+                // Deadline has passed - fetch next deadline
+                clearInterval(currentCountdownInterval);
+                currentCountdownInterval = null;
+                
+                // Show transitional message
+                const countdownEl = document.getElementById('kickoff-countdown');
+                if (countdownEl) {
+                    countdownEl.innerHTML = '<div class="game-started">Picks locked! Loading next game...</div>';
+                }
+                
+                // Fetch next deadline
+                fetchNextDeadlineAndContinue();
+            }
+        }
+        
+        // Update countdown immediately
+        updateCountdown();
+        
+        // Update countdown every second
+        currentCountdownInterval = setInterval(updateCountdown, 1000);
+    }
+    
+    async function fetchNextDeadlineAndContinue() {
+        // Prevent multiple simultaneous fetches
+        if (isFetchingNextDeadline) {
+            return;
+        }
+        
+        isFetchingNextDeadline = true;
+        
+        try {
             const countdownEl = document.getElementById('kickoff-countdown');
             if (countdownEl) {
-                countdownEl.innerHTML = '<div class="game-started">The 2025 NFL Season has begun!</div>';
-                clearInterval(countdownInterval);
+                countdownEl.innerHTML = '<div class="game-started">Loading next game...</div>';
             }
+            
+            // Exponential backoff with jitter for retries
+            const waitTime = retryCount === 0 ? 2000 : Math.min(30000, (2000 * Math.pow(2, retryCount)) + Math.random() * 1000);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            
+            // Pass the current deadline that just expired so the API can exclude it
+            const currentDeadline = encodeURIComponent(nextPickDeadlineTimestamp);
+            const response = await fetch(`/api/next-deadline?exclude=${currentDeadline}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.nextDeadline) {
+                // Check if the deadline is actually in the future
+                const deadlineTime = new Date(data.nextDeadline).getTime();
+                const now = new Date().getTime();
+                
+                if (deadlineTime > now) {
+                    // Reset retry count on successful deadline
+                    retryCount = 0;
+                    // Start countdown for the new deadline
+                    startCountdownForDeadline(data.nextDeadline);
+                } else {
+                    // The deadline we got is already past, retry with backoff
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        setTimeout(() => {
+                            isFetchingNextDeadline = false;
+                            fetchNextDeadlineAndContinue();
+                        }, 2000);
+                    } else {
+                        const kickoffTimeEl = document.getElementById('kickoff-time');
+                        const countdownEl = document.getElementById('kickoff-countdown');
+                        
+                        if (kickoffTimeEl) {
+                            kickoffTimeEl.textContent = 'Unable to load next game';
+                        }
+                        
+                        if (countdownEl) {
+                            countdownEl.innerHTML = '<div class="game-started">Please refresh the page to see the next deadline</div>';
+                        }
+                        retryCount = 0;
+                    }
+                }
+            } else {
+                retryCount = 0;
+                // No more deadlines - this is the end of season
+                const kickoffTimeEl = document.getElementById('kickoff-time');
+                const countdownEl = document.getElementById('kickoff-countdown');
+                
+                if (kickoffTimeEl) {
+                    kickoffTimeEl.textContent = 'Season complete';
+                }
+                
+                if (countdownEl) {
+                    countdownEl.innerHTML = '<div class="game-started">No more games this season!</div>';
+                }
+            }
+        } catch (error) {
+            // Retry on error if under max retries
+            if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                const countdownEl = document.getElementById('kickoff-countdown');
+                if (countdownEl) {
+                    countdownEl.innerHTML = '<div class="game-started">Connection error. Retrying...</div>';
+                }
+                setTimeout(() => {
+                    isFetchingNextDeadline = false;
+                    fetchNextDeadlineAndContinue();
+                }, 3000);
+            } else {
+                const countdownEl = document.getElementById('kickoff-countdown');
+                if (countdownEl) {
+                    countdownEl.innerHTML = '<div class="game-started">Failed to load. Please refresh the page.</div>';
+                }
+                retryCount = 0;
+            }
+        } finally {
+            isFetchingNextDeadline = false;
         }
     }
     
-    // Update countdown immediately
-    updateCountdown();
+    // Start the initial countdown
+    startCountdownForDeadline(nextPickDeadlineTimestamp);
     
-    // Update countdown every second
-    const countdownInterval = setInterval(updateCountdown, 1000);
+    // Listen for WebSocket events about deadline changes
+    if (window.socketClient) {
+        window.socketClient.on('deadlinePassed', (data) => {
+            // A deadline has passed, fetch the next one
+            setTimeout(() => {
+                fetchNextDeadlineAndContinue();
+            }, 1000); // Small delay to ensure database updates are complete
+        });
+    }
 }
 
 // Utility function for toast notifications

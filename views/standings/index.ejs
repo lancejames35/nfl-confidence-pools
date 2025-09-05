@@ -605,6 +605,26 @@
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     padding: 2px 4px !important;
 }
+
+/* Mobile username column width limits */
+@media (max-width: 576px) {
+    .player-cell {
+        width: 85px !important;
+        min-width: 85px !important;
+        max-width: 85px !important;
+        left: 50px !important;
+    }
+    
+    .rank-cell {
+        width: 50px !important;
+        min-width: 50px !important;
+    }
+    
+    /* Force truncate long usernames on mobile in standings */
+    .player-cell div[style*="font-size: 0.8rem"] {
+        max-width: 75px !important;
+    }
+}
 </style>
 
 <script>

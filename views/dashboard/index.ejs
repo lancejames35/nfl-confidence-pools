@@ -80,16 +80,16 @@
     </div>
     <% } %>
 
-    <!-- NFL Kickoff Countdown -->
+    <!-- Next Pick Deadline Countdown -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="kickoff-countdown-card">
                 <div class="countdown-header">
-                    <i class="fas fa-football-ball me-2"></i>
-                    <span class="countdown-title">2025 NFL Season Kickoff</span>
+                    <i class="fas fa-clock me-2"></i>
+                    <span class="countdown-title">Next Pick Deadline</span>
                 </div>
                 <div class="countdown-game-info">
-                    <span class="game-date" id="kickoff-time">Loading game time...</span>
+                    <span class="game-date" id="kickoff-time">Loading deadline time...</span>
                 </div>
                 <div class="countdown-timer" id="kickoff-countdown">
                     <div class="countdown-item">
@@ -500,7 +500,7 @@ window.currentUser = {
     username: '<%= user ? user.username : "" %>'
 };
 window.isCommissioner = <%= locals.selectedLeague && selectedLeague.actual_role === 'commissioner' ? 'true' : 'false' %>;
-window.firstGameKickoffTimestamp = '<%= firstGameKickoff ? firstGameKickoff.toISOString() : "" %>';
+window.nextPickDeadlineTimestamp = '<%= nextPickDeadline ? nextPickDeadline.toISOString() : "" %>';
 window.currentWeek = <%= currentWeek || 1 %>;
 window.defaultLeagueId = <%= defaultLeagueId || 'null' %>;
 window.defaultEntryId = <%= defaultEntryId || 'null' %>;

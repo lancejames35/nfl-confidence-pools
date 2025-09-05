@@ -308,15 +308,11 @@ if ('serviceWorker' in navigator && window.location.protocol === 'https:' || win
 
 // Network status indicator
 window.addEventListener('online', function() {
-    if (window.PoolsApp) {
-        window.PoolsApp.showToast('Connection restored', 'success');
-    }
+    // Connection restored - no toast needed
 });
 
 window.addEventListener('offline', function() {
-    if (window.PoolsApp) {
-        window.PoolsApp.showToast('Connection lost', 'warning');
-    }
+    // Connection lost - no toast needed
 });
 
 // Global error handler

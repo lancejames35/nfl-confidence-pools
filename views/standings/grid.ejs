@@ -635,19 +635,27 @@
         z-index: 11;
     }
     
-    .player-cell {
-        width: 120px;
-        min-width: 120px;
+    .player-cell, .player-cell-grid {
+        width: 85px !important;  /* Reduced width on mobile */
+        min-width: 85px !important;
+        max-width: 85px !important;
         position: sticky;
         left: 35px;
         z-index: 10;
-        padding: 0.4rem;
+        padding: 0.3rem !important;  /* Less padding on mobile */
         border-right: 1px solid #dee2e6;
     }
     
     /* Default background only for cells without tier styling */
-    .player-cell:not([style*="background"]) {
+    .player-cell:not([style*="background"]),
+    .player-cell-grid:not([style*="background"]) {
         background: white !important;
+    }
+    
+    /* Force username truncation on mobile */
+    .player-cell div[style*="font-size: 0.8rem"],
+    .player-cell-grid div[style*="font-size: 0.8rem"] {
+        max-width: 70px !important;
     }
     
     .summary-column {

@@ -385,7 +385,7 @@
                                             <% if (hasTier) { %>
                                                 <div style="position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: <%= tierColor %>; border-radius: 50%; box-shadow: 0 1px 3px <%= tierColor %>50;"></div>
                                             <% } %>
-                                            <div style="font-weight: <% if (isCurrentUser) { %>800<% } else { %>600<% } %>; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; <% if (isCurrentUser) { %>color: #0066cc;<% } %>">
+                                            <div style="font-weight: <% if (isCurrentUser) { %>800<% } else { %>600<% } %>; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; <% if (isCurrentUser) { %>color: #0066cc;<% } %>">
                                                 <%= user.username %>
                                             </div>
                                         </div>
@@ -701,7 +701,7 @@
                                                         <% if (hasTier) { %>
                                                             <div style="position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: <%= tierColor %>; border-radius: 50%; box-shadow: 0 1px 3px <%= tierColor %>50;"></div>
                                                         <% } %>
-                                                        <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 85px; font-weight: <% if (isCurrentUser) { %>800<% } else { %>600<% } %>; <% if (isCurrentUser) { %>color: #0066cc;<% } %>"><%= user.username %></span>
+                                                        <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65px; font-weight: <% if (isCurrentUser) { %>800<% } else { %>600<% } %>; <% if (isCurrentUser) { %>color: #0066cc;<% } %>"><%= user.username %></span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -839,6 +839,31 @@
     padding: 2px 4px !important;
     height: 28px;
     outline: 1px solid white;  /* White outline to prevent bleed-through */
+}
+
+/* Mobile username truncation and column width limits */
+@media (max-width: 576px) {
+    .player-cell {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+    }
+    
+    .user-column[data-sort="player"] {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+        left: 35px !important;  /* Adjust position */
+    }
+    
+    /* Force truncate long usernames on mobile */
+    .player-cell div[style*="font-size: 0.8rem"] {
+        max-width: 70px !important;
+    }
+    
+    .mobile-player-cell .player-name span {
+        max-width: 60px !important;
+    }
 }
 
 
@@ -1627,6 +1652,8 @@
     z-index: 15;
     padding: 4px 6px !important;
     border-right: 1px solid #dee2e6;
+    max-width: 80px !important;  /* Limit width on mobile to prevent overflow */
+    width: 80px !important;
 }
 
 

@@ -415,7 +415,7 @@ class Application {
                 
                 // Get next pick deadline time for countdown (next upcoming game kickoff)
                 const nextGameRows = await database.execute(
-                    'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1',
+                    'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > CONVERT_TZ(NOW(), "UTC", "America/New_York") ORDER BY kickoff_timestamp ASC LIMIT 1',
                     [new Date().getFullYear()]
                 ) || [];
                 const nextPickDeadline = (nextGameRows && nextGameRows.length > 0) ? new Date(nextGameRows[0].kickoff_timestamp) : null;
@@ -667,7 +667,7 @@ class Application {
                     params = [new Date().getFullYear(), excludeDeadline];
                 } else {
                     // Use the normal logic for initial load
-                    query = 'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1';
+                    query = 'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > CONVERT_TZ(NOW(), "UTC", "America/New_York") ORDER BY kickoff_timestamp ASC LIMIT 1';
                     params = [new Date().getFullYear()];
                 }
                 

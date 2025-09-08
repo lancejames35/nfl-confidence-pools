@@ -23,11 +23,9 @@ class LiveScoreScheduler {
                 this.scheduleNextGameCheck();
             });
         } catch (error) {
-            // If initialization fails, try again in 5 minutes
-            setTimeout(() => {
-                this.initialize();
-            }, 5 * 60 * 1000);
-            // Don't throw - let the app continue running
+            console.error('❌ LiveScoreScheduler initialization failed:', error.message);
+            // Don't retry automatically to prevent infinite loops
+            // Manual restart will be required if this fails
         }
     }
 

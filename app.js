@@ -819,9 +819,14 @@ class Application {
                         console.log('✅ Live score scheduler initialized');
                         logger.info('All schedulers started successfully');
                     } catch (error) {
+                        console.error('💥 SCHEDULER STARTUP ERROR:', error.message);
+                        console.error('Stack:', error.stack);
                         logger.error('Failed to start schedulers:', error);
                         // Continue running even if schedulers fail to start
                     }
+                }).catch(error => {
+                    console.error('💥 SETIMMEDIATE ERROR:', error.message);
+                    logger.error('SetImmediate error:', error);
                 });
             });
         } catch (error) {

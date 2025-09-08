@@ -755,13 +755,16 @@ class Application {
                     url: process.env.NODE_ENV === 'development' ? `http://localhost:${this.port}` : undefined
                 });
                 
-                // Initialize live score scheduler
-                try {
-                    await liveScoreScheduler.initialize();
-                    logger.info('Live Score Scheduler started');
-                } catch (error) {
-                    logger.error('Failed to start Live Score Scheduler:', error);
-                }
+                // Initialize live score scheduler (non-blocking)
+                setImmediate(async () => {
+                    try {
+                        await liveScoreScheduler.initialize();
+                        logger.info('Live Score Scheduler started');
+                    } catch (error) {
+                        logger.error('Failed to start Live Score Scheduler:', error);
+                        // Continue running even if scheduler fails to start
+                    }
+                });
             });
         } catch (error) {
             logger.error('Failed to start server', { error: error.message, stack: error.stack });

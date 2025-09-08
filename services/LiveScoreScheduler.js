@@ -14,13 +14,21 @@ class LiveScoreScheduler {
      * Initialize the scheduler - starts the smart cron system
      */
     async initialize() {
-        // Start with checking for the next game
-        await this.scheduleNextGameCheck();
-        
-        // Set up a backup check every hour to catch any missed games
-        cron.schedule('0 * * * *', () => {
-            this.scheduleNextGameCheck();
-        });
+        try {
+            // Start with checking for the next game
+            await this.scheduleNextGameCheck();
+            
+            // Set up a backup check every hour to catch any missed games
+            cron.schedule('0 * * * *', () => {
+                this.scheduleNextGameCheck();
+            });
+        } catch (error) {
+            // If initialization fails, try again in 5 minutes
+            setTimeout(() => {
+                this.initialize();
+            }, 5 * 60 * 1000);
+            throw error;
+        }
     }
 
     /**

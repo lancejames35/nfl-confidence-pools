@@ -36,9 +36,8 @@ console.log('⏰ Loading scheduled tasks...');
 const scheduledTasks = require('./services/ScheduledTasks');
 console.log('✅ Scheduled tasks loaded');
 
-console.log('🏈 Loading live score scheduler...');
-const liveScoreScheduler = require('./services/LiveScoreScheduler');
-console.log('✅ Live score scheduler loaded');
+// Defer loading live score scheduler until after basic setup
+let liveScoreScheduler;
 
 console.log('📝 Loading logger...');
 const logger = require('./config/logger');
@@ -808,16 +807,20 @@ class Application {
                     url: process.env.NODE_ENV === 'development' ? `http://localhost:${this.port}` : undefined
                 });
                 
-                // Initialize live score scheduler (temporarily disabled for debugging)
-                // setImmediate(async () => {
-                //     try {
-                //         await liveScoreScheduler.initialize();
-                //         logger.info('Live Score Scheduler started');
-                //     } catch (error) {
-                //         logger.error('Failed to start Live Score Scheduler:', error);
-                //         // Continue running even if scheduler fails to start
-                //     }
-                // });
+                // Initialize live score scheduler after app is running
+                setImmediate(async () => {
+                    try {
+                        console.log('🏈 Loading live score scheduler...');
+                        liveScoreScheduler = require('./services/LiveScoreScheduler');
+                        console.log('✅ Live score scheduler loaded');
+                        
+                        await liveScoreScheduler.initialize();
+                        logger.info('Live Score Scheduler started');
+                    } catch (error) {
+                        logger.error('Failed to start Live Score Scheduler:', error);
+                        // Continue running even if scheduler fails to start
+                    }
+                });
             });
         } catch (error) {
             logger.error('Failed to start server', { error: error.message, stack: error.stack });
@@ -841,8 +844,10 @@ class Application {
                 // Stop scheduled tasks
                 scheduledTasks.stop();
                 
-                // Stop live score scheduler
-                liveScoreScheduler.shutdown();
+                // Stop live score scheduler if it was loaded
+                if (liveScoreScheduler) {
+                    liveScoreScheduler.shutdown();
+                }
                 
                 // Close database connections
                 await database.close();

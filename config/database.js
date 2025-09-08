@@ -26,10 +26,33 @@ class Database {
                 timezone: '-04:00'  // EDT (Eastern Daylight Time) - Use -05:00 for EST in winter
             });
 
-            // Test connection
-            const connection = await this.pool.getConnection();
-            // Database connected successfully
-            connection.release();
+            // Test connection with retry logic
+            console.log('🔗 Testing database connection...');
+            let connection;
+            let retries = 3;
+            let lastError;
+            
+            while (retries > 0) {
+                try {
+                    connection = await this.pool.getConnection();
+                    console.log('✅ Database connection test successful');
+                    connection.release();
+                    break;
+                } catch (error) {
+                    console.error(`❌ Database connection attempt failed (${4 - retries}/3):`, error.message);
+                    lastError = error;
+                    retries--;
+                    
+                    if (retries > 0) {
+                        console.log(`⏳ Waiting 2 seconds before retry...`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                }
+            }
+            
+            if (retries === 0) {
+                throw lastError;
+            }
 
             // Initialize session store
             this.initializeSessionStore();
@@ -37,6 +60,13 @@ class Database {
             this.isConnected = true;
             return true;
         } catch (error) {
+            console.error('💥 DATABASE CONNECTION FAILED:', error.message);
+            console.error('Error code:', error.code);
+            console.error('Error stack:', error.stack);
+            console.error('Host:', process.env.DATABASE_HOST);
+            console.error('Port:', process.env.DATABASE_PORT);
+            console.error('User:', process.env.DATABASE_USER);
+            console.error('Database:', process.env.DATABASE_NAME);
             // Database connection failed - logging via logger in production
             process.exit(1);
         }

@@ -3,13 +3,13 @@ const router = express.Router();
 const database = require('../config/database');
 const authMiddleware = require('../middleware/auth');
 
-// Import live scores routes
-const liveScoresRoutes = require('./api/live-scores');
-
-// API routes placeholder
-
+// Lazy load live scores routes to prevent startup dependency issues
 // Mount live scores routes with auth middleware
-router.use('/live-scores', authMiddleware.requireAuth, authMiddleware.loadUser, liveScoresRoutes);
+router.use('/live-scores', authMiddleware.requireAuth, authMiddleware.loadUser, (req, res, next) => {
+    // Lazy require to prevent startup crashes
+    const liveScoresRoutes = require('./api/live-scores');
+    liveScoresRoutes(req, res, next);
+});
 
 router.get('/status', (req, res) => {
     res.json({

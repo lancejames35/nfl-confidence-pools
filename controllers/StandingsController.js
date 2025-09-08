@@ -189,11 +189,47 @@ class StandingsController {
                     u.username,
                     u.user_id,
                     COUNT(p.pick_id) as week_picks,
-                    SUM(CASE WHEN p.is_correct = 1 THEN 1 ELSE 0 END) as week_correct,
-                    SUM(p.points_earned) as week_points,
-                    MAX(CASE WHEN p.is_correct = 1 THEN p.confidence_points ELSE 0 END) as best_pick,
-                    MIN(CASE WHEN p.is_correct = 0 THEN p.confidence_points ELSE NULL END) as worst_miss,
-                    AVG(CASE WHEN p.is_correct = 1 THEN p.confidence_points ELSE NULL END) as avg_correct_confidence,
+                    SUM(
+                        CASE 
+                            -- Final/completed games: count if correct
+                            WHEN g.status = 'completed' AND p.is_correct = 1 THEN 1
+                            -- Live games: count if user is currently winning  
+                            WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team = r.winning_team THEN 1
+                            -- All other cases: 0
+                            ELSE 0
+                        END
+                    ) as week_correct,
+                    SUM(
+                        CASE 
+                            -- Final/completed games: use stored points_earned
+                            WHEN g.status = 'completed' THEN p.points_earned
+                            -- Live games: award points if user is currently winning
+                            WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team = r.winning_team THEN p.confidence_points
+                            -- All other cases: 0 points
+                            ELSE 0
+                        END
+                    ) as week_points,
+                    MAX(
+                        CASE 
+                            WHEN g.status = 'completed' AND p.is_correct = 1 THEN p.confidence_points
+                            WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team = r.winning_team THEN p.confidence_points
+                            ELSE 0
+                        END
+                    ) as best_pick,
+                    MIN(
+                        CASE 
+                            WHEN g.status = 'completed' AND p.is_correct = 0 THEN p.confidence_points
+                            WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team != r.winning_team THEN p.confidence_points
+                            ELSE NULL
+                        END
+                    ) as worst_miss,
+                    AVG(
+                        CASE 
+                            WHEN g.status = 'completed' AND p.is_correct = 1 THEN p.confidence_points
+                            WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team = r.winning_team THEN p.confidence_points
+                            ELSE NULL
+                        END
+                    ) as avg_correct_confidence,
                     
                     -- Overall season totals for context
                     overall.total_points as season_total,
@@ -204,6 +240,8 @@ class StandingsController {
                 JOIN league_users lu ON le.league_user_id = lu.league_user_id
                 JOIN users u ON lu.user_id = u.user_id
                 LEFT JOIN picks p ON le.entry_id = p.entry_id AND p.week = ?
+                LEFT JOIN games g ON p.game_id = g.game_id
+                LEFT JOIN results r ON g.game_id = r.game_id
                 
                 -- Overall season stats
                 LEFT JOIN (
@@ -396,14 +434,41 @@ class StandingsController {
                 LEFT JOIN league_entry_tiers let ON lut.tier_id = let.tier_id
                 LEFT JOIN (
                     SELECT 
-                        entry_id,
-                        week,
-                        SUM(points_earned) as week_points,
-                        SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as week_correct,
-                        COUNT(pick_id) as week_picks
-                    FROM picks
-                    WHERE week BETWEEN 1 AND 18
-                    GROUP BY entry_id, week
+                        p.entry_id,
+                        p.week,
+                        SUM(
+                            CASE 
+                                -- Final/completed games: use stored points_earned
+                                WHEN g.status = 'completed' THEN p.points_earned
+                                -- Live games: award points if user is currently winning
+                                WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team = r.winning_team THEN p.confidence_points
+                                -- All other cases: 0 points
+                                ELSE 0
+                            END
+                        ) as week_points,
+                        SUM(
+                            CASE 
+                                -- Final/completed games: count if correct
+                                WHEN g.status = 'completed' AND p.is_correct = 1 THEN 1
+                                -- Live games: count if user is currently winning  
+                                WHEN g.status = 'in_progress' AND r.winning_team IS NOT NULL AND p.selected_team = r.winning_team THEN 1
+                                -- All other cases: 0
+                                ELSE 0
+                            END
+                        ) as week_correct,
+                        SUM(
+                            CASE 
+                                -- Only count games that are completed or in progress
+                                WHEN g.status = 'completed' OR g.status = 'in_progress' THEN 1
+                                -- All other cases: don't count
+                                ELSE 0
+                            END
+                        ) as week_picks
+                    FROM picks p
+                    JOIN games g ON p.game_id = g.game_id
+                    LEFT JOIN results r ON g.game_id = r.game_id
+                    WHERE p.week BETWEEN 1 AND 18
+                    GROUP BY p.entry_id, p.week
                 ) weekly_stats ON le.entry_id = weekly_stats.entry_id
                 
                 WHERE lu.league_id = ? AND le.status = 'active'

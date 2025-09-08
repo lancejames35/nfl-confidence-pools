@@ -453,7 +453,7 @@
                                             <%= user.totalPoints %>
                                         </div>
                                         <div class="record">
-                                            <%= user.correctPicks %>-<%= user.totalPicks - user.correctPicks %>
+                                            <%= user.correctPicks %>/<%= user.totalPicks %>
                                         </div>
                                     </td>
                                     
@@ -463,7 +463,7 @@
                                             <%= user.seasonPoints %>
                                         </div>
                                         <div class="record">
-                                            <%= user.seasonCorrect %>-<%= user.seasonPicks - user.seasonCorrect %>
+                                            <%= user.seasonCorrect %>/<%= user.seasonPicks %>
                                         </div>
                                     </td>
                                     
@@ -530,8 +530,8 @@
                         <table class="table table-sm mb-0">
                             <thead class="table-dark">
                                 <tr>
-                                    <th width="50">#</th>
-                                    <th>Player</th>
+                                    <th width="50" class="text-center">#</th>
+                                    <th width="140">Player</th>
                                     <th width="70" class="text-center">Week</th>
                                     <th width="70" class="text-center">Total</th>
                                     <th width="80" class="text-center">Max</th>
@@ -572,9 +572,24 @@
                                                 <small class="text-muted" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem;">@<%= user.username.length > 15 ? user.username.substring(0, 15) + '...' : user.username %></small>
                                             </div>
                                         </td>
-                                        <td class="text-center fw-bold text-primary"><%= user.totalPoints %></td>
-                                        <td class="text-center"><%= user.seasonPoints %></td>
-                                        <td class="text-center fw-bold text-success"><%= user.possiblePoints %></td>
+                                        <td class="text-center fw-bold text-primary">
+                                            <%= user.totalPoints %>
+                                            <div style="font-size: 0.65rem; color: #6c757d; font-weight: normal;">
+                                                <%= user.correctPicks %>/<%= user.totalPicks %>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <%= user.seasonPoints %>
+                                            <div style="font-size: 0.65rem; color: #6c757d;">
+                                                <%= user.seasonCorrect %>/<%= user.seasonPicks %>
+                                            </div>
+                                        </td>
+                                        <td class="text-center fw-bold text-success">
+                                            <%= user.possiblePoints %>
+                                            <div style="font-size: 0.65rem; color: #28a745; font-weight: normal;">
+                                                +<%= user.possiblePoints - user.totalPoints %> max
+                                            </div>
+                                        </td>
                                         <td class="text-center">
                                             <button class="btn btn-outline-primary btn-sm mobile-picks-btn" 
                                                     data-bs-toggle="collapse" 
@@ -809,12 +824,15 @@
                                             <% }); %>
                                             <td class="mobile-total-cell week-total">
                                                 <div class="total-points"><%= user.totalPoints %></div>
+                                                <div class="mobile-record"><%= user.correctPicks %>/<%= user.totalPicks %></div>
                                             </td>
                                             <td class="mobile-total-cell season-total">
                                                 <div class="total-points"><%= user.seasonPoints %></div>
+                                                <div class="mobile-record"><%= user.seasonCorrect %>/<%= user.seasonPicks %></div>
                                             </td>
                                             <td class="mobile-total-cell possible-points">
                                                 <div class="total-points"><%= user.possiblePoints %></div>
+                                                <div class="mobile-record" style="color: #28a745;">+<%= user.possiblePoints - user.totalPoints %> max</div>
                                             </td>
                                             <% if (league.settings && (league.settings.primary_tiebreaker === 'mnf_total' || league.settings.secondary_tiebreaker === 'mnf_total')) { %>
                                             <td class="mobile-total-cell mnf-total">
@@ -996,7 +1014,7 @@
 
 .summary-cell {
     position: sticky;
-    background: #f8f9fa !important;
+    background: #e9ecef !important;  /* Darker gray to stand out */
     font-weight: 600;
     text-align: center;
     z-index: 18;
@@ -1010,7 +1028,7 @@
 /* Keep solid background on hover */
 .summary-cell:hover {
     z-index: 22 !important;
-    background: #f8f9fa !important;  /* Keep solid background */
+    background: #e9ecef !important;  /* Match the new background color */
     color: #333 !important;
 }
 
@@ -1546,36 +1564,61 @@
 }
 
 .mobile-games-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+}
+
+/* Responsive grid for larger mobile screens */
+@media (min-width: 480px) {
+    .mobile-games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
 }
 
 .mobile-game-card {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background: white !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 90px !important;
+    justify-content: space-between !important;
+    align-items: center !important;  /* Center everything horizontally */
+    text-align: center !important;   /* Center text */
+    width: 100% !important;
 }
 
 .mobile-game-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
+    display: flex !important;
+    flex-direction: column !important;  /* Stack vertically for center alignment */
+    align-items: center !important;     /* Center horizontally */
+    justify-content: center !important; /* Center vertically */
+    margin-bottom: 8px !important;
+    gap: 4px !important;
+    min-height: 44px !important;
+    width: 100% !important;
+    text-align: center !important;
 }
 
 .mobile-matchup {
-    flex: 1;
+    width: 100% !important;
+    text-align: center !important;
 }
 
 .mobile-teams {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: #495057;
-    display: block;
-    line-height: 1.3;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    color: #495057 !important;
+    display: block !important;
+    line-height: 1.4 !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin-bottom: 4px !important;
 }
 
 .mobile-spread {
@@ -1587,15 +1630,21 @@
 }
 
 .mobile-game-status {
-    text-align: right;
-    min-width: 80px;
+    text-align: center !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
 }
 
 .mobile-score {
-    font-weight: 700;
-    font-size: 0.85rem;
-    display: block;
-    margin-bottom: 4px;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    display: block !important;
+    text-align: center !important;
+    margin-bottom: 4px !important;
 }
 
 .mobile-score.final {
@@ -1607,18 +1656,28 @@
 }
 
 .mobile-pick-result {
-    text-align: center;
-    margin-top: 8px;
+    text-align: center !important;
+    margin-top: auto !important;
+    padding: 8px 4px !important;
+    border-top: 1px solid #e9ecef !important;
+    min-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
 }
 
 .mobile-pick {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    min-width: 60px !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
 
 .mobile-pick.correct {
@@ -1661,38 +1720,42 @@
 }
 
 .mobile-results-table {
-    min-width: 800px;
+    min-width: 1000px;
     font-size: 0.75rem;
 }
 
 .mobile-rank-col {
-    width: 35px;
-    min-width: 35px;
+    width: 40px;
+    min-width: 40px;
     position: sticky;
     left: 0;
     background: var(--bs-dark) !important;
-    z-index: 11;
+    z-index: 20;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
 .mobile-player-col {
     width: 100px;
     min-width: 100px;
     position: sticky;
-    left: 35px;
+    left: 40px;
     background: var(--bs-dark) !important;
-    z-index: 11;
+    z-index: 20;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
 .mobile-game-col {
-    width: 60px;
+    width: 60px;      /* Consistent width for better alignment */
     min-width: 60px;
+    max-width: 60px;  /* Prevent expansion */
     padding: 4px 2px !important;
     text-align: center;
+    vertical-align: middle;  /* Center align content */
 }
 
 .mobile-total-col {
-    width: 55px;  /* Slightly wider to eliminate gaps */
-    min-width: 55px;
+    width: 58px;  /* Slightly wider to eliminate gaps */
+    min-width: 58px;
     background: var(--bs-dark) !important;
     text-align: center;
     padding: 4px 2px !important;
@@ -1713,27 +1776,36 @@
     position: sticky;
     left: 0;
     background: white !important;
-    z-index: 15;
+    z-index: 18;
     text-align: center;
     padding: 4px 2px !important;
+    width: 40px;
+    min-width: 40px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
 .mobile-player-cell {
     position: sticky;
-    left: 35px;
+    left: 40px;
     background: white !important;
-    z-index: 15;
+    z-index: 18;
     padding: 4px 6px !important;
     border-right: 1px solid #dee2e6;
-    max-width: 80px !important;  /* Limit width on mobile to prevent overflow */
-    width: 80px !important;
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
 
 
 .mobile-pick-cell {
+    width: 60px;      /* Match header column width */
+    min-width: 60px;
+    max-width: 60px;  /* Prevent expansion */
     text-align: center;
     padding: 4px 2px !important;
+    vertical-align: middle;  /* Center align content */
 }
 
 /* Missing unstarted class for games that haven't started */
@@ -1757,18 +1829,25 @@
 .mobile-total-cell {
     text-align: center;
     font-weight: 600;
-    background: #f8f9fa !important;
+    background: #e9ecef !important;  /* Darker gray to match desktop */
     padding: 4px 2px !important;
     z-index: 11 !important;
     position: static;  /* Remove sticky for mobile scrolling */
-    width: 55px;
-    min-width: 55px;
+    width: 58px;
+    min-width: 58px;
+}
+
+.mobile-record {
+    font-size: 0.6rem;
+    color: #6c757d;
+    font-weight: normal;
+    margin-top: 1px;
 }
 
 /* Increase z-index on hover to prevent bleed-through */
 .mobile-total-cell:hover {
     z-index: 24 !important;
-    background: rgba(248, 249, 250, 0.95) !important;  /* Slightly transparent light gray */
+    background: rgba(233, 236, 239, 0.95) !important;  /* Match the new darker background */
     color: #333 !important;
 }
 
@@ -1810,9 +1889,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
+    justify-content: flex-start;
+    gap: 2px;
     font-size: 0.65rem;
     line-height: 1.1;
+    height: 100%;  /* Fill available space */
+    padding: 2px;
 }
 
 .mobile-teams-header {
@@ -1872,10 +1954,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 1px;
-    padding: 2px;
-    border-radius: 3px;
+    padding: 3px 2px;
+    border-radius: 4px;
     font-size: 0.7rem;
+    min-height: 32px;    /* Ensure consistent height */
+    width: 100%;         /* Fill the cell */
+    box-sizing: border-box;
 }
 
 .mobile-pick-compact.correct {

@@ -358,19 +358,38 @@
                                     </div>
                                     <div class="card-body">
                                         <% 
-                                            // Find Monday Night Football game for this week
-                                            const mondayGame = games.find(game => {
-                                                const gameDate = new Date(game.kickoff_timestamp);
-                                                return gameDate.getDay() === 1; // Monday = 1
-                                            });
+                                            // DEBUG: Log all games to see what we have
+                                            console.log('DEBUG: All games in array (' + (games ? games.length : 'null') + '):');
+                                            if (games) {
+                                                games.forEach((game, index) => {
+                                                    console.log(`  ${index + 1}. ${game.away_team} @ ${game.home_team} - ${new Date(game.kickoff_timestamp).toString()}`);
+                                                });
+                                            }
+                                            
+                                            // Find the last game of the week (typically Monday Night Football)
+                                            // Games are already sorted by kickoff_timestamp from the SQL query
+                                            let mondayGame = null;
+                                            if (games && games.length > 0) {
+                                                // The games array should already be sorted by kickoff time from the database
+                                                // But let's sort again to be sure
+                                                const sortedGames = [...games].sort((a, b) => {
+                                                    const dateA = new Date(a.kickoff_timestamp).getTime();
+                                                    const dateB = new Date(b.kickoff_timestamp).getTime();
+                                                    return dateA - dateB;
+                                                });
+                                                
+                                                // Get the last game (latest kickoff time)
+                                                mondayGame = sortedGames[sortedGames.length - 1];
+                                                console.log('DEBUG: Selected tiebreaker game:', mondayGame.away_team, '@', mondayGame.home_team);
+                                            }
                                         %>
                                         
                                         <% if (mondayGame) { %>
                                             <div class="row align-items-center">
                                                 <div class="col-md-8">
-                                                    <h6 class="mb-2">Monday Night Football Total Points</h6>
+                                                    <h6 class="mb-2">Tiebreaker - Total Points</h6>
                                                     <p class="text-muted small mb-2">
-                                                        Predict the combined total points scored by both teams in the Monday Night Football game:
+                                                        Predict the combined total points scored by both teams in the last game of the week:
                                                         <strong><%= mondayGame.away_team %> @ <%= mondayGame.home_team %></strong>
                                                     </p>
                                                 </div>

@@ -296,10 +296,10 @@ class ESPNApiService {
                         
                         if (gameData.home_score !== gameData.away_score) {
                             if (gameData.home_score > gameData.away_score) {
-                                winningTeam = gameData.home_team_abbr;
+                                winningTeam = existingGame.home_abbr;  // Use DB abbreviation, not ESPN's
                                 marginOfVictory = gameData.home_score - gameData.away_score;
                             } else {
-                                winningTeam = gameData.away_team_abbr;
+                                winningTeam = existingGame.away_abbr;  // Use DB abbreviation, not ESPN's
                                 marginOfVictory = gameData.away_score - gameData.home_score;
                             }
                         }
@@ -389,7 +389,7 @@ class ESPNApiService {
 
                         updatedGames.push({
                             gameId: existingGame.game_id,
-                            teams: `${gameData.away_team_abbr} @ ${gameData.home_team_abbr}`,
+                            teams: `${existingGame.away_abbr} @ ${existingGame.home_abbr}`,  // Use DB abbreviations
                             score: `${gameData.away_score}-${gameData.home_score}`,
                             status: gameData.is_final ? 'Final' : `Q${gameData.current_quarter} ${gameData.time_remaining}`,
                             winningTeam: winningTeam

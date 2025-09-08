@@ -183,9 +183,13 @@ class ResultsController {
                             userTotals[pick.entry_id].picks[pick.game_id] = enhancedPick;
                         }
                         
-                        // Only count games that have started toward record
+                        // Only count final or live games toward record (not future games)
                         const hasScores = game.home_score !== null && game.away_score !== null;
-                        if (hasScores) {
+                        const gameFinished = game.result_status === 'final';
+                        const gameInProgress = hasScores && !gameFinished && (game.status === 'in_progress' || game.result_status === 'in_progress');
+                        const shouldCountGame = gameFinished || gameInProgress;
+                        
+                        if (shouldCountGame && shouldShowPick) {
                             userTotals[pick.entry_id].totalPicks += 1;
                             if (pickResult.isCorrect === 1) {  // Check for 1 instead of true
                                 userTotals[pick.entry_id].correctPicks += 1;

@@ -135,6 +135,11 @@ class ESPNApiService {
         let isLive = false;
         let isFinal = false;
         
+        // Log ESPN status for debugging
+        if (status.type.name !== 'STATUS_SCHEDULED' && status.type.name !== 'STATUS_FINAL') {
+            console.log(`ESPN Status for game: ${status.type.name}, completed: ${status.type.completed}, description: ${status.type.description}`);
+        }
+        
         switch(status.type.name) {
             case 'STATUS_IN_PROGRESS':
                 gameStatus = 'in_progress';
@@ -157,6 +162,22 @@ class ESPNApiService {
             case 'STATUS_DELAYED':
                 gameStatus = 'in_progress';
                 isLive = true;
+                break;
+            case 'STATUS_SCHEDULED':
+                gameStatus = 'scheduled';
+                break;
+            case 'STATUS_PRE_GAME':
+            case 'STATUS_PREGAME':
+            case 'STATUS_END_OF_PERIOD':
+            case 'STATUS_END_PERIOD':
+                // These are pre-game or between-period statuses, not actual gameplay
+                gameStatus = 'scheduled';
+                isLive = false;
+                break;
+            default:
+                // Log unknown status types
+                console.log(`Unknown ESPN status type: ${status.type.name}`);
+                gameStatus = 'scheduled';
                 break;
         }
         

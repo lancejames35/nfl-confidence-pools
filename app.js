@@ -107,7 +107,11 @@ class Application {
             
             console.log('Memory usage after initialization:', process.memoryUsage());
             logger.info('Application initialized successfully');
+            
+            console.log('🏁 Initialize method completing...');
+            return true; // Ensure the promise resolves
         } catch (error) {
+            console.error('💥 Initialize method error:', error.message);
             logger.error('Application initialization failed', { error: error.message, stack: error.stack });
             process.exit(1);
         }
@@ -792,6 +796,7 @@ class Application {
             console.log('Initial memory usage:', process.memoryUsage());
             
             await this.initialize();
+            console.log('🎉 INITIALIZATION COMPLETED - Starting server...');
             
             console.log('🚀 Starting server on port', this.port);
             this.server.listen(this.port, async () => {

@@ -123,6 +123,8 @@ router.put('/:id', leagueValidation, LeagueController.update);
 router.delete('/:id', LeagueController.destroy);
 router.post('/:id/leave', LeagueController.leave);
 router.delete('/:id/members/:userId', LeagueController.removeMember);
+router.put('/:id/members/:userId', LeagueController.updateMember);
+router.put('/:id/members/:userId/role', LeagueController.updateMemberRole);
 router.post('/:id/regenerate-code', LeagueController.regenerateJoinCode);
 router.post('/:id/settings', LeagueController.updateSettings);
 router.post('/:id/update-member', LeagueController.updateMember);

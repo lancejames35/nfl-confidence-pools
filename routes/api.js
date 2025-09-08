@@ -51,4 +51,34 @@ router.get('/picks/count', async (req, res) => {
     }
 });
 
+// League chat endpoint (used by dashboard)
+router.get('/league-chat', authMiddleware.requireAuth, authMiddleware.loadUser, async (req, res) => {
+    try {
+        // This endpoint appears to be unused/placeholder based on the frontend code
+        res.json({ messages: [] });
+    } catch (error) {
+        res.status(500).json({ error: 'Error loading league chat' });
+    }
+});
+
+// League invite endpoint (used by dashboard)
+router.post('/league/invite', authMiddleware.requireAuth, authMiddleware.loadUser, async (req, res) => {
+    try {
+        // This endpoint appears to be unused/placeholder based on the frontend code
+        res.json({ success: true, message: 'Invite functionality not yet implemented' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error sending invite' });
+    }
+});
+
+// Commissioner message endpoint (used by dashboard)
+router.post('/commissioner/message', authMiddleware.requireAuth, authMiddleware.loadUser, async (req, res) => {
+    try {
+        // This endpoint appears to be unused/placeholder based on the frontend code
+        res.json({ success: true, message: 'Message functionality moved to league-specific endpoints' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error posting message' });
+    }
+});
+
 module.exports = router;

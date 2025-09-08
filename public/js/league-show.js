@@ -781,7 +781,7 @@ function postCommissionerMessage() {
     
     const leagueId = document.body.getAttribute('data-league-id');
     
-    fetch(`/leagues/${leagueId}/messages`, {
+    fetch(`/leagues/${leagueId}/post-message`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

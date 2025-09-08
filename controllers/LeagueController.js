@@ -1910,6 +1910,50 @@ class LeagueController {
             });
         }
     }
+
+    // Update member role (promote/demote commissioner status)
+    static async updateMemberRole(req, res) {
+        try {
+            const { id: league_id, userId: user_id } = req.params;
+            const { role } = req.body;
+
+            // Validate league exists and user is commissioner
+            const league = await League.findById(league_id);
+            if (!league) {
+                return res.status(404).json({ success: false, message: 'League not found' });
+            }
+
+            // Check if current user is commissioner of this league
+            if (league.commissioner_id !== req.user.user_id) {
+                return res.status(403).json({ success: false, message: 'Only commissioners can modify member roles' });
+            }
+
+            // Validate role
+            if (!['participant', 'co_commissioner'].includes(role)) {
+                return res.status(400).json({ success: false, message: 'Invalid role specified' });
+            }
+
+            // Update the member's role in the league_members table
+            const updateQuery = `
+                UPDATE league_members 
+                SET role = ?
+                WHERE league_id = ? AND user_id = ?
+            `;
+
+            await database.execute(updateQuery, [role, league_id, user_id]);
+
+            res.json({ 
+                success: true, 
+                message: 'Member role updated successfully',
+                role: role
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Error updating member role' 
+            });
+        }
+    }
 }
 
 module.exports = LeagueController;

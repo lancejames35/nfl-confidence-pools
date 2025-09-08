@@ -304,6 +304,21 @@ class ESPNApiService {
                         );
                     }
 
+                    // Additional safety check: Don't mark as in_progress if scores are both 0
+                    // This prevents pre-game warmups from being marked as live
+                    if (gameData.game_status === 'in_progress' && 
+                        gameData.home_score === 0 && 
+                        gameData.away_score === 0 && 
+                        !gameData.current_quarter) {
+                        // Reset to scheduled if no actual game data
+                        gameData.game_status = 'scheduled';
+                        gameData.is_live = false;
+                        await connection.execute(
+                            'UPDATE games SET status = ? WHERE game_id = ?',
+                            ['scheduled', existingGame.game_id]
+                        );
+                    }
+                    
                     // Check if we need to update results
                     const scoresChanged = existingGame.existing_home_score !== gameData.home_score ||
                                         existingGame.existing_away_score !== gameData.away_score;

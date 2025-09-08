@@ -1,8 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const database = require('../config/database');
+const authMiddleware = require('../middleware/auth');
+
+// Import live scores routes
+const liveScoresRoutes = require('./api/live-scores');
 
 // API routes placeholder
+
+// Mount live scores routes with auth middleware
+router.use('/live-scores', authMiddleware.requireAuth, authMiddleware.loadUser, liveScoresRoutes);
 
 router.get('/status', (req, res) => {
     res.json({
@@ -39,7 +46,6 @@ router.get('/picks/count', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error fetching pick count:', error);
         res.status(500).json({
             error: 'Internal server error',
             count: 0

@@ -20,6 +20,7 @@ const database = require('./config/database');
 const socketManager = require('./config/socket');
 const { themeMiddleware } = require('./config/themes');
 const scheduledTasks = require('./services/ScheduledTasks');
+const liveScoreScheduler = require('./services/LiveScoreScheduler');
 const logger = require('./config/logger');
 
 // Import middleware
@@ -415,15 +416,14 @@ class Application {
                 
                 // Get next pick deadline time for countdown (next upcoming game kickoff)
                 const nextGameRows = await database.execute(
-                    'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > CONVERT_TZ(NOW(), "UTC", "America/New_York") ORDER BY kickoff_timestamp ASC LIMIT 1',
-                    [new Date().getFullYear()]
+                    'SELECT kickoff_timestamp FROM games WHERE kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1'
                 ) || [];
                 const nextPickDeadline = (nextGameRows && nextGameRows.length > 0) ? new Date(nextGameRows[0].kickoff_timestamp) : null;
                 
                 // Get number of games this week
                 const [gamesCountRow] = await database.execute(
-                    'SELECT COUNT(*) as count FROM games WHERE week = ? AND season_year = ?',
-                    [currentWeek, new Date().getFullYear()]
+                    'SELECT COUNT(*) as count FROM games WHERE week = ?',
+                    [currentWeek]
                 ) || [];
                 const gamesThisWeek = gamesCountRow ? gamesCountRow.count : 16;
                 // Dashboard metrics logging removed for production
@@ -663,12 +663,12 @@ class Application {
                 
                 if (excludeDeadline) {
                     // Find the next deadline AFTER the one that just expired
-                    query = 'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > ? ORDER BY kickoff_timestamp ASC LIMIT 1';
-                    params = [new Date().getFullYear(), excludeDeadline];
+                    query = 'SELECT kickoff_timestamp FROM games WHERE kickoff_timestamp > ? ORDER BY kickoff_timestamp ASC LIMIT 1';
+                    params = [excludeDeadline];
                 } else {
                     // Use the normal logic for initial load
-                    query = 'SELECT kickoff_timestamp FROM games WHERE season_year = ? AND kickoff_timestamp > CONVERT_TZ(NOW(), "UTC", "America/New_York") ORDER BY kickoff_timestamp ASC LIMIT 1';
-                    params = [new Date().getFullYear()];
+                    query = 'SELECT kickoff_timestamp FROM games WHERE kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1';
+                    params = [];
                 }
                 
                 const nextGameRows = await database.execute(query, params) || [];
@@ -747,13 +747,21 @@ class Application {
         try {
             await this.initialize();
             
-            this.server.listen(this.port, () => {
+            this.server.listen(this.port, async () => {
                 logger.info('Server started successfully', {
                     port: this.port,
                     environment: process.env.NODE_ENV || 'development',
                     features: ['mobile-responsive', 'real-time', 'multi-theme'],
                     url: process.env.NODE_ENV === 'development' ? `http://localhost:${this.port}` : undefined
                 });
+                
+                // Initialize live score scheduler
+                try {
+                    await liveScoreScheduler.initialize();
+                    logger.info('Live Score Scheduler started');
+                } catch (error) {
+                    logger.error('Failed to start Live Score Scheduler:', error);
+                }
             });
         } catch (error) {
             logger.error('Failed to start server', { error: error.message, stack: error.stack });
@@ -776,6 +784,9 @@ class Application {
             try {
                 // Stop scheduled tasks
                 scheduledTasks.stop();
+                
+                // Stop live score scheduler
+                liveScoreScheduler.shutdown();
                 
                 // Close database connections
                 await database.close();

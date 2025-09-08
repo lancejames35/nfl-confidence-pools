@@ -5,7 +5,7 @@ const rateLimit = require('express-rate-limit');
 // General API rate limiter
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 500, // Limit each IP to 500 requests per windowMs (increased for dashboard usage)
     message: {
         error: true,
         message: 'Too many API requests, please try again later',
@@ -14,8 +14,10 @@ const apiLimiter = rateLimit({
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     skip: (req) => {
-        // Skip rate limiting for health checks
-        return req.path === '/health';
+        // Skip rate limiting for health checks and live scores monitoring
+        return req.path === '/health' || 
+               req.path.includes('/live-scores/scheduler/status') ||
+               req.path.includes('/live-scores/rate-limit');
     }
 });
 

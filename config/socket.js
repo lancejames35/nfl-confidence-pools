@@ -405,6 +405,41 @@ class SocketManager {
         this.io.to(room).emit(event, data);
     }
 
+    // Live score update methods
+    
+    // Broadcast score updates to all leagues
+    broadcastScoreUpdate(scoreData) {
+        this.io.emit('score-update', {
+            ...scoreData,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Notify specific league of score updates
+    notifyLeagueScoreUpdate(leagueId, scoreData) {
+        this.io.to(`league_${leagueId}`).emit('league-score-update', {
+            ...scoreData,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Notify all leagues about game status change
+    broadcastGameStatusUpdate(gameUpdate) {
+        this.io.emit('game-status-update', {
+            ...gameUpdate,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Broadcast user totals update to specific league
+    broadcastUserTotalsUpdate(leagueId, userTotals) {
+        this.io.to(`league_${leagueId}`).emit('user-totals-update', {
+            leagueId,
+            userTotals,
+            timestamp: new Date().toISOString()
+        });
+    }
+
     // Get league member count
     getLeagueMemberCount(leagueId) {
         return this.leagueRooms.get(leagueId)?.size || 0;

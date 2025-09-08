@@ -1,0 +1,68 @@
+/* League Show Page Styles */
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 576px) {
+    .card-body.p-3 {
+        padding: 0.75rem !important;
+    }
+    
+    .card-title {
+        font-size: 1rem;
+    }
+    
+    .fa-lg {
+        font-size: 1.2em;
+    }
+    
+    .btn-xs {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Table improvements */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* Badge improvements */
+.badge {
+    font-weight: 500;
+}
+
+/* Mobile member cards */
+@media (max-width: 767px) {
+    .table-responsive {
+        border: none;
+    }
+    
+    .table td {
+        padding: 0.75rem 0.5rem;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .table td:first-child {
+        padding-left: 1rem;
+    }
+    
+    .table td:last-child {
+        padding-right: 1rem;
+    }
+}

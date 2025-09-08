@@ -316,7 +316,30 @@
                                                     <%= game.away_score %>-<%= game.home_score %>
                                                 </div>
                                                 <div class="quarter-time">
-                                                    Q<%= game.current_quarter %> <%= game.time_remaining %>
+                                                    <%
+                                                    let statusText = 'In Progress';
+                                                    if (game.current_quarter && game.time_remaining !== null) {
+                                                        if (game.current_quarter === 2 && game.time_remaining === '0:00') {
+                                                            statusText = 'Halftime';
+                                                        } else if (game.current_quarter === 1 && game.time_remaining === '0:00') {
+                                                            statusText = 'End of 1st';
+                                                        } else if (game.current_quarter === 3 && game.time_remaining === '0:00') {
+                                                            statusText = 'End of 3rd';
+                                                        } else if (game.current_quarter === 4 && game.time_remaining === '0:00') {
+                                                            statusText = 'End of 4th';
+                                                        } else if (game.current_quarter > 4) {
+                                                            if (game.time_remaining === '0:00') {
+                                                                statusText = `End of OT${game.current_quarter - 4}`;
+                                                            } else {
+                                                                statusText = `OT${game.current_quarter > 5 ? game.current_quarter - 4 : ''} - ${game.time_remaining}`;
+                                                            }
+                                                        } else if (game.current_quarter >= 1 && game.current_quarter <= 4) {
+                                                            const quarterNames = ['', '1st', '2nd', '3rd', '4th'];
+                                                            statusText = `${quarterNames[game.current_quarter]} - ${game.time_remaining}`;
+                                                        }
+                                                    }
+                                                    %>
+                                                    <%= statusText %>
                                                 </div>
                                                 <div class="status in-progress">LIVE</div>
                                             <% } else { %>
@@ -589,7 +612,32 @@
                                                                         <span class="badge bg-success">FINAL</span>
                                                                     <% } else if (game.status === 'in_progress') { %>
                                                                         <span class="mobile-score live"><%= game.away_score %>-<%= game.home_score %></span>
-                                                                        <span class="badge bg-warning text-dark">Q<%= game.current_quarter %> <%= game.time_remaining %></span>
+                                                                        <span class="badge bg-warning text-dark">
+                                                                            <%
+                                                                            let mobileStatusText = 'In Progress';
+                                                                            if (game.current_quarter && game.time_remaining !== null) {
+                                                                                if (game.current_quarter === 2 && game.time_remaining === '0:00') {
+                                                                                    mobileStatusText = 'Halftime';
+                                                                                } else if (game.current_quarter === 1 && game.time_remaining === '0:00') {
+                                                                                    mobileStatusText = 'End of 1st';
+                                                                                } else if (game.current_quarter === 3 && game.time_remaining === '0:00') {
+                                                                                    mobileStatusText = 'End of 3rd';
+                                                                                } else if (game.current_quarter === 4 && game.time_remaining === '0:00') {
+                                                                                    mobileStatusText = 'End of 4th';
+                                                                                } else if (game.current_quarter > 4) {
+                                                                                    if (game.time_remaining === '0:00') {
+                                                                                        mobileStatusText = `End of OT${game.current_quarter - 4}`;
+                                                                                    } else {
+                                                                                        mobileStatusText = `OT${game.current_quarter > 5 ? game.current_quarter - 4 : ''} - ${game.time_remaining}`;
+                                                                                    }
+                                                                                } else if (game.current_quarter >= 1 && game.current_quarter <= 4) {
+                                                                                    const quarterNames = ['', '1st', '2nd', '3rd', '4th'];
+                                                                                    mobileStatusText = `${quarterNames[game.current_quarter]} - ${game.time_remaining}`;
+                                                                                }
+                                                                            }
+                                                                            %>
+                                                                            <%= mobileStatusText %>
+                                                                        </span>
                                                                     <% } else { %>
                                                                         <small class="text-muted">
                                                                             <span class="game-time-display" data-timestamp="<%= game.kickoff_timestamp %>">Loading...</span>
@@ -655,7 +703,32 @@
                                                         <div class="mobile-status final">FINAL</div>
                                                     <% } else if (game.status === 'in_progress') { %>
                                                         <div class="mobile-game-score live"><%= game.away_score %>-<%= game.home_score %></div>
-                                                        <div class="mobile-quarter">Q<%= game.current_quarter %> <%= game.time_remaining %></div>
+                                                        <div class="mobile-quarter">
+                                                            <%
+                                                            let mobileTinyStatusText = 'In Progress';
+                                                            if (game.current_quarter && game.time_remaining !== null) {
+                                                                if (game.current_quarter === 2 && game.time_remaining === '0:00') {
+                                                                    mobileTinyStatusText = 'Halftime';
+                                                                } else if (game.current_quarter === 1 && game.time_remaining === '0:00') {
+                                                                    mobileTinyStatusText = 'End of 1st';
+                                                                } else if (game.current_quarter === 3 && game.time_remaining === '0:00') {
+                                                                    mobileTinyStatusText = 'End of 3rd';
+                                                                } else if (game.current_quarter === 4 && game.time_remaining === '0:00') {
+                                                                    mobileTinyStatusText = 'End of 4th';
+                                                                } else if (game.current_quarter > 4) {
+                                                                    if (game.time_remaining === '0:00') {
+                                                                        mobileTinyStatusText = `End of OT${game.current_quarter - 4}`;
+                                                                    } else {
+                                                                        mobileTinyStatusText = `OT${game.current_quarter > 5 ? game.current_quarter - 4 : ''} - ${game.time_remaining}`;
+                                                                    }
+                                                                } else if (game.current_quarter >= 1 && game.current_quarter <= 4) {
+                                                                    const quarterNames = ['', '1st', '2nd', '3rd', '4th'];
+                                                                    mobileTinyStatusText = `${quarterNames[game.current_quarter]} - ${game.time_remaining}`;
+                                                                }
+                                                            }
+                                                            %>
+                                                            <%= mobileTinyStatusText %>
+                                                        </div>
                                                     <% } else { %>
                                                         <div class="mobile-game-time">
                                                             <span class="game-time-display" data-timestamp="<%= game.kickoff_timestamp %>">Loading...</span>

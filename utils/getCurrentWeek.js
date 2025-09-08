@@ -8,7 +8,7 @@ async function getCurrentNFLWeek(database) {
                 MAX(kickoff_timestamp) as last_game,
                 MIN(kickoff_timestamp) as first_game
             FROM games
-            WHERE season_year = YEAR(CURDATE())
+            WHERE season_year = 2025
             GROUP BY week
             ORDER BY week ASC
         `);
@@ -53,7 +53,7 @@ async function getWeekDeadline(database, week) {
         const [games] = await database.execute(`
             SELECT MIN(kickoff_timestamp) as first_game
             FROM games
-            WHERE season_year = YEAR(CURDATE()) AND week = ?
+            WHERE season_year = 2025 AND week = ?
         `, [week]);
         
         if (games && games[0] && games[0].first_game) {

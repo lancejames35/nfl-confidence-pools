@@ -1,0 +1,377 @@
+/**
+ * Live Scores CSS
+ * Styles for live NFL score updates and pick status colors
+ */
+
+/* Live game indicators */
+.live-game {
+    position: relative;
+    border-left: 4px solid #28a745;
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.1) 0%, transparent 100%);
+    animation: pulse-live 2s infinite;
+}
+
+.live-game::before {
+    content: "LIVE";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #28a745;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+.final-game {
+    border-left: 4px solid #6c757d;
+    background: rgba(108, 117, 125, 0.05);
+}
+
+@keyframes pulse-live {
+    0%, 100% { 
+        border-left-color: #28a745; 
+        background: linear-gradient(90deg, rgba(40, 167, 69, 0.1) 0%, transparent 100%);
+    }
+    50% { 
+        border-left-color: #20c997; 
+        background: linear-gradient(90deg, rgba(32, 201, 151, 0.15) 0%, transparent 100%);
+    }
+}
+
+/* Game status styles */
+.game-status {
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.status-live {
+    background: #28a745;
+    color: white;
+}
+
+.status-final {
+    background: #6c757d;
+    color: white;
+}
+
+.status-scheduled {
+    background: #e9ecef;
+    color: #495057;
+}
+
+/* Pick status colors */
+.pick-winning {
+    background-color: #d4edda !important;
+    border-color: #c3e6cb !important;
+    color: #155724 !important;
+}
+
+.pick-winning .confidence-points {
+    color: #155724;
+    font-weight: bold;
+}
+
+.pick-losing {
+    background-color: #f8d7da !important;
+    border-color: #f5c6cb !important;
+    color: #721c24 !important;
+}
+
+.pick-losing .confidence-points {
+    color: #721c24;
+    text-decoration: line-through;
+}
+
+.pick-tied {
+    background-color: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+    color: #856404 !important;
+}
+
+.pick-tied .confidence-points {
+    color: #856404;
+    font-weight: bold;
+}
+
+.pick-pending {
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+    color: #6c757d !important;
+}
+
+/* Score display */
+.game-score {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.game-score.tied {
+    color: #ffc107;
+}
+
+.game-score.home-leading {
+    color: #28a745;
+}
+
+.game-score.away-leading {
+    color: #17a2b8;
+}
+
+/* Quarter and time display */
+.quarter-time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.quarter {
+    background: #495057;
+    color: white;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.time-remaining {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+/* User totals with live updates */
+.user-totals {
+    transition: all 0.3s ease;
+}
+
+.user-totals.updated {
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.2) 0%, transparent 100%);
+    animation: highlight-update 1s ease-out;
+}
+
+@keyframes highlight-update {
+    0% { 
+        background: linear-gradient(90deg, rgba(40, 167, 69, 0.3) 0%, transparent 100%);
+        transform: scale(1.02);
+    }
+    100% { 
+        background: transparent;
+        transform: scale(1);
+    }
+}
+
+.weekly-score, .season-total, .max-possible {
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.weekly-score.updated {
+    color: #28a745;
+    animation: number-update 0.5s ease;
+}
+
+.season-total.updated {
+    color: #007bff;
+    animation: number-update 0.5s ease;
+}
+
+.max-possible.updated {
+    color: #6f42c1;
+    animation: number-update 0.5s ease;
+}
+
+@keyframes number-update {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Live score notification */
+.live-score-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    font-weight: 600;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 1050;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.live-score-notification.show {
+    transform: translateX(0);
+}
+
+/* Refresh button */
+.refresh-scores {
+    background: #17a2b8;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.2s ease;
+}
+
+.refresh-scores:hover {
+    background: #138496;
+}
+
+.refresh-scores:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Connection status indicator */
+.connection-status {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: 600;
+    z-index: 1060;
+}
+
+.connection-status.connected {
+    background: #28a745;
+    color: white;
+}
+
+.connection-status.disconnected {
+    background: #dc3545;
+    color: white;
+}
+
+.connection-status.polling {
+    background: #ffc107;
+    color: #212529;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .live-game::before {
+        font-size: 8px;
+        padding: 1px 4px;
+        top: 3px;
+        right: 3px;
+    }
+    
+    .live-score-notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        text-align: center;
+        transform: translateY(-100%);
+    }
+    
+    .live-score-notification.show {
+        transform: translateY(0);
+    }
+    
+    .game-score {
+        font-size: 1em;
+    }
+    
+    .quarter-time {
+        font-size: 0.8em;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .pick-winning {
+        background-color: #1e4620 !important;
+        border-color: #2d5a2d !important;
+        color: #75b798 !important;
+    }
+    
+    .pick-losing {
+        background-color: #4d1f23 !important;
+        border-color: #6c2c31 !important;
+        color: #f5a3aa !important;
+    }
+    
+    .pick-tied {
+        background-color: #4d3d1a !important;
+        border-color: #665028 !important;
+        color: #f0d068 !important;
+    }
+    
+    .pick-pending {
+        background-color: #2d3748 !important;
+        border-color: #4a5568 !important;
+        color: #a0aec0 !important;
+    }
+    
+    .status-scheduled {
+        background: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .quarter {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+}
+
+/* Table-specific pick styling */
+table .pick-winning {
+    background-color: rgba(212, 237, 218, 0.3) !important;
+}
+
+table .pick-losing {
+    background-color: rgba(248, 215, 218, 0.3) !important;
+}
+
+table .pick-tied {
+    background-color: rgba(255, 243, 205, 0.3) !important;
+}
+
+table .pick-pending {
+    background-color: rgba(248, 249, 250, 0.3) !important;
+}
+
+/* Confidence points styling */
+.confidence-points {
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    min-width: 25px;
+    text-align: center;
+}
+
+.pick-winning .confidence-points {
+    background: rgba(40, 167, 69, 0.2);
+    color: #155724;
+}
+
+.pick-losing .confidence-points {
+    background: rgba(220, 53, 69, 0.2);
+    color: #721c24;
+}
+
+.pick-tied .confidence-points {
+    background: rgba(255, 193, 7, 0.2);
+    color: #856404;
+}
+
+.pick-pending .confidence-points {
+    background: rgba(108, 117, 125, 0.2);
+    color: #495057;
+}

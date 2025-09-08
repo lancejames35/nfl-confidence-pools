@@ -824,9 +824,6 @@ class Application {
                         logger.error('Failed to start schedulers:', error);
                         // Continue running even if schedulers fail to start
                     }
-                }).catch(error => {
-                    console.error('💥 SETIMMEDIATE ERROR:', error.message);
-                    logger.error('SetImmediate error:', error);
                 });
             });
         } catch (error) {

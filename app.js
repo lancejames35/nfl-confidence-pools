@@ -1,7 +1,11 @@
 // Load environment variables first
+console.log('🔧 Loading environment variables...');
 require('dotenv').config();
+console.log('✅ Environment loaded');
 
+console.log('📦 Loading Express...');
 const express = require('express');
+console.log('✅ Express loaded');
 const http = require('http');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
@@ -16,12 +20,29 @@ const useragent = require('express-useragent');
 const methodOverride = require('method-override');
 
 // Import configurations
+console.log('📊 Loading database config...');
 const database = require('./config/database');
+console.log('✅ Database config loaded');
+
+console.log('🔌 Loading socket manager...');
 const socketManager = require('./config/socket');
+console.log('✅ Socket manager loaded');
+
+console.log('🎨 Loading themes...');
 const { themeMiddleware } = require('./config/themes');
+console.log('✅ Themes loaded');
+
+console.log('⏰ Loading scheduled tasks...');
 const scheduledTasks = require('./services/ScheduledTasks');
+console.log('✅ Scheduled tasks loaded');
+
+console.log('🏈 Loading live score scheduler...');
 const liveScoreScheduler = require('./services/LiveScoreScheduler');
+console.log('✅ Live score scheduler loaded');
+
+console.log('📝 Loading logger...');
 const logger = require('./config/logger');
+console.log('✅ Logger loaded');
 
 // Import middleware
 const authMiddleware = require('./middleware/auth');
@@ -51,8 +72,13 @@ class Application {
 
     async initialize() {
         try {
+            console.log('🚀 Starting app initialization...');
+            console.log('Memory usage at start:', process.memoryUsage());
+            
             // Initialize database connection
+            console.log('📊 Initializing database...');
             await database.initialize();
+            console.log('✅ Database initialized successfully');
 
             // Configure middleware
             this.configureMiddleware();
@@ -70,11 +96,16 @@ class Application {
             this.configureErrorHandling();
             
             // Initialize Socket.io with session middleware
+            console.log('🔌 Initializing Socket.IO...');
             socketManager.initialize(this.server, this.sessionMiddleware);
+            console.log('✅ Socket.IO initialized');
             
             // Start scheduled tasks
+            console.log('⏰ Starting scheduled tasks...');
             scheduledTasks.start();
+            console.log('✅ Scheduled tasks started');
             
+            console.log('Memory usage after initialization:', process.memoryUsage());
             logger.info('Application initialized successfully');
         } catch (error) {
             logger.error('Application initialization failed', { error: error.message, stack: error.stack });
@@ -728,26 +759,43 @@ class Application {
 
         // Uncaught exception handler
         process.on('uncaughtException', (error) => {
+            console.error('💥 UNCAUGHT EXCEPTION:', error.message);
+            console.error('Stack:', error.stack);
             logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
             this.gracefulShutdown('UNCAUGHT_EXCEPTION');
         });
 
         // Unhandled rejection handler
         process.on('unhandledRejection', (reason, promise) => {
+            console.error('💥 UNHANDLED REJECTION:', reason);
+            console.error('Promise:', promise);
             logger.error('Unhandled Promise Rejection', { reason, stack: reason?.stack });
             this.gracefulShutdown('UNHANDLED_REJECTION');
         });
 
         // Graceful shutdown handlers
-        process.on('SIGTERM', () => this.gracefulShutdown('SIGTERM'));
-        process.on('SIGINT', () => this.gracefulShutdown('SIGINT'));
+        process.on('SIGTERM', () => {
+            console.log('💀 SIGTERM received, starting graceful shutdown...');
+            this.gracefulShutdown('SIGTERM');
+        });
+        process.on('SIGINT', () => {
+            console.log('💀 SIGINT received, starting graceful shutdown...');
+            this.gracefulShutdown('SIGINT');
+        });
     }
 
     async start() {
         try {
+            console.log('🌟 APPLICATION STARTING...');
+            console.log('Node.js version:', process.version);
+            console.log('Environment:', process.env.NODE_ENV || 'development');
+            console.log('Initial memory usage:', process.memoryUsage());
+            
             await this.initialize();
             
+            console.log('🚀 Starting server on port', this.port);
             this.server.listen(this.port, async () => {
+                console.log('✅ SERVER LISTENING ON PORT', this.port);
                 logger.info('Server started successfully', {
                     port: this.port,
                     environment: process.env.NODE_ENV || 'development',
@@ -755,16 +803,16 @@ class Application {
                     url: process.env.NODE_ENV === 'development' ? `http://localhost:${this.port}` : undefined
                 });
                 
-                // Initialize live score scheduler (non-blocking)
-                setImmediate(async () => {
-                    try {
-                        await liveScoreScheduler.initialize();
-                        logger.info('Live Score Scheduler started');
-                    } catch (error) {
-                        logger.error('Failed to start Live Score Scheduler:', error);
-                        // Continue running even if scheduler fails to start
-                    }
-                });
+                // Initialize live score scheduler (temporarily disabled for debugging)
+                // setImmediate(async () => {
+                //     try {
+                //         await liveScoreScheduler.initialize();
+                //         logger.info('Live Score Scheduler started');
+                //     } catch (error) {
+                //         logger.error('Failed to start Live Score Scheduler:', error);
+                //         // Continue running even if scheduler fails to start
+                //     }
+                // });
             });
         } catch (error) {
             logger.error('Failed to start server', { error: error.message, stack: error.stack });

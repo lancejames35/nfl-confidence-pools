@@ -27,7 +27,7 @@ class LiveScoreScheduler {
             setTimeout(() => {
                 this.initialize();
             }, 5 * 60 * 1000);
-            throw error;
+            // Don't throw - let the app continue running
         }
     }
 

@@ -444,10 +444,16 @@ class Application {
                 const hoursToDeadline = await getHoursUntilDeadline(database, currentWeek) || 48;
                 
                 // Get next pick deadline time for countdown (next upcoming game kickoff)
+                // Use JavaScript Date instead of MySQL NOW() to match pick locking logic
+                const currentTime = new Date();
                 const nextGameRows = await database.execute(
-                    'SELECT kickoff_timestamp FROM games WHERE kickoff_timestamp > NOW() ORDER BY kickoff_timestamp ASC LIMIT 1'
+                    'SELECT kickoff_timestamp FROM games WHERE kickoff_timestamp > ? ORDER BY kickoff_timestamp ASC LIMIT 1',
+                    [currentTime]
                 ) || [];
                 const nextPickDeadline = (nextGameRows && nextGameRows.length > 0) ? new Date(nextGameRows[0].kickoff_timestamp) : null;
+                
+                // Debug logging to verify timezone consistency
+                console.log(`Dashboard timezone check: currentTime=${currentTime.toISOString()}, nextDeadline=${nextPickDeadline ? nextPickDeadline.toISOString() : 'null'}`);
                 
                 // Get number of games this week
                 const [gamesCountRow] = await database.execute(

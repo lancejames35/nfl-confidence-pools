@@ -135,9 +135,13 @@ class ESPNApiService {
         let isLive = false;
         let isFinal = false;
         
+        // Add timestamp logging for timezone debugging  
+        const gameDate = new Date(espnGame.date);
+        const currentTime = new Date();
+        
         // Log ESPN status for debugging
         if (status.type.name !== 'STATUS_SCHEDULED' && status.type.name !== 'STATUS_FINAL') {
-            console.log(`ESPN Status for game: ${status.type.name}, completed: ${status.type.completed}, description: ${status.type.description}`);
+            console.log(`ESPN Status DEBUG: game=${espnGame.id}, status=${status.type.name}, completed=${status.type.completed}, gameTime=${gameDate.toISOString()}, currentTime=${currentTime.toISOString()}, timeDiff=${(gameDate - currentTime)/1000/60}mins`);
         }
         
         switch(status.type.name) {

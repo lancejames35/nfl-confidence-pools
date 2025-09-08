@@ -278,6 +278,50 @@ function initializeEventListeners() {
         refreshStatusBtn.addEventListener('click', loadLiveScoresStatus);
     }
     
+    // Settings toggle button
+    const settingsToggleBtn = document.getElementById('settingsToggleBtn');
+    const settingsPanel = document.getElementById('leagueSettings');
+    if (settingsToggleBtn && settingsPanel) {
+        settingsToggleBtn.addEventListener('click', function() {
+            const bsCollapse = new bootstrap.Collapse(settingsPanel, { toggle: true });
+        });
+    }
+    
+    // Post message button
+    const postMessageBtn = document.getElementById('postMessageBtn');
+    if (postMessageBtn) {
+        postMessageBtn.addEventListener('click', postCommissionerMessage);
+    }
+    
+    // Save member changes button
+    const saveMemberChangesBtn = document.getElementById('saveMemberChangesBtn');
+    if (saveMemberChangesBtn) {
+        saveMemberChangesBtn.addEventListener('click', saveMemberChanges);
+    }
+    
+    // Regenerate join code modal button
+    const regenerateJoinCodeModalBtn = document.getElementById('regenerateJoinCodeModalBtn');
+    if (regenerateJoinCodeModalBtn) {
+        regenerateJoinCodeModalBtn.addEventListener('click', regenerateJoinCode);
+    }
+    
+    // Make commissioner button
+    const makeCommissionerBtn = document.getElementById('makeCommissionerBtn');
+    if (makeCommissionerBtn) {
+        makeCommissionerBtn.addEventListener('click', toggleCommissionerStatus);
+    }
+    
+    // Remove member button
+    const removeMemberBtn = document.getElementById('removeMemberBtn');
+    if (removeMemberBtn) {
+        removeMemberBtn.addEventListener('click', function() {
+            if (currentEditingUserId) {
+                const username = document.getElementById('editUsername').value;
+                removeMember(currentEditingUserId, username);
+            }
+        });
+    }
+    
     
     // Delete league confirmation
     const confirmLeagueNameInput = document.getElementById('confirmLeagueName');
@@ -315,6 +359,29 @@ function initializeEventListeners() {
         
         if (e.target.closest('.toast-close-btn')) {
             e.target.closest('.alert').remove();
+        }
+        
+        // Edit member button
+        if (e.target.closest('.edit-member-btn')) {
+            const btn = e.target.closest('.edit-member-btn');
+            openEditMemberModal(btn);
+        }
+        
+        // Remove tier buttons
+        if (e.target.closest('.remove-tier-btn')) {
+            const tierRow = e.target.closest('.tier-row');
+            removeTier(tierRow);
+        }
+        
+        // Add tier button
+        if (e.target.closest('#addTierBtn')) {
+            addTier();
+        }
+        
+        // Position adjustment buttons
+        if (e.target.closest('[data-action]')) {
+            const action = e.target.closest('[data-action]').getAttribute('data-action');
+            adjustPositions(action);
         }
     });
 }
@@ -521,4 +588,320 @@ function displayCommissionerMessages() {
             </div>
         `;
     }
+}
+
+// Edit Member Modal Functions
+function openEditMemberModal(btn) {
+    const modal = document.getElementById('editMemberModal');
+    if (!modal) return;
+    
+    // Extract data from button
+    currentEditingUserId = btn.dataset.userId;
+    const userData = {
+        username: btn.dataset.username,
+        firstName: btn.dataset.firstName || '',
+        lastName: btn.dataset.lastName || '',
+        email: btn.dataset.email,
+        tier: btn.dataset.tier || 'Standard',
+        tierId: btn.dataset.tierId || '',
+        paymentStatus: btn.dataset.paymentStatus || 'unpaid',
+        amountOwed: parseFloat(btn.dataset.amountOwed) || 0,
+        amountPaid: parseFloat(btn.dataset.amountPaid) || 0,
+        entryCount: parseInt(btn.dataset.entryCount) || 1,
+        role: btn.dataset.role || 'participant'
+    };
+    
+    // Populate modal fields
+    document.getElementById('editMemberName').textContent = userData.username;
+    document.getElementById('editUsername').value = userData.username;
+    document.getElementById('editFirstName').value = userData.firstName;
+    document.getElementById('editLastName').value = userData.lastName;
+    document.getElementById('editEmail').value = userData.email;
+    document.getElementById('editPassword').value = '';
+    document.getElementById('editEntryCount').value = userData.entryCount;
+    document.getElementById('editEntryCountDisplay').textContent = userData.entryCount;
+    document.getElementById('editAmountOwed').value = userData.amountOwed.toFixed(2);
+    document.getElementById('editAmountPaid').value = userData.amountPaid.toFixed(2);
+    
+    // Update role display
+    updateRoleDisplay(userData.role);
+    
+    // Update payment status
+    updatePaymentStatusDisplay(userData.amountPaid, userData.amountOwed);
+    
+    // Show modal
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+}
+
+function updateRoleDisplay(role) {
+    const roleIcon = document.getElementById('editRoleIcon');
+    const roleDisplay = document.getElementById('editRoleDisplay');
+    const makeCommissionerBtn = document.getElementById('makeCommissionerBtn');
+    
+    if (role === 'commissioner') {
+        roleIcon.textContent = '👑';
+        roleDisplay.value = 'Main Commissioner';
+        if (makeCommissionerBtn) makeCommissionerBtn.style.display = 'none';
+    } else if (role === 'co_commissioner') {
+        roleIcon.textContent = '🤝';
+        roleDisplay.value = 'Co-Commissioner';
+        if (makeCommissionerBtn) {
+            makeCommissionerBtn.textContent = 'Remove Commissioner Status';
+            makeCommissionerBtn.className = 'btn btn-outline-warning w-100';
+        }
+    } else {
+        roleIcon.textContent = '👤';
+        roleDisplay.value = 'Participant';
+        if (makeCommissionerBtn) {
+            makeCommissionerBtn.textContent = 'Make Co-Commissioner';
+            makeCommissionerBtn.className = 'btn btn-warning w-100';
+        }
+    }
+}
+
+function updatePaymentStatusDisplay(amountPaid, amountOwed) {
+    const statusIcon = document.getElementById('paymentStatusIcon');
+    const statusDisplay = document.getElementById('editPaymentStatus');
+    const tolerance = 0.01;
+    
+    if (amountOwed === 0) {
+        statusIcon.textContent = '🆓';
+        statusDisplay.value = 'Free';
+    } else if (Math.abs(amountPaid - amountOwed) < tolerance) {
+        statusIcon.textContent = '✅';
+        statusDisplay.value = 'Paid';
+    } else if (amountPaid > amountOwed + tolerance) {
+        statusIcon.textContent = '💰';
+        statusDisplay.value = 'Overpaid';
+    } else if (amountPaid > tolerance) {
+        statusIcon.textContent = '⚠️';
+        statusDisplay.value = 'Partial Payment';
+    } else {
+        statusIcon.textContent = '❌';
+        statusDisplay.value = 'Unpaid';
+    }
+}
+
+// Tier management functions
+function addTier() {
+    const tiersContainer = document.getElementById('tiers-container');
+    if (!tiersContainer) return;
+    
+    tierCounter++;
+    const newTier = document.createElement('div');
+    newTier.className = 'tier-row';
+    newTier.setAttribute('data-tier', tierCounter);
+    
+    newTier.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Tier Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="tier_name[]" value="" placeholder="e.g., VIP" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Entry Fee ($) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="tier_fee[]" value="0" min="0" step="0.01" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="tier_description[]" value="" placeholder="Describe what this tier includes" required>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button type="button" class="btn btn-sm btn-outline-danger d-block remove-tier-btn" title="Remove tier">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    tiersContainer.appendChild(newTier);
+}
+
+function removeTier(tierRow) {
+    const tiersContainer = document.getElementById('tiers-container');
+    const tierRows = tiersContainer.querySelectorAll('.tier-row');
+    
+    // Don't allow removing if only one tier remains
+    if (tierRows.length <= 1) {
+        showToast('You must have at least one tier', 'error');
+        return;
+    }
+    
+    tierRow.remove();
+    
+    // Update the first tier's remove button (disable if it's the only one left)
+    const remainingRows = tiersContainer.querySelectorAll('.tier-row');
+    if (remainingRows.length === 1) {
+        const firstRemoveBtn = remainingRows[0].querySelector('.remove-tier-btn');
+        if (firstRemoveBtn) firstRemoveBtn.disabled = true;
+    }
+}
+
+function adjustPositions(action) {
+    const [type, direction] = action.split('-');
+    const positionsInput = document.getElementById(`${type}_positions`);
+    const positionsLabel = document.getElementById(`${type}PositionsLabel`);
+    
+    if (!positionsInput || !positionsLabel) return;
+    
+    let currentValue = parseInt(positionsInput.value);
+    const min = parseInt(positionsInput.min) || 1;
+    const max = parseInt(positionsInput.max) || 10;
+    
+    if (direction === 'increase' && currentValue < max) {
+        currentValue++;
+    } else if (direction === 'decrease' && currentValue > min) {
+        currentValue--;
+    }
+    
+    positionsInput.value = currentValue;
+    positionsLabel.textContent = currentValue;
+    
+    // Update position breakdown
+    updatePositionBreakdown(type);
+}
+
+function updatePositionBreakdown(type) {
+    // This function would update the position breakdown display
+    // Implementation depends on the specific requirements
+}
+
+// Commissioner message functions
+function postCommissionerMessage() {
+    const title = document.getElementById('messageTitle').value.trim();
+    const content = document.getElementById('messageContent').value.trim();
+    const important = document.getElementById('messageImportant').checked;
+    
+    if (!title || !content) {
+        showToast('Please fill in both title and message', 'error');
+        return;
+    }
+    
+    const leagueId = document.body.getAttribute('data-league-id');
+    
+    fetch(`/leagues/${leagueId}/messages`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            content: content,
+            important: important
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Message posted successfully!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('postMessageModal'));
+            if (modal) modal.hide();
+            // Clear form
+            document.getElementById('messageTitle').value = '';
+            document.getElementById('messageContent').value = '';
+            document.getElementById('messageImportant').checked = false;
+            // Reload messages
+            loadCommissionerMessages();
+        } else {
+            showToast(data.message || 'Failed to post message', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error posting message', 'error');
+    });
+}
+
+// Member management functions
+function saveMemberChanges() {
+    if (!currentEditingUserId) return;
+    
+    const memberData = {
+        username: document.getElementById('editUsername').value.trim(),
+        firstName: document.getElementById('editFirstName').value.trim(),
+        lastName: document.getElementById('editLastName').value.trim(),
+        email: document.getElementById('editEmail').value.trim(),
+        password: document.getElementById('editPassword').value,
+        amountPaid: parseFloat(document.getElementById('editAmountPaid').value) || 0,
+        paymentMethod: document.getElementById('editPaymentMethod').value
+    };
+    
+    if (!memberData.username || !memberData.email) {
+        showToast('Username and email are required', 'error');
+        return;
+    }
+    
+    const leagueId = document.body.getAttribute('data-league-id');
+    
+    fetch(`/leagues/${leagueId}/members/${currentEditingUserId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(memberData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Member updated successfully!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editMemberModal'));
+            if (modal) modal.hide();
+            // Reload page to show changes
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to update member', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error updating member', 'error');
+    });
+}
+
+function toggleCommissionerStatus() {
+    if (!currentEditingUserId) return;
+    
+    const username = document.getElementById('editUsername').value;
+    const currentRole = document.getElementById('editRoleDisplay').value;
+    
+    let action, newRole;
+    if (currentRole === 'Co-Commissioner') {
+        action = 'remove';
+        newRole = 'participant';
+    } else {
+        action = 'promote';
+        newRole = 'co_commissioner';
+    }
+    
+    const confirmMessage = action === 'promote' 
+        ? `Make ${username} a co-commissioner? They will have full access to league settings.`
+        : `Remove ${username}'s commissioner status? They will become a regular participant.`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    const leagueId = document.body.getAttribute('data-league-id');
+    
+    fetch(`/leagues/${leagueId}/members/${currentEditingUserId}/role`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`${username} role updated successfully!`, 'success');
+            updateRoleDisplay(newRole);
+        } else {
+            showToast(data.message || 'Failed to update member role', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error updating member role', 'error');
+    });
 }

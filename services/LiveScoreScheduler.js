@@ -6,6 +6,7 @@ class LiveScoreScheduler {
     constructor() {
         this.currentTask = null;
         this.isRunning = false;
+        this.isUpdating = false;
         this.nextGameCheck = null;
         this.gameEndCheck = null;
     }
@@ -144,13 +145,22 @@ class LiveScoreScheduler {
 
         this.isRunning = true;
 
-        // 5-minute update cycle during games
-        this.currentTask = cron.schedule('*/5 * * * *', async () => {
+        // 3-minute update cycle during games for better responsiveness
+        this.currentTask = cron.schedule('*/3 * * * *', async () => {
+            // Don't start a new update if one is already running
+            if (this.isUpdating) {
+                console.log('⏳ Skipping live update - previous update still in progress');
+                return;
+            }
+            this.isUpdating = true;
             await this.performLiveUpdate();
+            this.isUpdating = false;
         });
 
         // Also run one update immediately
+        this.isUpdating = true;
         await this.performLiveUpdate();
+        this.isUpdating = false;
 
         // Schedule a check to see when all games are finished
         this.scheduleGameEndCheck();
@@ -160,19 +170,36 @@ class LiveScoreScheduler {
      * Perform a live score update
      */
     async performLiveUpdate() {
+        const startTime = new Date();
         try {
+            console.log(`🔄 Starting live score update at ${startTime.toISOString()}`);
+            
             // Get current week from database (reuse existing logic)
             const { getCurrentNFLWeek } = require('../utils/getCurrentWeek');
             const currentWeek = await getCurrentNFLWeek(database);
             const seasonYear = new Date().getFullYear();
 
-            const result = await ESPNApiService.updateLiveScores(currentWeek, seasonYear);
+            // Add timeout wrapper to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('ESPN API timeout after 4 minutes')), 240000)
+            );
+            
+            const updatePromise = ESPNApiService.updateLiveScores(currentWeek, seasonYear);
+            const result = await Promise.race([updatePromise, timeoutPromise]);
+            
+            const endTime = new Date();
+            const duration = (endTime - startTime) / 1000;
+            console.log(`✅ Live score update completed in ${duration}s at ${endTime.toISOString()}`);
 
             // Check if we should continue running
             await this.checkIfShouldContinue();
 
         } catch (error) {
-            // Live update failed - continue
+            const endTime = new Date();
+            const duration = (endTime - startTime) / 1000;
+            console.log(`❌ Live score update failed after ${duration}s: ${error.message}`);
+            
+            // Continue running even if this update failed
         }
     }
 

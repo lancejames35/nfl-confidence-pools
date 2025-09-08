@@ -186,22 +186,11 @@ class PickController {
             const existingPicks = await Pick.getWeeklyPicks(entry_id, week);
             
             // Check if picks can be edited (week-level)
-            let canEdit = await Pick.canEditPicks(entry_id, week);
+            const canEdit = await Pick.canEditPicks(entry_id, week);
             
-            // Additional check: if any games for this week have started (locked), show status as CLOSED
-            // This provides better UX by showing CLOSED when games are in progress, even if some games haven't started yet
-            const startedGamesCheck = await database.execute(
-                `SELECT COUNT(*) as started_count, COUNT(*) as total_count
-                 FROM games g 
-                 WHERE g.week = ? AND g.season_year = YEAR(NOW())
-                 AND g.kickoff_timestamp <= NOW()`,
-                [week]
-            );
-            
-            const hasStartedGames = startedGamesCheck[0]?.started_count > 0;
-            if (hasStartedGames) {
-                canEdit = false; // Override canEdit if any games have started
-            }
+            // Display status should match the actual editing capability
+            // No need for additional logic - just use canEdit for display
+            const displayStatus = canEdit ? 'open' : 'closed';
             
             
             // Get draft picks if any
@@ -256,6 +245,7 @@ class PickController {
                 existingPicks,
                 draftPicks,
                 canEdit,
+                displayStatus,
                 gameEditStatus,
                 tiebreakerValue,
                 user: req.user

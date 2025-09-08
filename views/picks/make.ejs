@@ -38,7 +38,7 @@
                     <!-- Center: Status -->
                     <div class="header-center d-flex gap-3">
                         <div class="stat-card">
-                            <div class="stat-value" data-status="<%= canEdit ? 'open' : 'closed' %>"><%= canEdit ? 'OPEN' : 'CLOSED' %></div>
+                            <div class="stat-value" data-status="<%= displayStatus %>"><%= displayStatus.toUpperCase() %></div>
                             <div class="stat-label">Status</div>
                         </div>
                         <div class="stat-card">

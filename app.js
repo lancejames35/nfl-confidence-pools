@@ -32,11 +32,8 @@ console.log('🎨 Loading themes...');
 const { themeMiddleware } = require('./config/themes');
 console.log('✅ Themes loaded');
 
-console.log('⏰ Loading scheduled tasks...');
-const scheduledTasks = require('./services/ScheduledTasks');
-console.log('✅ Scheduled tasks loaded');
-
-// Defer loading live score scheduler until after basic setup
+// Defer loading services until after basic setup to prevent database cascade
+let scheduledTasks;
 let liveScoreScheduler;
 
 console.log('📝 Loading logger...');
@@ -99,10 +96,8 @@ class Application {
             socketManager.initialize(this.server, this.sessionMiddleware);
             console.log('✅ Socket.IO initialized');
             
-            // Start scheduled tasks
-            console.log('⏰ Starting scheduled tasks...');
-            scheduledTasks.start();
-            console.log('✅ Scheduled tasks started');
+            // Defer starting scheduled tasks until after basic setup
+            console.log('⏰ Scheduled tasks will be loaded after server start');
             
             console.log('Memory usage after initialization:', process.memoryUsage());
             logger.info('Application initialized successfully');
@@ -807,18 +802,25 @@ class Application {
                     url: process.env.NODE_ENV === 'development' ? `http://localhost:${this.port}` : undefined
                 });
                 
-                // Initialize live score scheduler after app is running
+                // Initialize both schedulers after app is running
                 setImmediate(async () => {
                     try {
+                        console.log('⏰ Loading scheduled tasks...');
+                        scheduledTasks = require('./services/ScheduledTasks');
+                        console.log('✅ Scheduled tasks loaded');
+                        scheduledTasks.start();
+                        console.log('✅ Scheduled tasks started');
+                        
                         console.log('🏈 Loading live score scheduler...');
                         liveScoreScheduler = require('./services/LiveScoreScheduler');
                         console.log('✅ Live score scheduler loaded');
                         
                         await liveScoreScheduler.initialize();
-                        logger.info('Live Score Scheduler started');
+                        console.log('✅ Live score scheduler initialized');
+                        logger.info('All schedulers started successfully');
                     } catch (error) {
-                        logger.error('Failed to start Live Score Scheduler:', error);
-                        // Continue running even if scheduler fails to start
+                        logger.error('Failed to start schedulers:', error);
+                        // Continue running even if schedulers fail to start
                     }
                 });
             });
@@ -841,8 +843,10 @@ class Application {
             logger.info('HTTP server closed successfully');
             
             try {
-                // Stop scheduled tasks
-                scheduledTasks.stop();
+                // Stop scheduled tasks if they were loaded
+                if (scheduledTasks) {
+                    scheduledTasks.stop();
+                }
                 
                 // Stop live score scheduler if it was loaded
                 if (liveScoreScheduler) {

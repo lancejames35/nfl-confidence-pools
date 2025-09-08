@@ -142,11 +142,11 @@
                                 <% if (games && games.length > 0) { %>
                                     <% 
                                     // Step 1: Separate games with and without picks
-                                    const gamesWithPicks = games.filter(game => existingPicks[game.game_id]);
-                                    const gamesWithoutPicks = games.filter(game => !existingPicks[game.game_id]);
+                                    const gamesWithPicks = games.filter(game => existingPicks.find(p => p.game_id === game.game_id));
+                                    const gamesWithoutPicks = games.filter(game => !existingPicks.find(p => p.game_id === game.game_id));
                                     
                                     // Step 2: Get used confidence values from existing picks
-                                    const usedConfidenceValues = new Set(Object.values(existingPicks).map(p => p.confidence_points));
+                                    const usedConfidenceValues = new Set(existingPicks.map(p => p.confidence_points));
                                     
                                     // Step 3: Create array of available confidence values (excluding used ones)
                                     const availableValues = [];
@@ -158,8 +158,8 @@
                                     
                                     // Step 4: Sort games with picks by confidence (highest first)
                                     gamesWithPicks.sort((a, b) => {
-                                        const pickA = existingPicks[a.game_id];
-                                        const pickB = existingPicks[b.game_id];
+                                        const pickA = existingPicks.find(p => p.game_id === a.game_id);
+                                        const pickB = existingPicks.find(p => p.game_id === b.game_id);
                                         return pickB.confidence_points - pickA.confidence_points;
                                     });
                                     
@@ -174,7 +174,7 @@
                                     const orderedGames = [...gamesWithPicks, ...gamesWithoutPicks];
                                     %>
                                     <% orderedGames.forEach((game, index) => { 
-                                        const existingPick = existingPicks[game.game_id];
+                                        const existingPick = existingPicks.find(p => p.game_id === game.game_id);
                                         const draftPick = draftPicks && draftPicks.picks ? draftPicks.picks.find(p => p.game_id === game.game_id) : null;
                                         const selectedTeam = existingPick ? existingPick.selected_team : (draftPick ? draftPick.selected_team : '');
                                         const confidencePoints = existingPick ? existingPick.confidence_points : (draftPick ? draftPick.confidence_points : game._assignedConfidence);
@@ -220,16 +220,8 @@
                                                                         <input type="hidden" name="picks[<%= index %>][game_id]" value="<%= game.game_id %>">
                                                                         <input type="hidden" name="picks[<%= index %>][pick_type]" value="confidence">
                                                                         <!-- Away Team -->
-                                                                        <div class="team-option flex-fill <%= selectedTeam === game.away_team ? 'selected' : '' %> <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %><%
-                                                                            // Add correctness classes for locked games
-                                                                            if (existingPicks[game.game_id] && existingPicks[game.game_id].has_result && selectedTeam === game.away_team) {
-                                                                                if (existingPicks[game.game_id].is_correct === true) {
-                                                                                    %> pick-correct<%
-                                                                                } else if (existingPicks[game.game_id].is_correct === false) {
-                                                                                    %> pick-incorrect<%
-                                                                                }
-                                                                            }
-                                                                        %>" data-team="<%= game.away_team %>">
+                                                                        <div class="team-option flex-fill <%= selectedTeam === game.away_team ? 'selected' : '' %> <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %>" 
+                                                                             data-team="<%= game.away_team %>">
                                                                             <input type="radio" 
                                                                                    name="picks[<%= index %>][selected_team]" 
                                                                                    value="<%= game.away_team %>" 
@@ -264,16 +256,8 @@
                                                                         <div class="at-symbol mx-2 text-muted">@</div>
                                                                         
                                                                         <!-- Home Team -->
-                                                                        <div class="team-option flex-fill <%= selectedTeam === game.home_team ? 'selected' : '' %> <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %><%
-                                                                            // Add correctness classes for locked games
-                                                                            if (existingPicks[game.game_id] && existingPicks[game.game_id].has_result && selectedTeam === game.home_team) {
-                                                                                if (existingPicks[game.game_id].is_correct === true) {
-                                                                                    %> pick-correct<%
-                                                                                } else if (existingPicks[game.game_id].is_correct === false) {
-                                                                                    %> pick-incorrect<%
-                                                                                }
-                                                                            }
-                                                                        %>" data-team="<%= game.home_team %>">
+                                                                        <div class="team-option flex-fill <%= selectedTeam === game.home_team ? 'selected' : '' %> <%= game.point_spread && league.pick_method === 'against_spread' ? 'has-spread' : '' %>" 
+                                                                             data-team="<%= game.home_team %>">
                                                                             <input type="radio" 
                                                                                    name="picks[<%= index %>][selected_team]" 
                                                                                    value="<%= game.home_team %>" 
@@ -516,29 +500,6 @@
 
 <style>
 /* Conditional styles that depend on server-side logic */
-
-/* Pick correctness highlighting for locked games */
-.team-option.pick-correct {
-    background-color: rgba(40, 167, 69, 0.15) !important;
-    border-color: #28a745 !important;
-    border-width: 2px !important;
-}
-
-.team-option.pick-correct .team-label {
-    color: #155724 !important;
-    font-weight: 600 !important;
-}
-
-.team-option.pick-incorrect {
-    background-color: rgba(220, 53, 69, 0.15) !important;
-    border-color: #dc3545 !important;
-    border-width: 2px !important;
-}
-
-.team-option.pick-incorrect .team-label {
-    color: #721c24 !important;
-    font-weight: 600 !important;
-}
 
 /* Disabled state styles for when picks are locked/closed */
 <% if (!canEdit) { %>

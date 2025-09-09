@@ -7,11 +7,11 @@ class ESPNApiService {
         this.baseUrl = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
         this.lastFetchTime = null;
         this.cacheData = null;
-        this.cacheTimeout = 300000; // 5 minutes cache (increased from 2 minutes)
+        this.cacheTimeout = 600000; // 10 minutes cache during debugging to prevent excessive calls
         
         // Fallback rate limiting (memory-based as backup)
         this.lastAPICallTime = null;
-        this.minTimeBetweenCalls = 300000; // 5 minutes minimum between API calls
+        this.minTimeBetweenCalls = 600000; // 10 minutes minimum between API calls during debugging
     }
 
     /**

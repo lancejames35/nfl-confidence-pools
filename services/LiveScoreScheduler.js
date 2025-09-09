@@ -96,7 +96,7 @@ class LiveScoreScheduler {
             FROM games g
             JOIN teams ht ON g.home_team_id = ht.team_id
             JOIN teams at ON g.away_team_id = at.team_id
-            WHERE g.kickoff_timestamp > NOW()
+            WHERE g.kickoff_timestamp > CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York')
             AND g.status IN ('scheduled', 'in_progress')
             ORDER BY g.kickoff_timestamp ASC
             LIMIT 1`;
@@ -111,14 +111,15 @@ class LiveScoreScheduler {
     async checkAndStartLiveUpdates() {
         try {
             // Check for games that are currently live or recently started
+            // Use Eastern Time like the rest of the application
             const liveGamesQuery = `
                 SELECT COUNT(*) as live_count
                 FROM games 
                 WHERE (
                     status = 'in_progress' 
                     OR (
-                        kickoff_timestamp <= NOW() 
-                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+                        kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
+                        AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
                         AND status IN ('scheduled', 'in_progress')
                     )
                 )`;
@@ -126,8 +127,16 @@ class LiveScoreScheduler {
             const [result] = await database.execute(liveGamesQuery);
             const liveCount = result.live_count || 0;
             
+            console.log(`🎮 Live games check: ${liveCount} games found`, {
+                currentTime: new Date().toISOString(),
+                query: 'games with status=in_progress OR (kickoff <= NOW() AND kickoff >= NOW()-4h AND status IN scheduled,in_progress)'
+            });
+            
             if (liveCount > 0) {
+                console.log(`🚀 Starting live updates for ${liveCount} active games`);
                 await this.startLiveUpdates();
+            } else {
+                console.log(`😴 No live games found - scheduler staying inactive`);
             }
 
         } catch (error) {
@@ -214,8 +223,8 @@ class LiveScoreScheduler {
                 FROM games 
                 WHERE status = 'in_progress'
                 OR (
-                    kickoff_timestamp <= NOW() 
-                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+                    kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
+                    AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
                     AND status = 'scheduled'
                 )`;
 

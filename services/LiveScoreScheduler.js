@@ -154,8 +154,8 @@ class LiveScoreScheduler {
 
         this.isRunning = true;
 
-        // 10-minute update cycle during debugging to prevent excessive API calls
-        this.currentTask = cron.schedule('*/10 * * * *', async () => {
+        // 5-minute update cycle during live games
+        this.currentTask = cron.schedule('*/5 * * * *', async () => {
             // Don't start a new update if one is already running
             if (this.isUpdating) {
                 console.log('⏳ Skipping live update - previous update still in progress');

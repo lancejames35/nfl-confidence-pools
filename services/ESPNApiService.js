@@ -261,6 +261,13 @@ class ESPNApiService {
             for (const espnGame of espnData.events) {
                 try {
                     const gameData = this.parseGameData(espnGame);
+                    console.log(`🔍 Processing ESPN game: ${gameData.away_team_abbr} @ ${gameData.home_team_abbr}`, {
+                        status: gameData.status,
+                        homeScore: gameData.home_score,
+                        awayScore: gameData.away_score,
+                        espnHomeId: gameData.home_team_id,
+                        espnAwayId: gameData.away_team_id
+                    });
                     // Find matching game in our database using ESPN team IDs
                     const queryParams = [
                         currentWeek, 
@@ -290,6 +297,12 @@ class ESPNApiService {
                     );
                     
                     if (!results || results.length === 0) {
+                        console.log(`❌ No database match found for ESPN game: ${gameData.away_team_abbr} @ ${gameData.home_team_abbr}`, {
+                            espnHomeTeamId: gameData.home_team_id,
+                            espnAwayTeamId: gameData.away_team_id,
+                            week: currentWeek,
+                            season: currentSeason
+                        });
                         continue;
                     }
                     
@@ -426,6 +439,13 @@ class ESPNApiService {
                                 existingGame.game_id
                             ]
                         );
+
+                        console.log(`✅ Updated game: ${existingGame.away_abbr} @ ${existingGame.home_abbr}`, {
+                            oldScore: `${existingGame.existing_away_score || 0}-${existingGame.existing_home_score || 0}`,
+                            newScore: `${gameData.away_score}-${gameData.home_score}`,
+                            status: gameData.is_final ? 'Final' : `Q${gameData.current_quarter} ${gameData.time_remaining}`,
+                            winningTeam: winningTeam
+                        });
 
                         updatedGames.push({
                             gameId: existingGame.game_id,

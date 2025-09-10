@@ -1,7 +1,7 @@
 const database = require('../config/database');
 const GameResultsProcessor = require('../services/GameResultsProcessor');
 const PickScoringService = require('../services/PickScoringService');
-const { getCurrentNFLWeek, getDefaultWeekForUI } = require('../utils/getCurrentWeek');
+const { getCurrentNFLWeek, getDefaultWeekForUIWithWinnerCalculation } = require('../utils/getCurrentWeek');
 
 class ResultsController {
     /**
@@ -9,7 +9,7 @@ class ResultsController {
      */
     static async weekResults(req, res) {
         try {
-            const currentWeek = req.query.week || await getDefaultWeekForUI(database);
+            const currentWeek = req.query.week || await getDefaultWeekForUIWithWinnerCalculation(database);
             const seasonYear = req.query.season || new Date().getFullYear();
             const leagueId = req.params.league_id ? parseInt(req.params.league_id) : null;
             
@@ -269,7 +269,18 @@ class ResultsController {
                     seasonCorrect: seasonData.seasonCorrect,
                     possiblePoints: possiblePoints
                 };
-            }).sort((a, b) => b.totalPoints - a.totalPoints);
+            }).sort((a, b) => {
+                // Check if any user has weekly points scored yet
+                const hasWeeklyScores = Object.values(userTotals).some(user => user.totalPoints > 0);
+                
+                if (hasWeeklyScores) {
+                    // Use weekly points sorting (current behavior)
+                    return b.totalPoints - a.totalPoints;
+                } else {
+                    // Fallback to season points sorting when no weekly scores yet
+                    return b.seasonPoints - a.seasonPoints;
+                }
+            });
 
             // Get MNF tiebreaker predictions if the league uses MNF as a tiebreaker
             const tiebreakerSettings = await ResultsController.getLeagueSettings(league.league_id);

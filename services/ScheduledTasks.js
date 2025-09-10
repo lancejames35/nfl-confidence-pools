@@ -1,5 +1,8 @@
 const Pick = require('../models/Pick');
 const GameResultsProcessor = require('./GameResultsProcessor');
+const WeeklyWinnersService = require('./WeeklyWinnersService');
+const database = require('../config/database');
+const getCurrentWeek = require('../utils/getCurrentWeek');
 
 /**
  * Scheduled task runner for automated system processes
@@ -38,6 +41,9 @@ class ScheduledTasks {
         this.processPickLocking().catch(error => {
             // Initial pick locking error
         });
+        
+        // Note: Weekly winner calculation is now event-driven via getDefaultWeekForUIWithWinnerCalculation()
+        // No longer using scheduled polling for week transitions
         
         // All scheduled tasks started successfully
     }
@@ -132,6 +138,7 @@ class ScheduledTasks {
         }
     }
     
+    
     /**
      * Get current NFL week
      */
@@ -154,6 +161,22 @@ class ScheduledTasks {
             // Manual pick locking completed
         } catch (error) {
             // Manual pick locking error
+            throw error;
+        }
+    }
+    
+    /**
+     * Manually trigger weekly winner calculation for a specific week and league (for testing)
+     * Note: This is now the primary way to test weekly winner calculation since it's event-driven
+     */
+    async triggerWeeklyWinnerCalculation(leagueId, week, seasonYear = new Date().getFullYear()) {
+        console.log(`Manual trigger: Weekly winner calculation for League ${leagueId}, Week ${week}, Season ${seasonYear}`);
+        try {
+            const result = await WeeklyWinnersService.calculateWeeklyWinners(leagueId, week, seasonYear);
+            console.log('Manual weekly winner calculation result:', result);
+            return result;
+        } catch (error) {
+            console.error('Manual weekly winner calculation error:', error);
             throw error;
         }
     }

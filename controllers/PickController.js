@@ -2,7 +2,7 @@ const Pick = require('../models/Pick');
 const League = require('../models/League');
 const { validationResult } = require('express-validator');
 const database = require('../config/database');
-const { getCurrentNFLWeek, getDefaultWeekForUI } = require('../utils/getCurrentWeek');
+const { getCurrentNFLWeek, getDefaultWeekForUIWithWinnerCalculation } = require('../utils/getCurrentWeek');
 
 class PickController {
     /**
@@ -65,7 +65,7 @@ class PickController {
                 title: 'My Picks',
                 leagues: userLeagues,
                 user: req.user,
-                currentWeek: await getDefaultWeekForUI(database)
+                currentWeek: await getDefaultWeekForUIWithWinnerCalculation(database)
             });
         } catch (error) {
             req.flash('error', 'Error loading picks dashboard');
@@ -79,7 +79,7 @@ class PickController {
     static async makePicks(req, res) {
         try {
             let { league_id, entry_id } = req.params;
-            const week = req.query.week || await getDefaultWeekForUI(database);
+            const week = req.query.week || await getDefaultWeekForUIWithWinnerCalculation(database);
             
             // Verify user has access to this entry
             const league = await League.findById(league_id);
@@ -413,7 +413,7 @@ class PickController {
     static async viewPicks(req, res) {
         try {
             const { league_id, entry_id } = req.params;
-            const week = req.query.week || await getDefaultWeekForUI(database);
+            const week = req.query.week || await getDefaultWeekForUIWithWinnerCalculation(database);
             
             const league = await League.findById(league_id);
             if (!league) {
@@ -448,7 +448,7 @@ class PickController {
     static async leaguePicks(req, res) {
         try {
             const { league_id } = req.params;
-            const week = req.query.week || await getDefaultWeekForUI(database);
+            const week = req.query.week || await getDefaultWeekForUIWithWinnerCalculation(database);
             
             const league = await League.findById(league_id);
             if (!league) {

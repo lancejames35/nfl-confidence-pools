@@ -7,13 +7,13 @@ const WeeklyWinnersService = require('../services/WeeklyWinnersService');
 router.get('/', async (req, res, next) => {
     try {
         const database = require('../config/database');
-        const { getDefaultWeekForUI } = require('../utils/getCurrentWeek');
+        const { getDefaultWeekForUIWithWinnerCalculation } = require('../utils/getCurrentWeek');
         
         // Make sure we have the correct user ID - it might be id instead of user_id
         const userId = req.user.id || req.user.user_id;
         
         // Get current week from database or use query param
-        const currentWeek = req.query.week || await getDefaultWeekForUI(database) || 1;
+        const currentWeek = req.query.week || await getDefaultWeekForUIWithWinnerCalculation(database) || 1;
         
         // Check if a specific league was requested
         const requestedLeagueId = req.query.league_id ? parseInt(req.query.league_id) : null;

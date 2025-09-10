@@ -516,6 +516,24 @@ class Application {
                 const totalPicks = userStats ? (parseInt(userStats.total_picks) || 0) : 0;
                 const winPercentage = totalPicks > 0 ? Math.round((correctPicks / totalPicks) * 100) : 0;
                 
+                // Get weekly wins for the selected league (league-specific metrics)
+                let totalWins = 0;
+                try {
+                    if (selectedLeagueId) {
+                        const WeeklyWinnersService = require('./services/WeeklyWinnersService');
+                        const weeklyWins = await WeeklyWinnersService.getUserWeeklyWinsInLeague(req.user.user_id, selectedLeagueId);
+                        totalWins = (weeklyWins && Array.isArray(weeklyWins)) ? weeklyWins.length : 0;
+                    } else {
+                        // If no specific league, get total wins across all leagues
+                        const WeeklyWinnersService = require('./services/WeeklyWinnersService');
+                        const allWeeklyWins = await WeeklyWinnersService.getUserWeeklyWins(req.user.user_id);
+                        totalWins = (allWeeklyWins && Array.isArray(allWeeklyWins)) ? allWeeklyWins.length : 0;
+                    }
+                } catch (error) {
+                    console.error('Error fetching weekly wins:', error);
+                    totalWins = 0;
+                }
+                
                 // Get recent activity - filter by selected league if specified
                 let activityQuery;
                 let activityParams;
@@ -632,7 +650,7 @@ class Application {
                     hoursToDeadline,
                     nextPickDeadline, // Pass the next pick deadline time
                     activeLeaguesCount: leagues ? leagues.length : 0,
-                    totalWins: 0,  // This would need a more complex query
+                    totalWins,
                     winPercentage,
                     correctPicks,
                     totalPicks,

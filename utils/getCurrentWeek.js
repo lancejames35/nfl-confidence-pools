@@ -91,9 +91,70 @@ async function getHoursUntilDeadline(database, week) {
     return hoursUntilDeadline;
 }
 
+// Get the default week for UI (picks/results pages)
+// Logic: Move to next week the day after the max kickoff date for current week
+async function getDefaultWeekForUI(database) {
+    try {
+        // Get all weeks with their max game dates (stored as UTC in database)
+        const weeks = await database.execute(`
+            SELECT 
+                week,
+                MAX(kickoff_timestamp) as last_game_utc
+            FROM games
+            WHERE season_year = 2025
+            GROUP BY week
+            ORDER BY week ASC
+        `);
+        
+        if (!weeks || weeks.length === 0) {
+            return 1; // Default to week 1 if no games
+        }
+        
+        // Get current time in UTC, then we'll use the comparison logic that matches existing codebase
+        const nowUTC = new Date();
+        
+        // Find the appropriate week based on max kickoff date logic
+        for (let i = 0; i < weeks.length; i++) {
+            const weekData = weeks[i];
+            const lastGameUTC = new Date(weekData.last_game_utc);
+            
+            // Get the date portion only (midnight UTC) of the day after the last game
+            // This matches your logic: "current date is greater than max kickoff date"
+            const dayAfterLastGame = new Date(lastGameUTC);
+            dayAfterLastGame.setDate(lastGameUTC.getDate() + 1);
+            dayAfterLastGame.setHours(0, 0, 0, 0); // Set to midnight UTC
+            
+            // If current date hasn't passed the day after the last game, this is the current week
+            if (nowUTC < dayAfterLastGame) {
+                return weekData.week;
+            }
+        }
+        
+        // If we've gone past all scheduled weeks, find the week that has games
+        // This handles the case where we're in early season
+        for (let week = 1; week <= 18; week++) {
+            const weekGames = await database.execute(`
+                SELECT COUNT(*) as game_count 
+                FROM games 
+                WHERE week = ? AND season_year = 2025
+            `, [week]);
+            
+            if (weekGames && weekGames[0] && weekGames[0].game_count > 0) {
+                return week;
+            }
+        }
+        return 1; // Default to week 1
+        
+    } catch (error) {
+        console.error('Error getting default week for UI:', error);
+        return 1; // Default to week 1 on error
+    }
+}
+
 module.exports = {
     getCurrentNFLWeek,
     getWeekDeadline,
     arePicksLocked,
-    getHoursUntilDeadline
+    getHoursUntilDeadline,
+    getDefaultWeekForUI
 };

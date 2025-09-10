@@ -4,7 +4,8 @@
       "Bash(grep:*)",
       "Bash(sed:*)",
       "Bash(node:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(npm restart)"
     ],
     "deny": [],
     "ask": []

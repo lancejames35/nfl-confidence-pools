@@ -207,7 +207,6 @@ function resetTiersToDefault() {
 let tierCounter = 2;
 let currentEditingUserId = null;
 let commissionerMessages = [];
-let originalTierData = [];
 let originalLeagueData = {};
 let originalPayoutData = {
     payout_calculations_enabled: false,
@@ -626,6 +625,12 @@ function openEditMemberModal(btn) {
     // Update role display
     updateRoleDisplay(userData.role);
     
+    
+    // Populate tier dropdown if multi-tier is enabled
+    if (leagueData.enable_multi_tier) {
+        populateTierDropdown(userData.tierId);
+    }
+    
     // Update payment status
     updatePaymentStatusDisplay(userData.amountPaid, userData.amountOwed);
     
@@ -680,6 +685,64 @@ function updatePaymentStatusDisplay(amountPaid, amountOwed) {
     } else {
         statusIcon.textContent = '❌';
         statusDisplay.value = 'Unpaid';
+    }
+}
+
+function populateTierDropdown(selectedTierId) {
+    const tierSelect = document.getElementById('editTier');
+    if (!tierSelect) return;
+    
+    // Clear existing options
+    tierSelect.innerHTML = '';
+    
+    // Fetch tiers for this league
+    fetch(`/leagues/${leagueData.league_id}/tiers`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.tiers) {
+                data.tiers.forEach((tier, index) => {
+                    const option = document.createElement('option');
+                    option.value = tier.tier_id;
+                    option.textContent = `${tier.tier_name} - $${parseFloat(tier.entry_fee).toFixed(2)}`;
+                    option.dataset.fee = tier.entry_fee;
+                    
+                    if (selectedTierId && selectedTierId == tier.tier_id) {
+                        option.selected = true;
+                    } else if (!selectedTierId && index === 0) {
+                        // Select first tier by default if no tier is assigned
+                        option.selected = true;
+                    }
+                    
+                    tierSelect.appendChild(option);
+                });
+                
+                // Add change event listener
+                tierSelect.addEventListener('change', updateAmountOwedBasedOnTier);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching tiers:', error);
+        });
+}
+
+function updateAmountOwedBasedOnTier() {
+    const tierSelect = document.getElementById('editTier');
+    const amountOwedInput = document.getElementById('editAmountOwed');
+    const entryCountDisplay = document.getElementById('editEntryCountDisplay');
+    
+    if (!tierSelect || !amountOwedInput || !entryCountDisplay) return;
+    
+    const selectedOption = tierSelect.options[tierSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.fee) {
+        const tierFee = parseFloat(selectedOption.dataset.fee);
+        const entryCount = parseInt(entryCountDisplay.textContent) || 1;
+        const totalOwed = tierFee * entryCount;
+        
+        amountOwedInput.value = totalOwed.toFixed(2);
+        
+        // Update payment status
+        const amountPaid = parseFloat(document.getElementById('editAmountPaid').value) || 0;
+        updatePaymentStatusDisplay(amountPaid, totalOwed);
     }
 }
 
@@ -825,8 +888,15 @@ function saveMemberChanges() {
         email: document.getElementById('editEmail').value.trim(),
         password: document.getElementById('editPassword').value,
         amountPaid: parseFloat(document.getElementById('editAmountPaid').value) || 0,
+        amountOwed: parseFloat(document.getElementById('editAmountOwed').value) || 0,
         paymentMethod: document.getElementById('editPaymentMethod').value
     };
+    
+    // Include tier information if multi-tier is enabled
+    const tierSelect = document.getElementById('editTier');
+    if (tierSelect && tierSelect.value && leagueData.enable_multi_tier) {
+        memberData.tierId = parseInt(tierSelect.value);
+    }
     
     if (!memberData.username || !memberData.email) {
         showToast('Username and email are required', 'error');

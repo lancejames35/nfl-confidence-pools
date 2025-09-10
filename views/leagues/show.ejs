@@ -882,12 +882,15 @@
                                         Use the "Make Commissioner" button below to change roles
                                     </div>
                                 </div>
-                                <div class="mb-3" id="editTierSection" style="<%= league.enable_multi_tier ? '' : 'display: none;' %>">
+                                <% if (league.enable_multi_tier) { %>
+                                <div class="mb-3">
                                     <label class="form-label">Tier</label>
                                     <select class="form-select" id="editTier">
                                         <!-- Options will be populated dynamically -->
                                     </select>
+                                    <div class="form-text">Select the tier for this member</div>
                                 </div>
+                                <% } %>
                             </div>
                         </div>
                     </div>
@@ -1162,18 +1165,7 @@ const leagueData = {
     isCommissioner: <%= isCommissioner ? 'true' : 'false' %>
 };
 
-// Original tier data for reset functionality
-originalTierData = [
-<% if (locals.tiers && tiers.length > 0) { %>
-    <% tiers.forEach((tier, index) => { %>
-    {
-        tier_name: '<%= tier.tier_name %>',
-        entry_fee: '<%= tier.entry_fee %>',
-        tier_description: '<%= tier.tier_description %>'
-    }<%= index < tiers.length - 1 ? ',' : '' %>
-    <% }); %>
-<% } %>
-];
+
 
 // Original league settings for complete restoration
 originalLeagueData = {

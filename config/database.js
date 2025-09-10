@@ -100,6 +100,13 @@ class Database {
         return this.pool;
     }
 
+    async getConnection() {
+        if (!this.isConnected || !this.pool) {
+            throw new Error('Database not initialized. Call initialize() first.');
+        }
+        return await this.pool.getConnection();
+    }
+
     getSessionStore() {
         if (!this.sessionStore) {
             throw new Error('Session store not initialized.');

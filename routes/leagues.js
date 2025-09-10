@@ -131,6 +131,7 @@ router.post('/:id/update-member', LeagueController.updateMember);
 router.post('/:id/transfer-ownership', LeagueController.transferOwnership);
 router.post('/:id/reset-password', LeagueController.resetPassword);
 router.get('/:id/messages', LeagueController.getMessages);
+router.get('/:id/tiers', LeagueController.getTiers);
 router.post('/:id/post-message', LeagueController.postMessage);
 router.delete('/:id/messages/:messageId', LeagueController.deleteMessage);
 router.get('/:id/chat', LeagueController.chat);

@@ -269,8 +269,9 @@
                                     <% for (let week = 1; week <= 18; week++) { 
                                         const weekData = user.weeks[week];
                                         const hasData = weekData && weekData.picks > 0;
+                                        const isWinner = weeklyWinnersMap && weeklyWinnersMap[week] && weeklyWinnersMap[week].includes(user.entry_id);
                                     %>
-                                        <td class="week-cell <%= !hasData ? 'no-data' : '' %>" data-week="<%= week %>">
+                                        <td class="week-cell <%= !hasData ? 'no-data' : '' %> <%= isWinner ? 'weekly-winner' : '' %>" data-week="<%= week %>">
                                             <% if (hasData) { %>
                                                 <div class="week-points">
                                                     <span class="points-value"><%= weekData.points || 0 %></span>
@@ -519,6 +520,20 @@
     background: #f7fafc;
 }
 
+.week-cell.weekly-winner {
+    background: rgba(34, 197, 94, 0.2) !important; /* Soft green background */
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.week-cell.weekly-winner:hover {
+    background: rgba(34, 197, 94, 0.3) !important;
+}
+
+.week-cell.weekly-winner .points-value {
+    color: #15803d;
+    font-weight: 800;
+}
+
 .week-cell.no-data {
     color: #cbd5e0;
 }
@@ -536,8 +551,10 @@
 }
 
 .week-record {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: #718096;
+    line-height: 1;
+    margin-top: 1px;
 }
 
 .no-picks {
@@ -567,9 +584,11 @@
 }
 
 .season-record {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: #718096;
     display: block;
+    line-height: 1;
+    margin-top: 1px;
 }
 
 /* Row hover effect */

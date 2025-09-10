@@ -815,13 +815,37 @@ class LeagueController {
         }
     }
 
+    // Get tiers for a league (API endpoint)
+    static async getTiers(req, res) {
+        try {
+            const league_id = parseInt(req.params.id);
+            
+            const tiers = await database.executeMany(`
+                SELECT tier_id, tier_name, entry_fee, tier_order, tier_description 
+                FROM league_entry_tiers 
+                WHERE league_id = ? AND is_active = 1
+                ORDER BY tier_order ASC
+            `, [league_id]);
+            
+            res.json({ 
+                success: true, 
+                tiers: tiers 
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Error fetching tiers' 
+            });
+        }
+    }
+
     // Update member information
     static async updateMember(req, res) {
         try {
             const league_id = parseInt(req.params.id);
             const user_id = parseInt(req.params.userId);
             
-            const { username, firstName, lastName, email, password, amountPaid, paymentMethod } = req.body;
+            const { username, firstName, lastName, email, password, amountPaid, amountOwed, paymentMethod, tierId } = req.body;
 
             // Check if current user is commissioner
             const isCommissioner = await League.isUserCommissioner(league_id, req.user.user_id);
@@ -868,8 +892,93 @@ class LeagueController {
                 `, userParams);
             }
 
-            // Payment information would be handled separately if there were payment tables
-            // For now, just respond with success since user info is updated
+            // Update tier assignment if provided
+            if (tierId && parseInt(tierId) > 0) {
+                // Get league_user for this user in this league
+                const leagueUserResult = await database.executeMany(`
+                    SELECT league_user_id FROM league_users 
+                    WHERE league_id = ? AND user_id = ?
+                `, [league_id, user_id]);
+                
+                if (leagueUserResult && leagueUserResult.length > 0) {
+                    const leagueUserId = leagueUserResult[0].league_user_id;
+                    
+                    // Get the tier fee for amount_owed calculation
+                    const [tierInfo] = await database.executeMany(`
+                        SELECT entry_fee FROM league_entry_tiers 
+                        WHERE tier_id = ? AND league_id = ?
+                    `, [tierId, league_id]);
+                    
+                    const entryFee = tierInfo ? parseFloat(tierInfo.entry_fee) : 0;
+                    
+                    // Update or insert tier assignment
+                    await database.execute(`
+                        INSERT INTO league_user_tiers (league_user_id, tier_id, amount_owed, payment_status)
+                        VALUES (?, ?, ?, 'unpaid')
+                        ON DUPLICATE KEY UPDATE 
+                            tier_id = VALUES(tier_id),
+                            amount_owed = VALUES(amount_owed)
+                    `, [leagueUserId, tierId, entryFee]);
+                }
+            }
+            
+            // Update payment information if provided
+            if (amountPaid !== undefined || amountOwed !== undefined || paymentMethod !== undefined) {
+                // Get league_entry for this user in this league
+                const [entryResult] = await database.execute(`
+                    SELECT le.entry_id FROM league_entries le
+                    JOIN league_users lu ON le.league_user_id = lu.league_user_id
+                    WHERE lu.league_id = ? AND lu.user_id = ?
+                `, [league_id, user_id]);
+                
+                if (entryResult && entryResult.length > 0) {
+                    const entryId = entryResult[0].entry_id;
+                    
+                    // Update or insert payment record
+                    const paymentUpdates = [];
+                    const paymentParams = [];
+                    
+                    if (amountPaid !== undefined) {
+                        paymentUpdates.push('amount_paid = ?');
+                        paymentParams.push(amountPaid);
+                    }
+                    if (amountOwed !== undefined) {
+                        paymentUpdates.push('amount_owed = ?');
+                        paymentParams.push(amountOwed);
+                    }
+                    if (paymentMethod !== undefined) {
+                        paymentUpdates.push('payment_method = ?');
+                        paymentParams.push(paymentMethod || null);
+                    }
+                    
+                    if (paymentUpdates.length > 0) {
+                        // Calculate payment status
+                        let paymentStatus = 'unpaid';
+                        if (amountOwed !== undefined && amountPaid !== undefined) {
+                            const tolerance = 0.01;
+                            if (amountOwed === 0) {
+                                paymentStatus = 'free';
+                            } else if (Math.abs(amountPaid - amountOwed) < tolerance) {
+                                paymentStatus = 'paid';
+                            } else if (amountPaid > amountOwed + tolerance) {
+                                paymentStatus = 'overpaid';
+                            } else if (amountPaid > 0) {
+                                paymentStatus = 'partial';
+                            }
+                        }
+                        
+                        paymentUpdates.push('payment_status = ?');
+                        paymentParams.push(paymentStatus);
+                        paymentParams.push(entryId);
+                        
+                        await database.execute(`
+                            INSERT INTO league_payments (entry_id, amount_paid, amount_owed, payment_method, payment_status)
+                            VALUES (?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE ${paymentUpdates.join(', ')}
+                        `, [entryId, amountPaid || 0, amountOwed || 0, paymentMethod || null, paymentStatus, ...paymentParams]);
+                    }
+                }
+            }
 
             res.json({ 
                 success: true, 

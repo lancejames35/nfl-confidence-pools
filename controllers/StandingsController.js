@@ -1,6 +1,7 @@
 const database = require('../config/database');
 const League = require('../models/League');
 const GameResultsProcessor = require('../services/GameResultsProcessor');
+const WeeklyWinnersService = require('../services/WeeklyWinnersService');
 
 class StandingsController {
     /**
@@ -39,12 +40,26 @@ class StandingsController {
                 if (league.enable_multi_tier) {
                     tierInfo = await StandingsController.getTierSummary(leagueId);
                 }
+
+                // Get weekly winners for highlighting
+                const weeklyWinnersMap = new Map();
+                for (let week = 1; week <= 18; week++) {
+                    try {
+                        const winners = await WeeklyWinnersService.getWeeklyWinners(leagueId, week);
+                        const winnerEntryIds = winners.map(w => w.entry_id);
+                        weeklyWinnersMap.set(week, winnerEntryIds);
+                    } catch (error) {
+                        // If no winners found for this week, set empty array
+                        weeklyWinnersMap.set(week, []);
+                    }
+                }
                 
                 res.render('standings/grid', {
                     title: `${league.league_name} - Standings`,
                     league,
                     weeklyTotals,
                     tierInfo,
+                    weeklyWinnersMap: Object.fromEntries(weeklyWinnersMap),
                     currentWeek,
                     view,
                     isMember,

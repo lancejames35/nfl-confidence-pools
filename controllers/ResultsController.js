@@ -1,7 +1,7 @@
 const database = require('../config/database');
 const GameResultsProcessor = require('../services/GameResultsProcessor');
 const PickScoringService = require('../services/PickScoringService');
-const { getCurrentNFLWeek } = require('../utils/getCurrentWeek');
+const { getCurrentNFLWeek, getDefaultWeekForUI } = require('../utils/getCurrentWeek');
 
 class ResultsController {
     /**
@@ -9,7 +9,7 @@ class ResultsController {
      */
     static async weekResults(req, res) {
         try {
-            const currentWeek = req.query.week || await getCurrentNFLWeek(database);
+            const currentWeek = req.query.week || await getDefaultWeekForUI(database);
             const seasonYear = req.query.season || new Date().getFullYear();
             const leagueId = req.params.league_id ? parseInt(req.params.league_id) : null;
             

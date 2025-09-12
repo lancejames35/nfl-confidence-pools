@@ -183,10 +183,12 @@ class LiveScoreScheduler {
         try {
             console.log(`🔄 Starting live score update at ${startTime.toISOString()}`);
             
-            // Get current week from database (reuse existing logic)
-            const { getCurrentNFLWeek } = require('../utils/getCurrentWeek');
-            const currentWeek = await getCurrentNFLWeek(database);
+            // Get current week from database (use same logic as picks/results pages)
+            const { getDefaultWeekForUI } = require('../utils/getCurrentWeek');
+            const currentWeek = await getDefaultWeekForUI(database);
             const seasonYear = new Date().getFullYear();
+            
+            console.log(`🏈 ESPN API Update: currentWeek=${currentWeek}, seasonYear=${seasonYear}, currentDate=${new Date().toISOString()}`);
 
             // Add timeout wrapper to prevent hanging
             const timeoutPromise = new Promise((_, reject) => 

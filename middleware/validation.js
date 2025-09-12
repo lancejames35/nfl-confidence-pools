@@ -86,8 +86,7 @@ class ValidationMiddleware {
             body('email')
                 .trim()
                 .isEmail()
-                .withMessage('Please provide a valid email address')
-                .normalizeEmail(),
+                .withMessage('Please provide a valid email address'),
             
             body('password')
                 .notEmpty()

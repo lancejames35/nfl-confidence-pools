@@ -185,8 +185,43 @@ class LiveScoreScheduler {
             
             // Get current week from database (use same logic as picks/results pages)
             const { getDefaultWeekForUI } = require('../utils/getCurrentWeek');
-            const currentWeek = await getDefaultWeekForUI(database);
+            let currentWeek = await getDefaultWeekForUI(database);
             const seasonYear = new Date().getFullYear();
+
+            // Check if we have any live or recently started games for the calculated week
+            const liveGamesCheck = await database.execute(`
+                SELECT COUNT(*) as live_count
+                FROM games 
+                WHERE week = ? AND season_year = ?
+                AND (
+                    status = 'in_progress' 
+                    OR (
+                        kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
+                        AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
+                    )
+                )
+            `, [currentWeek, seasonYear]);
+
+            // If no live games for current week, check previous week
+            if (liveGamesCheck[0].live_count === 0 && currentWeek > 1) {
+                const prevWeekCheck = await database.execute(`
+                    SELECT COUNT(*) as live_count
+                    FROM games 
+                    WHERE week = ? AND season_year = ?
+                    AND (
+                        status = 'in_progress' 
+                        OR (
+                            kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
+                            AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
+                        )
+                    )
+                `, [currentWeek - 1, seasonYear]);
+                
+                if (prevWeekCheck[0].live_count > 0) {
+                    console.log(`📅 Week transition detected: Using week ${currentWeek - 1} instead of ${currentWeek} due to live games`);
+                    currentWeek = currentWeek - 1;
+                }
+            }
             
             console.log(`🏈 ESPN API Update: currentWeek=${currentWeek}, seasonYear=${seasonYear}, currentDate=${new Date().toISOString()}`);
 

@@ -174,6 +174,7 @@ router.post('/login',
     async (req, res) => {
         try {
             const { email, password, remember } = req.body;
+            console.log(`🔍 Login attempt for email: ${email}`);
 
             // Find user by email
             const user = await database.executeMany(
@@ -182,22 +183,28 @@ router.post('/login',
             );
 
             if (user.length === 0) {
+                console.log(`❌ User not found: ${email}`);
                 req.flash('error', 'Invalid email or password');
                 return res.redirect('/auth/login');
             }
 
             const userData = user[0];
+            console.log(`✅ User found: ${userData.username} (ID: ${userData.user_id})`);
 
             // Check account status
             if (userData.account_status !== 'active') {
+                console.log(`❌ Account suspended: ${userData.username}`);
                 req.flash('error', 'Your account has been suspended. Please contact support.');
                 return res.redirect('/auth/login');
             }
 
+            console.log(`🔐 Attempting password verification for user: ${userData.username}`);
             // Verify password
             const passwordValid = await bcrypt.compare(password, userData.password_hash);
+            console.log(`🔐 Password valid: ${passwordValid}`);
             
             if (!passwordValid) {
+                console.log(`❌ Password verification failed for user: ${userData.username}`);
                 req.flash('error', 'Invalid email or password');
                 return res.redirect('/auth/login');
             }

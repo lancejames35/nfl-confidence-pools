@@ -525,6 +525,12 @@
                     <i class="fas fa-sync-alt me-1"></i>
                     Refresh Status
                 </button>
+                <% if (isCommissioner) { %>
+                <button type="button" class="btn btn-outline-warning btn-sm" id="manualEspnUpdateBtn">
+                    <i class="fas fa-play me-1"></i>
+                    Run ESPN Update
+                </button>
+                <% } %>
             </div>
         </div>
     </div>

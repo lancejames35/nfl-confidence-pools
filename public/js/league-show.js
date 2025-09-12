@@ -277,6 +277,12 @@ function initializeEventListeners() {
         refreshStatusBtn.addEventListener('click', loadLiveScoresStatus);
     }
     
+    // Manual ESPN update button
+    const manualEspnUpdateBtn = document.getElementById('manualEspnUpdateBtn');
+    if (manualEspnUpdateBtn) {
+        manualEspnUpdateBtn.addEventListener('click', triggerManualEspnUpdate);
+    }
+    
     // Settings toggle button
     const settingsToggleBtn = document.getElementById('settingsToggleBtn');
     const settingsPanel = document.getElementById('leagueSettings');
@@ -423,6 +429,47 @@ async function loadLiveScoresStatus() {
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 Failed to load live scores status: ${error.message}
             </div>`;
+    }
+}
+
+async function triggerManualEspnUpdate() {
+    const btn = document.getElementById('manualEspnUpdateBtn');
+    const originalHtml = btn.innerHTML;
+    
+    try {
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Running Update...
+        `;
+        
+        const response = await fetch('/api/live-scores/manual-update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`ESPN Update Complete: ${data.gamesProcessed} games processed, ${data.gamesUpdated} updated`, 'success');
+            
+            // Refresh the live scores status
+            setTimeout(() => {
+                loadLiveScoresStatus();
+            }, 1000);
+        } else {
+            showToast(`ESPN Update Failed: ${data.error}`, 'error');
+        }
+        
+    } catch (error) {
+        showToast(`ESPN Update Error: ${error.message}`, 'error');
+    } finally {
+        // Restore button state
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
     }
 }
 

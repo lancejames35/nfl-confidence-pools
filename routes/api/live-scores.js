@@ -31,6 +31,38 @@ router.get('/status', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/live-scores/manual-update
+ * Manually trigger ESPN API update for current week
+ */
+router.post('/manual-update', async (req, res) => {
+    try {
+        const { getDefaultWeekForUI } = require('../../utils/getCurrentWeek');
+        const currentWeek = await getDefaultWeekForUI(database);
+        const seasonYear = new Date().getFullYear();
+        
+        console.log(`🔧 Manual ESPN API update triggered for Week ${currentWeek}, Season ${seasonYear}`);
+        
+        const result = await ESPNApiService.updateLiveScores(currentWeek, seasonYear);
+        
+        res.json({
+            success: true,
+            message: `ESPN API update completed for Week ${currentWeek}`,
+            week: currentWeek,
+            seasonYear: seasonYear,
+            gamesProcessed: result.gamesProcessed,
+            gamesUpdated: result.gamesUpdated,
+            updatedGames: result.updatedGames,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Manual ESPN API update failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
 /**
  * GET /api/live-scores/user-totals/:leagueId

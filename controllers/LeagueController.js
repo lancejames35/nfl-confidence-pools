@@ -878,7 +878,7 @@ class LeagueController {
             }
             if (password && password.trim()) {
                 const bcrypt = require('bcryptjs');
-                const hashedPassword = await bcrypt.hash(password, 10);
+                const hashedPassword = await bcrypt.hash(password.trim(), 10);
                 userUpdates.push('password_hash = ?');
                 userParams.push(hashedPassword);
             }

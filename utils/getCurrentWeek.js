@@ -294,7 +294,7 @@ async function checkAndCalculateMissedWeeks(currentWeek) {
             console.log(`Checking if week ${week} needs winner calculation...`);
             
             // Check if this week is actually closed (has games and max kickoff date has passed)
-            const [weekGames] = await database.execute(`
+            const weekGames = await database.execute(`
                 SELECT 
                     COUNT(*) as game_count,
                     MAX(kickoff_timestamp) as last_game_utc
@@ -302,13 +302,13 @@ async function checkAndCalculateMissedWeeks(currentWeek) {
                 WHERE week = ? AND season_year = ?
             `, [week, seasonYear]);
             
-            if (!weekGames || weekGames.game_count === 0) {
+            if (!weekGames || weekGames.length === 0 || weekGames[0].game_count === 0) {
                 console.log(`Week ${week}: No games found, skipping`);
                 continue;
             }
             
             // Check if week is actually closed using same logic as getDefaultWeekForUI
-            const lastGameUTC = new Date(weekGames.last_game_utc);
+            const lastGameUTC = new Date(weekGames[0].last_game_utc);
             const dayAfterLastGame = new Date(lastGameUTC);
             dayAfterLastGame.setDate(lastGameUTC.getDate() + 1);
             dayAfterLastGame.setHours(0, 0, 0, 0);
@@ -324,13 +324,13 @@ async function checkAndCalculateMissedWeeks(currentWeek) {
             // Check if any league already has winners calculated for this week
             let needsCalculation = false;
             for (const league of activeLeagues) {
-                const [existingWinners] = await database.execute(`
+                const existingWinners = await database.execute(`
                     SELECT COUNT(*) as winner_count
                     FROM weekly_winners
                     WHERE league_id = ? AND week = ? AND season_year = ?
                 `, [league.league_id, week, seasonYear]);
                 
-                if (existingWinners.winner_count === 0) {
+                if (existingWinners[0].winner_count === 0) {
                     needsCalculation = true;
                     break; // At least one league needs calculation
                 }

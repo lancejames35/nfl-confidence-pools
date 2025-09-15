@@ -47,13 +47,14 @@ class LiveScoreScheduler {
                     return;
                 }
 
-                const now = new Date();
-                const gameTime = new Date(nextGame.kickoff_timestamp);
-                const startMonitoringTime = new Date(gameTime.getTime() - (30 * 60 * 1000)); // 30 minutes before kickoff
-                const timeUntilMonitoring = startMonitoringTime - now;
+                const now = new Date(); // UTC time
+                const easternGameTime = new Date(nextGame.kickoff_timestamp); // Eastern time
+                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC
+                const utcStartMonitoringTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 minutes before UTC kickoff
+                const timeUntilMonitoring = utcStartMonitoringTime - now;
 
-                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${gameTime.toISOString()}`);
-                console.log(`🕐 Will start monitoring at: ${startMonitoringTime.toISOString()} (30 min before kickoff)`);
+                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${easternGameTime.toISOString()} Eastern (${utcGameTime.toISOString()} UTC)`);
+                console.log(`🕐 Will start monitoring at: ${utcStartMonitoringTime.toISOString()} UTC (30 min before kickoff)`);
 
                 if (timeUntilMonitoring <= 0) {
                     // We should already be monitoring this game - start immediately
@@ -91,31 +92,25 @@ class LiveScoreScheduler {
     async getNextGame() {
         const query = `
             SELECT
-                nfl_game_id as game_id,
-                kickoff_timestamp,
-                status,
-                nfl_game_id,
-                week,
-                season_year
-            FROM nfl_games
-            WHERE kickoff_timestamp > DATE_SUB(NOW(), INTERVAL 2 HOUR)
-            AND status IN ('scheduled', 'in_progress')
-            ORDER BY kickoff_timestamp ASC
+                g.game_id,
+                g.kickoff_timestamp,
+                g.status,
+                g.nfl_game_id,
+                g.week,
+                g.season_year,
+                ht.name as home_team,
+                at.name as away_team
+            FROM games g
+            JOIN teams ht ON g.home_team_id = ht.team_id
+            JOIN teams at ON g.away_team_id = at.team_id
+            WHERE g.kickoff_timestamp > DATE_SUB(NOW(), INTERVAL 4 HOUR)
+            AND g.status IN ('scheduled', 'in_progress')
+            ORDER BY g.kickoff_timestamp ASC
             LIMIT 1`;
 
         const results = await database.execute(query);
         if (results.length > 0) {
-            const game = results[0];
-            // Extract team names from nfl_game_id (e.g., "2025_W2_HOU_TB" -> "HOU vs TB")
-            const parts = game.nfl_game_id.split('_');
-            if (parts.length >= 4) {
-                game.home_team = parts[3]; // TB
-                game.away_team = parts[2]; // HOU
-            } else {
-                game.home_team = 'TBD';
-                game.away_team = 'TBD';
-            }
-            return game;
+            return results[0];
         }
         return null;
     }
@@ -125,35 +120,31 @@ class LiveScoreScheduler {
      */
     async checkAndStartLiveUpdates() {
         try {
-            // Get all games that could be live, then check with JavaScript time like dashboard
+            // Get games that should trigger ESPN API activation (30 min before Eastern kickoff)
             const gamesQuery = `
                 SELECT kickoff_timestamp, status
-                FROM nfl_games
+                FROM games
                 WHERE (
                     status = 'in_progress'
                     OR (
                         status IN ('scheduled', 'in_progress')
-                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
-                        AND kickoff_timestamp <= NOW()
+                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
                     )
                 )`;
 
             const games = await database.execute(gamesQuery);
 
-            // Use JavaScript time logic like dashboard countdown
             const now = new Date();
             let liveCount = 0;
 
             for (const game of games) {
-                // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
-                const gameTime = new Date(game.kickoff_timestamp);
-                gameTime.setHours(gameTime.getHours() + 2);
-                const timeUntilKickoff = gameTime.getTime() - now.getTime();
-                const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+                const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
+                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
+                const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
 
-                // Game is live if: in_progress OR within 30 minutes of kickoff OR started up to 4 hours ago
-                if (game.status === 'in_progress' ||
-                    (minutesUntil <= 30 && minutesUntil >= -240)) {
+                // ESPN API should be active if: in_progress OR past UTC kickoff OR within 30 min before UTC kickoff
+                if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
                     liveCount++;
                 }
             }
@@ -219,33 +210,29 @@ class LiveScoreScheduler {
             let currentWeek = await getDefaultWeekForUI(database);
             const seasonYear = new Date().getFullYear();
 
-            // Check if we have any live or recently started games for the calculated week using JavaScript time
+            // Check if we have any active games for the calculated week
             const currentWeekGames = await database.execute(`
                 SELECT kickoff_timestamp, status
-                FROM nfl_games
+                FROM games
                 WHERE week = ? AND season_year = ?
                 AND (
                     status = 'in_progress'
                     OR (
-                        kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
-                        AND kickoff_timestamp <= NOW()
+                        kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
                     )
                 )
             `, [currentWeek, seasonYear]);
 
-            // Use JavaScript time logic like dashboard
             const now = new Date();
             let currentWeekLiveCount = 0;
 
             for (const game of currentWeekGames) {
-                // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
-                const gameTime = new Date(game.kickoff_timestamp);
-                gameTime.setHours(gameTime.getHours() + 2);
-                const timeUntilKickoff = gameTime.getTime() - now.getTime();
-                const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+                const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
+                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
+                const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
 
-                if (game.status === 'in_progress' ||
-                    (minutesUntil <= 30 && minutesUntil >= -240)) {
+                if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
                     currentWeekLiveCount++;
                 }
             }
@@ -254,27 +241,24 @@ class LiveScoreScheduler {
             if (currentWeekLiveCount === 0 && currentWeek > 1) {
                 const prevWeekGames = await database.execute(`
                     SELECT kickoff_timestamp, status
-                    FROM nfl_games
+                    FROM games
                     WHERE week = ? AND season_year = ?
                     AND (
                         status = 'in_progress'
                         OR (
-                            kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
-                            AND kickoff_timestamp <= NOW()
+                            kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+                            AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
                         )
                     )
                 `, [currentWeek - 1, seasonYear]);
 
                 let prevWeekLiveCount = 0;
                 for (const game of prevWeekGames) {
-                    // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
-                    const gameTime = new Date(game.kickoff_timestamp);
-                    gameTime.setHours(gameTime.getHours() + 2);
-                    const timeUntilKickoff = gameTime.getTime() - now.getTime();
-                    const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+                    const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
+                    const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
+                    const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
 
-                    if (game.status === 'in_progress' ||
-                        (minutesUntil <= 30 && minutesUntil >= -240)) {
+                    if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
                         prevWeekLiveCount++;
                     }
                 }
@@ -316,32 +300,28 @@ class LiveScoreScheduler {
      */
     async checkIfShouldContinue() {
         try {
-            // Check if there are any games still in progress using JavaScript time logic
+            // Check if ESPN API should still be active
             const activeGamesQuery = `
                 SELECT kickoff_timestamp, status
-                FROM nfl_games
+                FROM games
                 WHERE status = 'in_progress'
                 OR (
                     status = 'scheduled'
-                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
-                    AND kickoff_timestamp <= NOW()
+                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+                    AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
                 )`;
 
             const activeGames = await database.execute(activeGamesQuery);
 
-            // Use JavaScript time logic like dashboard
             const now = new Date();
             let activeCount = 0;
 
             for (const game of activeGames) {
-                // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
-                const gameTime = new Date(game.kickoff_timestamp);
-                gameTime.setHours(gameTime.getHours() + 2);
-                const timeUntilKickoff = gameTime.getTime() - now.getTime();
-                const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+                const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
+                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
+                const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
 
-                if (game.status === 'in_progress' ||
-                    (minutesUntil <= 30 && minutesUntil >= -240)) {
+                if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
                     activeCount++;
                 }
             }

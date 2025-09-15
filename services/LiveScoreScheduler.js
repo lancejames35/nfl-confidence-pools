@@ -145,7 +145,9 @@ class LiveScoreScheduler {
             let liveCount = 0;
 
             for (const game of games) {
+                // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
                 const gameTime = new Date(game.kickoff_timestamp);
+                gameTime.setHours(gameTime.getHours() + 2);
                 const timeUntilKickoff = gameTime.getTime() - now.getTime();
                 const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
 
@@ -236,7 +238,9 @@ class LiveScoreScheduler {
             let currentWeekLiveCount = 0;
 
             for (const game of currentWeekGames) {
+                // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
                 const gameTime = new Date(game.kickoff_timestamp);
+                gameTime.setHours(gameTime.getHours() + 2);
                 const timeUntilKickoff = gameTime.getTime() - now.getTime();
                 const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
 
@@ -263,7 +267,9 @@ class LiveScoreScheduler {
 
                 let prevWeekLiveCount = 0;
                 for (const game of prevWeekGames) {
+                    // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
                     const gameTime = new Date(game.kickoff_timestamp);
+                    gameTime.setHours(gameTime.getHours() + 2);
                     const timeUntilKickoff = gameTime.getTime() - now.getTime();
                     const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
 
@@ -328,7 +334,9 @@ class LiveScoreScheduler {
             let activeCount = 0;
 
             for (const game of activeGames) {
+                // Add 2 hours to stored time since DB stores Central but dashboard expects Eastern
                 const gameTime = new Date(game.kickoff_timestamp);
+                gameTime.setHours(gameTime.getHours() + 2);
                 const timeUntilKickoff = gameTime.getTime() - now.getTime();
                 const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
 

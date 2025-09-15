@@ -98,7 +98,7 @@ class LiveScoreScheduler {
                 week,
                 season_year
             FROM nfl_games
-            WHERE kickoff_timestamp > NOW()
+            WHERE kickoff_timestamp > DATE_SUB(NOW(), INTERVAL 2 HOUR)
             AND status IN ('scheduled', 'in_progress')
             ORDER BY kickoff_timestamp ASC
             LIMIT 1`;
@@ -133,8 +133,8 @@ class LiveScoreScheduler {
                     status = 'in_progress'
                     OR (
                         status IN ('scheduled', 'in_progress')
-                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
-                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
+                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+                        AND kickoff_timestamp <= NOW()
                     )
                 )`;
 
@@ -225,8 +225,8 @@ class LiveScoreScheduler {
                 AND (
                     status = 'in_progress'
                     OR (
-                        kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
-                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
+                        kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+                        AND kickoff_timestamp <= NOW()
                     )
                 )
             `, [currentWeek, seasonYear]);
@@ -255,8 +255,8 @@ class LiveScoreScheduler {
                     AND (
                         status = 'in_progress'
                         OR (
-                            kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
-                            AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
+                            kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+                            AND kickoff_timestamp <= NOW()
                         )
                     )
                 `, [currentWeek - 1, seasonYear]);
@@ -317,8 +317,8 @@ class LiveScoreScheduler {
                 WHERE status = 'in_progress'
                 OR (
                     status = 'scheduled'
-                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
-                    AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
+                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+                    AND kickoff_timestamp <= NOW()
                 )`;
 
             const activeGames = await database.execute(activeGamesQuery);

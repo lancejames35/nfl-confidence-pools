@@ -90,24 +90,34 @@ class LiveScoreScheduler {
      */
     async getNextGame() {
         const query = `
-            SELECT 
-                g.game_id,
-                g.kickoff_timestamp,
-                g.status,
-                ht.abbreviation as home_team,
-                at.abbreviation as away_team,
-                g.week,
-                g.season_year
-            FROM games g
-            JOIN teams ht ON g.home_team_id = ht.team_id
-            JOIN teams at ON g.away_team_id = at.team_id
-            WHERE g.kickoff_timestamp > NOW()
-            AND g.status IN ('scheduled', 'in_progress')
-            ORDER BY g.kickoff_timestamp ASC
+            SELECT
+                nfl_game_id as game_id,
+                kickoff_timestamp,
+                status,
+                nfl_game_id,
+                week,
+                season_year
+            FROM nfl_games
+            WHERE kickoff_timestamp > NOW()
+            AND status IN ('scheduled', 'in_progress')
+            ORDER BY kickoff_timestamp ASC
             LIMIT 1`;
 
         const results = await database.execute(query);
-        return results.length > 0 ? results[0] : null;
+        if (results.length > 0) {
+            const game = results[0];
+            // Extract team names from nfl_game_id (e.g., "2025_W2_HOU_TB" -> "HOU vs TB")
+            const parts = game.nfl_game_id.split('_');
+            if (parts.length >= 4) {
+                game.home_team = parts[3]; // TB
+                game.away_team = parts[2]; // HOU
+            } else {
+                game.home_team = 'TBD';
+                game.away_team = 'TBD';
+            }
+            return game;
+        }
+        return null;
     }
 
     /**
@@ -115,22 +125,36 @@ class LiveScoreScheduler {
      */
     async checkAndStartLiveUpdates() {
         try {
-            // Check for games that are currently live or recently started
-            // Use Eastern Time like the rest of the application
-            const liveGamesQuery = `
-                SELECT COUNT(*) as live_count
-                FROM games 
+            // Get all games that could be live, then check with JavaScript time like dashboard
+            const gamesQuery = `
+                SELECT kickoff_timestamp, status
+                FROM nfl_games
                 WHERE (
-                    status = 'in_progress' 
+                    status = 'in_progress'
                     OR (
-                        kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
-                        AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
-                        AND status IN ('scheduled', 'in_progress')
+                        status IN ('scheduled', 'in_progress')
+                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
+                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
                     )
                 )`;
 
-            const [result] = await database.execute(liveGamesQuery);
-            const liveCount = result.live_count || 0;
+            const games = await database.execute(gamesQuery);
+
+            // Use JavaScript time logic like dashboard countdown
+            const now = new Date();
+            let liveCount = 0;
+
+            for (const game of games) {
+                const gameTime = new Date(game.kickoff_timestamp);
+                const timeUntilKickoff = gameTime.getTime() - now.getTime();
+                const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+
+                // Game is live if: in_progress OR within 30 minutes of kickoff OR started up to 4 hours ago
+                if (game.status === 'in_progress' ||
+                    (minutesUntil <= 30 && minutesUntil >= -240)) {
+                    liveCount++;
+                }
+            }
             
             console.log(`🎮 Live games check: ${liveCount} games found`, {
                 currentTime: new Date().toISOString(),
@@ -193,36 +217,63 @@ class LiveScoreScheduler {
             let currentWeek = await getDefaultWeekForUI(database);
             const seasonYear = new Date().getFullYear();
 
-            // Check if we have any live or recently started games for the calculated week
-            const liveGamesCheck = await database.execute(`
-                SELECT COUNT(*) as live_count
-                FROM games 
+            // Check if we have any live or recently started games for the calculated week using JavaScript time
+            const currentWeekGames = await database.execute(`
+                SELECT kickoff_timestamp, status
+                FROM nfl_games
                 WHERE week = ? AND season_year = ?
                 AND (
-                    status = 'in_progress' 
+                    status = 'in_progress'
                     OR (
-                        kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
-                        AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
+                        kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
+                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
                     )
                 )
             `, [currentWeek, seasonYear]);
 
+            // Use JavaScript time logic like dashboard
+            const now = new Date();
+            let currentWeekLiveCount = 0;
+
+            for (const game of currentWeekGames) {
+                const gameTime = new Date(game.kickoff_timestamp);
+                const timeUntilKickoff = gameTime.getTime() - now.getTime();
+                const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+
+                if (game.status === 'in_progress' ||
+                    (minutesUntil <= 30 && minutesUntil >= -240)) {
+                    currentWeekLiveCount++;
+                }
+            }
+
             // If no live games for current week, check previous week
-            if (liveGamesCheck[0].live_count === 0 && currentWeek > 1) {
-                const prevWeekCheck = await database.execute(`
-                    SELECT COUNT(*) as live_count
-                    FROM games 
+            if (currentWeekLiveCount === 0 && currentWeek > 1) {
+                const prevWeekGames = await database.execute(`
+                    SELECT kickoff_timestamp, status
+                    FROM nfl_games
                     WHERE week = ? AND season_year = ?
                     AND (
-                        status = 'in_progress' 
+                        status = 'in_progress'
                         OR (
-                            kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
-                            AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
+                            kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
+                            AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
                         )
                     )
                 `, [currentWeek - 1, seasonYear]);
-                
-                if (prevWeekCheck[0].live_count > 0) {
+
+                let prevWeekLiveCount = 0;
+                for (const game of prevWeekGames) {
+                    const gameTime = new Date(game.kickoff_timestamp);
+                    const timeUntilKickoff = gameTime.getTime() - now.getTime();
+                    const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+
+                    if (game.status === 'in_progress' ||
+                        (minutesUntil <= 30 && minutesUntil >= -240)) {
+                        prevWeekLiveCount++;
+                    }
+                }
+
+                if (prevWeekLiveCount > 0) {
                     console.log(`📅 Week transition detected: Using week ${currentWeek - 1} instead of ${currentWeek} due to live games`);
                     currentWeek = currentWeek - 1;
                 }
@@ -259,16 +310,37 @@ class LiveScoreScheduler {
      */
     async checkIfShouldContinue() {
         try {
-            // Check if there are any games still in progress
+            // Check if there are any games still in progress using JavaScript time logic
             const activeGamesQuery = `
-                SELECT COUNT(*) as active_count
-                FROM games 
+                SELECT kickoff_timestamp, status
+                FROM nfl_games
                 WHERE status = 'in_progress'
                 OR (
-                    kickoff_timestamp <= CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York') 
-                    AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York'), INTERVAL 4 HOUR)
-                    AND status = 'scheduled'
+                    status = 'scheduled'
+                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
+                    AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 2 HOUR)
                 )`;
+
+            const activeGames = await database.execute(activeGamesQuery);
+
+            // Use JavaScript time logic like dashboard
+            const now = new Date();
+            let activeCount = 0;
+
+            for (const game of activeGames) {
+                const gameTime = new Date(game.kickoff_timestamp);
+                const timeUntilKickoff = gameTime.getTime() - now.getTime();
+                const minutesUntil = Math.floor(timeUntilKickoff / (1000 * 60));
+
+                if (game.status === 'in_progress' ||
+                    (minutesUntil <= 30 && minutesUntil >= -240)) {
+                    activeCount++;
+                }
+            }
+
+            // Remove the old database result line since we're calculating activeCount above
+            // const [result] = await database.execute(activeGamesQuery);
+            // const activeCount = result.active_count || 0;
 
             const [result] = await database.execute(activeGamesQuery);
             const activeCount = result.active_count || 0;

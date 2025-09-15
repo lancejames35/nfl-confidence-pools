@@ -338,12 +338,6 @@ class LiveScoreScheduler {
                 }
             }
 
-            // Remove the old database result line since we're calculating activeCount above
-            // const [result] = await database.execute(activeGamesQuery);
-            // const activeCount = result.active_count || 0;
-
-            const [result] = await database.execute(activeGamesQuery);
-            const activeCount = result.active_count || 0;
 
             if (activeCount === 0) {
                 this.stopLiveUpdates();

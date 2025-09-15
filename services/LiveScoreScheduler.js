@@ -49,23 +49,28 @@ class LiveScoreScheduler {
 
                 const now = new Date();
                 const gameTime = new Date(nextGame.kickoff_timestamp);
-                const timeUntilGame = gameTime - now;
+                const startMonitoringTime = new Date(gameTime.getTime() - (30 * 60 * 1000)); // 30 minutes before kickoff
+                const timeUntilMonitoring = startMonitoringTime - now;
 
-                if (timeUntilGame <= 30 * 60 * 1000) {
-                    // Game starts within 30 minutes - start live updates soon
+                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${gameTime.toISOString()}`);
+                console.log(`🕐 Will start monitoring at: ${startMonitoringTime.toISOString()} (30 min before kickoff)`);
+
+                if (timeUntilMonitoring <= 0) {
+                    // We should already be monitoring this game - start immediately
+                    console.log(`🚀 Starting monitoring immediately (game starts soon or already started)`);
                     await this.startLiveUpdates();
                 } else {
-                    // Game is more than 30 minutes away - schedule a check closer to game time
-                    const checkTime = gameTime.getTime() - (30 * 60 * 1000); // 30 minutes before
-                    const delay = checkTime - now.getTime();
+                    // Schedule to start monitoring 30 minutes before kickoff
+                    console.log(`⏰ Scheduling monitoring to start in ${Math.round(timeUntilMonitoring / (60 * 1000))} minutes`);
                     
                     if (this.nextGameCheck) {
                         clearTimeout(this.nextGameCheck);
                     }
                     
                     this.nextGameCheck = setTimeout(() => {
-                        this.scheduleNextGameCheck();
-                    }, delay);
+                        console.log(`🎯 Scheduled monitoring time reached - starting live updates for upcoming game`);
+                        this.startLiveUpdates();
+                    }, timeUntilMonitoring);
                 }
             }
 
@@ -96,7 +101,7 @@ class LiveScoreScheduler {
             FROM games g
             JOIN teams ht ON g.home_team_id = ht.team_id
             JOIN teams at ON g.away_team_id = at.team_id
-            WHERE g.kickoff_timestamp > CONVERT_TZ(NOW(), @@session.time_zone, 'America/New_York')
+            WHERE g.kickoff_timestamp > NOW()
             AND g.status IN ('scheduled', 'in_progress')
             ORDER BY g.kickoff_timestamp ASC
             LIMIT 1`;

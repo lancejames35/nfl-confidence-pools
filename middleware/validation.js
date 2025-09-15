@@ -38,12 +38,11 @@ class ValidationMiddleware {
                 .withMessage('Username must be between 3 and 50 characters')
                 .matches(/^[a-zA-Z0-9_-]+$/)
                 .withMessage('Username can only contain letters, numbers, underscores, and hyphens'),
-            
+
             body('email')
                 .trim()
                 .isEmail()
-                .withMessage('Please provide a valid email address')
-                .normalizeEmail(),
+                .withMessage('Please provide a valid email address'),
             
             body('password')
                 .isLength({ min: 8 })
@@ -237,8 +236,7 @@ class ValidationMiddleware {
             body('email')
                 .trim()
                 .isEmail()
-                .withMessage('Please provide a valid email address')
-                .normalizeEmail(),
+                .withMessage('Please provide a valid email address'),
 
             this.handleValidation
         ];

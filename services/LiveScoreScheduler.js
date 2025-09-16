@@ -16,17 +16,14 @@ class LiveScoreScheduler {
      */
     async initialize() {
         try {
-            // Start with checking for the next game
             await this.scheduleNextGameCheck();
-            
+
             // Set up a backup check every hour to catch any missed games
             cron.schedule('0 * * * *', () => {
                 this.scheduleNextGameCheck();
             });
         } catch (error) {
             console.error('❌ LiveScoreScheduler initialization failed:', error.message);
-            // Don't retry automatically to prevent infinite loops
-            // Manual restart will be required if this fails
         }
     }
 
@@ -37,37 +34,32 @@ class LiveScoreScheduler {
         try {
             // First check if there are currently live games
             await this.checkAndStartLiveUpdates();
-            
+
             // If no live games, then check for next scheduled game
             if (!this.isRunning) {
                 const nextGame = await this.getNextGame();
-                
+
                 if (!nextGame) {
                     this.stopLiveUpdates();
                     return;
                 }
 
-                const now = new Date(); // UTC time
-                const storedTime = new Date(nextGame.kickoff_timestamp); // Stored time
-                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000)); // Add 3 hours
-                const timeUntilMonitoring = actualKickoffTime - now;
+                const currentEasternTime = this.getCurrentEasternTime();
+                const storedEasternTime = new Date(nextGame.kickoff_timestamp);
+                const timeUntilMonitoring = storedEasternTime - currentEasternTime;
 
-                console.log(`🎯 Next game scheduling: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, now=${now.toISOString()}`);
-
-                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${actualKickoffTime.toISOString()} UTC (stored: ${storedTime.toISOString()})`);
+                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${storedEasternTime.toISOString()} Eastern`);
 
                 if (timeUntilMonitoring <= 0) {
-                    // We should already be monitoring this game - start immediately
                     console.log(`🚀 Starting monitoring immediately (game starts soon or already started)`);
                     await this.startLiveUpdates();
                 } else {
-                    // Schedule to start monitoring 30 minutes before kickoff
                     console.log(`⏰ Scheduling monitoring to start in ${Math.round(timeUntilMonitoring / (60 * 1000))} minutes`);
-                    
+
                     if (this.nextGameCheck) {
                         clearTimeout(this.nextGameCheck);
                     }
-                    
+
                     this.nextGameCheck = setTimeout(() => {
                         console.log(`🎯 Scheduled monitoring time reached - starting live updates for upcoming game`);
                         this.startLiveUpdates();
@@ -103,7 +95,7 @@ class LiveScoreScheduler {
             FROM games g
             JOIN teams ht ON g.home_team_id = ht.team_id
             JOIN teams at ON g.away_team_id = at.team_id
-            WHERE g.kickoff_timestamp > DATE_SUB(NOW(), INTERVAL 4 HOUR)
+            WHERE g.kickoff_timestamp > DATE_SUB(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 2 HOUR)
             AND g.status IN ('scheduled', 'in_progress')
             ORDER BY g.kickoff_timestamp ASC
             LIMIT 1`;
@@ -120,7 +112,7 @@ class LiveScoreScheduler {
      */
     async checkAndStartLiveUpdates() {
         try {
-            // Get games that should trigger ESPN API activation (30 min before Eastern kickoff)
+            // Get games that should trigger ESPN API activation
             const gamesQuery = `
                 SELECT kickoff_timestamp, status
                 FROM games
@@ -128,36 +120,26 @@ class LiveScoreScheduler {
                     status = 'in_progress'
                     OR (
                         status IN ('scheduled', 'in_progress')
-                        AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
-                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+                        AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 2 HOUR)
+                        AND kickoff_timestamp <= DATE_ADD(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 30 MINUTE)
                     )
                 )`;
 
             const games = await database.execute(gamesQuery);
-
-            const now = new Date();
+            const currentEasternTime = this.getCurrentEasternTime();
             let liveCount = 0;
 
             for (const game of games) {
-                const storedTime = new Date(game.kickoff_timestamp); // Stored time (e.g. 19:00)
-                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000)); // Add 3 hours (e.g. 22:00)
+                const storedEasternTime = new Date(game.kickoff_timestamp);
 
-                console.log(`🏈 Game ${game.kickoff_timestamp}: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, now=${now.toISOString()}, status=${game.status}`);
-
-                // ESPN API should be active if: in_progress OR past actual kickoff time
-                if (game.status === 'in_progress' || now >= actualKickoffTime) {
-                    console.log(`✅ Game ${game.kickoff_timestamp} should activate ESPN API`);
+                // ESPN API should be active if: in_progress OR Eastern time >= stored Eastern time
+                if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
                     liveCount++;
-                } else {
-                    console.log(`❌ Game ${game.kickoff_timestamp} not ready for ESPN API`);
                 }
             }
-            
-            console.log(`🎮 Live games check: ${liveCount} games found`, {
-                currentTime: new Date().toISOString(),
-                query: 'games with status=in_progress OR (kickoff <= NOW() AND kickoff >= NOW()-4h AND status IN scheduled,in_progress)'
-            });
-            
+
+            console.log(`🎮 Live games check: ${liveCount} games found`);
+
             if (liveCount > 0) {
                 console.log(`🚀 Starting live updates for ${liveCount} active games`);
                 await this.startLiveUpdates();
@@ -208,7 +190,7 @@ class LiveScoreScheduler {
         const startTime = new Date();
         try {
             console.log(`🔄 Starting live score update at ${startTime.toISOString()}`);
-            
+
             // Get current week from database (use same logic as picks/results pages)
             const { getDefaultWeekForUI } = require('../utils/getCurrentWeek');
             let currentWeek = await getDefaultWeekForUI(database);
@@ -222,23 +204,19 @@ class LiveScoreScheduler {
                 AND (
                     status = 'in_progress'
                     OR (
-                        kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
-                        AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+                        kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 2 HOUR)
+                        AND kickoff_timestamp <= DATE_ADD(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 30 MINUTE)
                     )
                 )
             `, [currentWeek, seasonYear]);
 
-            const now = new Date();
+            const currentEasternTime = this.getCurrentEasternTime();
             let currentWeekLiveCount = 0;
 
             for (const game of currentWeekGames) {
-                const storedTime = new Date(game.kickoff_timestamp);
-                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000));
+                const storedEasternTime = new Date(game.kickoff_timestamp);
 
-                console.log(`📅 Week ${currentWeek} game: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, status=${game.status}`);
-
-                if (game.status === 'in_progress' || now >= actualKickoffTime) {
-                    console.log(`✅ Week ${currentWeek} game activating ESPN API`);
+                if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
                     currentWeekLiveCount++;
                 }
             }
@@ -252,21 +230,17 @@ class LiveScoreScheduler {
                     AND (
                         status = 'in_progress'
                         OR (
-                            kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
-                            AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+                            kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 2 HOUR)
+                            AND kickoff_timestamp <= DATE_ADD(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 30 MINUTE)
                         )
                     )
                 `, [currentWeek - 1, seasonYear]);
 
                 let prevWeekLiveCount = 0;
                 for (const game of prevWeekGames) {
-                    const storedTime = new Date(game.kickoff_timestamp);
-                    const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000));
+                    const storedEasternTime = new Date(game.kickoff_timestamp);
 
-                    console.log(`📅 Week ${currentWeek - 1} game: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, status=${game.status}`);
-
-                    if (game.status === 'in_progress' || now >= actualKickoffTime) {
-                        console.log(`✅ Week ${currentWeek - 1} game activating ESPN API`);
+                    if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
                         prevWeekLiveCount++;
                     }
                 }
@@ -276,17 +250,17 @@ class LiveScoreScheduler {
                     currentWeek = currentWeek - 1;
                 }
             }
-            
-            console.log(`🏈 ESPN API Update: currentWeek=${currentWeek}, seasonYear=${seasonYear}, currentDate=${new Date().toISOString()}`);
+
+            console.log(`🏈 ESPN API Update: currentWeek=${currentWeek}, seasonYear=${seasonYear}`);
 
             // Add timeout wrapper to prevent hanging
-            const timeoutPromise = new Promise((_, reject) => 
+            const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('ESPN API timeout after 4 minutes')), 240000)
             );
-            
+
             const updatePromise = ESPNApiService.updateLiveScores(currentWeek, seasonYear);
             const result = await Promise.race([updatePromise, timeoutPromise]);
-            
+
             const endTime = new Date();
             const duration = (endTime - startTime) / 1000;
             console.log(`✅ Live score update completed in ${duration}s at ${endTime.toISOString()}`);
@@ -298,7 +272,7 @@ class LiveScoreScheduler {
             const endTime = new Date();
             const duration = (endTime - startTime) / 1000;
             console.log(`❌ Live score update failed after ${duration}s: ${error.message}`);
-            
+
             // Continue running even if this update failed
         }
     }
@@ -315,29 +289,21 @@ class LiveScoreScheduler {
                 WHERE status = 'in_progress'
                 OR (
                     status = 'scheduled'
-                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
-                    AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+                    AND kickoff_timestamp >= DATE_SUB(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 2 HOUR)
+                    AND kickoff_timestamp <= DATE_ADD(CONVERT_TZ(NOW(), "UTC", "America/New_York"), INTERVAL 30 MINUTE)
                 )`;
 
             const activeGames = await database.execute(activeGamesQuery);
-
-            const now = new Date();
+            const currentEasternTime = this.getCurrentEasternTime();
             let activeCount = 0;
 
             for (const game of activeGames) {
-                const storedTime = new Date(game.kickoff_timestamp);
-                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000));
+                const storedEasternTime = new Date(game.kickoff_timestamp);
 
-                console.log(`🔄 Active check: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, status=${game.status}`);
-
-                if (game.status === 'in_progress' || now >= actualKickoffTime) {
-                    console.log(`✅ Game still active for ESPN API`);
+                if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
                     activeCount++;
-                } else {
-                    console.log(`❌ Game no longer active for ESPN API`);
                 }
             }
-
 
             if (activeCount === 0) {
                 this.stopLiveUpdates();
@@ -395,13 +361,39 @@ class LiveScoreScheduler {
         };
     }
 
+    /**
+     * Get current time in Eastern timezone (same as pick lock logic)
+     * @returns {Date} - Current time in Eastern timezone
+     */
+    getCurrentEasternTime() {
+        const now = new Date();
+        // Convert UTC to Eastern Time (accounting for daylight saving)
+        const easternOffset = this.getEasternTimezoneOffset();
+        return new Date(now.getTime() + easternOffset);
+    }
+
+    /**
+     * Get Eastern timezone offset in milliseconds (handles DST)
+     * @returns {number} - Offset in milliseconds
+     */
+    getEasternTimezoneOffset() {
+        const now = new Date();
+        const january = new Date(now.getFullYear(), 0, 1);
+        const july = new Date(now.getFullYear(), 6, 1);
+
+        // If we're in a timezone that observes DST, use appropriate offset
+        const isDST = now.getTimezoneOffset() < Math.max(january.getTimezoneOffset(), july.getTimezoneOffset());
+
+        // Eastern Time: UTC-5 (standard) or UTC-4 (daylight)
+        return isDST ? -4 * 60 * 60 * 1000 : -5 * 60 * 60 * 1000;
+    }
 
     /**
      * Stop all scheduled tasks (for shutdown)
      */
     shutdown() {
         this.stopLiveUpdates();
-        
+
         if (this.nextGameCheck) {
             clearTimeout(this.nextGameCheck);
             this.nextGameCheck = null;

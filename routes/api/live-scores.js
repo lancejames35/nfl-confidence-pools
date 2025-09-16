@@ -254,11 +254,24 @@ router.get('/scheduler/status', async (req, res) => {
         const nextGameResult = await database.execute(nextGameQuery);
         const nextGame = nextGameResult.length > 0 ? nextGameResult[0] : null;
 
-        // Get live games count
+        // Get live games count using same logic as LiveScoreScheduler
         const liveGamesQuery = `
-            SELECT COUNT(*) as live_count
-            FROM games 
-            WHERE status = 'in_progress'`;
+            SELECT
+                COUNT(*) as live_count,
+                GROUP_CONCAT(CONCAT(nfl_game_id, ' (', status, ', stored: ', kickoff_timestamp, ', actual: ', DATE_ADD(kickoff_timestamp, INTERVAL 3 HOUR), ')') SEPARATOR ', ') as active_games
+            FROM games
+            WHERE (
+                status = 'in_progress'
+                OR (
+                    status IN ('scheduled', 'in_progress')
+                    AND kickoff_timestamp >= DATE_SUB(NOW(), INTERVAL 6 HOUR)
+                    AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 3 HOUR)
+                )
+            )
+            AND (
+                status = 'in_progress'
+                OR NOW() >= DATE_ADD(kickoff_timestamp, INTERVAL 3 HOUR)  -- past actual kickoff (stored + 3 hours)
+            )`;
 
         const [liveResult] = await database.execute(liveGamesQuery);
         const liveGamesCount = liveResult.live_count || 0;
@@ -272,6 +285,7 @@ router.get('/scheduler/status', async (req, res) => {
                 status: nextGame.status
             } : null,
             liveGamesCount,
+            activeGames: liveResult.active_games || 'None',
             timestamp: new Date().toISOString()
         });
     } catch (error) {

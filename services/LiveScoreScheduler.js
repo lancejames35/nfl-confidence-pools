@@ -48,13 +48,13 @@ class LiveScoreScheduler {
                 }
 
                 const now = new Date(); // UTC time
-                const easternGameTime = new Date(nextGame.kickoff_timestamp); // Eastern time
-                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC
-                const utcStartMonitoringTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 minutes before UTC kickoff
-                const timeUntilMonitoring = utcStartMonitoringTime - now;
+                const storedTime = new Date(nextGame.kickoff_timestamp); // Stored time
+                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000)); // Add 3 hours
+                const timeUntilMonitoring = actualKickoffTime - now;
 
-                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${easternGameTime.toISOString()} Eastern (${utcGameTime.toISOString()} UTC)`);
-                console.log(`🕐 Will start monitoring at: ${utcStartMonitoringTime.toISOString()} UTC (30 min before kickoff)`);
+                console.log(`🎯 Next game scheduling: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, now=${now.toISOString()}`);
+
+                console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${actualKickoffTime.toISOString()} UTC (stored: ${storedTime.toISOString()})`);
 
                 if (timeUntilMonitoring <= 0) {
                     // We should already be monitoring this game - start immediately
@@ -139,13 +139,17 @@ class LiveScoreScheduler {
             let liveCount = 0;
 
             for (const game of games) {
-                const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
-                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
-                const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
+                const storedTime = new Date(game.kickoff_timestamp); // Stored time (e.g. 19:00)
+                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000)); // Add 3 hours (e.g. 22:00)
 
-                // ESPN API should be active if: in_progress OR past UTC kickoff OR within 30 min before UTC kickoff
-                if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
+                console.log(`🏈 Game ${game.kickoff_timestamp}: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, now=${now.toISOString()}, status=${game.status}`);
+
+                // ESPN API should be active if: in_progress OR past actual kickoff time
+                if (game.status === 'in_progress' || now >= actualKickoffTime) {
+                    console.log(`✅ Game ${game.kickoff_timestamp} should activate ESPN API`);
                     liveCount++;
+                } else {
+                    console.log(`❌ Game ${game.kickoff_timestamp} not ready for ESPN API`);
                 }
             }
             
@@ -228,11 +232,13 @@ class LiveScoreScheduler {
             let currentWeekLiveCount = 0;
 
             for (const game of currentWeekGames) {
-                const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
-                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
-                const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
+                const storedTime = new Date(game.kickoff_timestamp);
+                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000));
 
-                if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
+                console.log(`📅 Week ${currentWeek} game: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, status=${game.status}`);
+
+                if (game.status === 'in_progress' || now >= actualKickoffTime) {
+                    console.log(`✅ Week ${currentWeek} game activating ESPN API`);
                     currentWeekLiveCount++;
                 }
             }
@@ -254,11 +260,13 @@ class LiveScoreScheduler {
 
                 let prevWeekLiveCount = 0;
                 for (const game of prevWeekGames) {
-                    const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
-                    const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
-                    const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
+                    const storedTime = new Date(game.kickoff_timestamp);
+                    const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000));
 
-                    if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
+                    console.log(`📅 Week ${currentWeek - 1} game: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, status=${game.status}`);
+
+                    if (game.status === 'in_progress' || now >= actualKickoffTime) {
+                        console.log(`✅ Week ${currentWeek - 1} game activating ESPN API`);
                         prevWeekLiveCount++;
                     }
                 }
@@ -317,12 +325,16 @@ class LiveScoreScheduler {
             let activeCount = 0;
 
             for (const game of activeGames) {
-                const easternGameTime = new Date(game.kickoff_timestamp); // Eastern time
-                const utcGameTime = new Date(easternGameTime.getTime() + (4 * 60 * 60 * 1000)); // Convert to UTC (+4 hours)
-                const utcActivationTime = new Date(utcGameTime.getTime() - (30 * 60 * 1000)); // 30 min before UTC kickoff
+                const storedTime = new Date(game.kickoff_timestamp);
+                const actualKickoffTime = new Date(storedTime.getTime() + (3 * 60 * 60 * 1000));
 
-                if (game.status === 'in_progress' || now >= utcGameTime || now >= utcActivationTime) {
+                console.log(`🔄 Active check: stored=${storedTime.toISOString()}, actual=${actualKickoffTime.toISOString()}, status=${game.status}`);
+
+                if (game.status === 'in_progress' || now >= actualKickoffTime) {
+                    console.log(`✅ Game still active for ESPN API`);
                     activeCount++;
+                } else {
+                    console.log(`❌ Game no longer active for ESPN API`);
                 }
             }
 

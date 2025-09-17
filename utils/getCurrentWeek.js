@@ -213,18 +213,20 @@ async function triggerWeeklyWinnerCalculation(week) {
         console.log(`Starting weekly winner calculation for week ${week}, season ${seasonYear}`);
         
         // Get all active leagues
-        const [activeLeagues] = await database.execute(`
-            SELECT league_id, league_name 
-            FROM leagues 
+        const activeLeagues = await database.execute(`
+            SELECT league_id, league_name
+            FROM leagues
             WHERE status = 'active'
             ORDER BY league_id
         `);
-        
-        if (activeLeagues.length === 0) {
+
+        console.log(`DEBUG: activeLeagues type: ${typeof activeLeagues}, value:`, activeLeagues);
+
+        if (!Array.isArray(activeLeagues) || activeLeagues.length === 0) {
             console.log('No active leagues found for weekly winner calculation');
             return;
         }
-        
+
         console.log(`Found ${activeLeagues.length} active leagues to process`);
         
         let successCount = 0;
@@ -275,12 +277,14 @@ async function checkAndCalculateMissedWeeks(currentWeek) {
         console.log(`Checking for missed weekly winner calculations up to current week ${currentWeek}`);
         
         // Get all active leagues
-        const [activeLeagues] = await database.execute(`
-            SELECT league_id, league_name 
-            FROM leagues 
+        const activeLeagues = await database.execute(`
+            SELECT league_id, league_name
+            FROM leagues
             WHERE status = 'active'
             ORDER BY league_id
         `);
+
+        console.log(`DEBUG: checkAndCalculateMissedWeeks - activeLeagues type: ${typeof activeLeagues}, length: ${activeLeagues?.length}`);
         
         if (activeLeagues.length === 0) {
             console.log('No active leagues found for missed week check');

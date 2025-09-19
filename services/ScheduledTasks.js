@@ -83,56 +83,33 @@ class ScheduledTasks {
     }
     
     /**
-     * Process pick locking using existing Pick model methods
+     * Process pick locking using PickLockingService (includes missing picks fallback)
      */
     async processPickLocking() {
         try {
             // Get current NFL week
             const currentWeek = this.getCurrentNFLWeek();
             const database = require('../config/database');
-            
+
             // First check if there are any games starting soon or in progress
             const upcomingGames = await database.execute(`
                 SELECT COUNT(*) as count
-                FROM games 
-                WHERE week = ? 
+                FROM games
+                WHERE week = ?
                 AND season_year = YEAR(CURDATE())
                 AND status IN ('scheduled', 'in_progress')
                 AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
             `, [currentWeek]);
-            
+
             if (upcomingGames[0].count === 0) {
                 // No games starting soon, skip processing
                 return;
             }
-            
-            // Processing pick locking
-            
-            // Get all active league entries for current week
-            const entries = await database.execute(`
-                SELECT DISTINCT le.entry_id, lu.league_id
-                FROM league_entries le
-                JOIN league_users lu ON le.league_user_id = lu.league_user_id
-                JOIN leagues l ON lu.league_id = l.league_id
-                WHERE l.status = 'active' AND le.status = 'active'
-            `);
-            
-            let totalLocked = 0;
-            
-            // Process each entry to lock started games
-            for (const entry of entries) {
-                try {
-                    await Pick.lockStartedGames(entry.entry_id, currentWeek);
-                    totalLocked++;
-                } catch (error) {
-                    // Error locking picks for entry
-                }
-            }
-            
-            if (totalLocked > 0) {
-                // Processed entries for pick locking
-            }
-            
+
+            // Processing pick locking with new service that includes missing picks fallback
+            const PickLockingService = require('./PickLockingService');
+            await PickLockingService.processAllLeagues();
+
         } catch (error) {
             // Pick locking process error
         }

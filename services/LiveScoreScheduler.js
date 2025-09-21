@@ -44,8 +44,8 @@ class LiveScoreScheduler {
                     return;
                 }
 
-                const currentEasternTime = this.getCurrentEasternTime();
                 const storedEasternTime = new Date(nextGame.kickoff_timestamp);
+                const currentEasternTime = this.getCurrentEasternTime();
                 const timeUntilMonitoring = storedEasternTime - currentEasternTime;
 
                 console.log(`📅 Next game: ${nextGame.home_team} vs ${nextGame.away_team} at ${storedEasternTime.toISOString()} Eastern`);
@@ -126,14 +126,15 @@ class LiveScoreScheduler {
                 )`;
 
             const games = await database.execute(gamesQuery);
-            const currentEasternTime = this.getCurrentEasternTime();
             let liveCount = 0;
 
             for (const game of games) {
-                const storedEasternTime = new Date(game.kickoff_timestamp);
+                // Use same timing logic as PickLockingService: compare database Eastern time directly
+                // Database query already converts NOW() to Eastern time for comparison
+                const hasGameStarted = await this.hasGameStartedLikePickLocking(game.kickoff_timestamp);
 
-                // ESPN API should be active if: in_progress OR Eastern time >= stored Eastern time
-                if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
+                // ESPN API should be active if: in_progress OR game has started (same as pick locking)
+                if (game.status === 'in_progress' || hasGameStarted) {
                     liveCount++;
                 }
             }
@@ -210,13 +211,12 @@ class LiveScoreScheduler {
                 )
             `, [currentWeek, seasonYear]);
 
-            const currentEasternTime = this.getCurrentEasternTime();
             let currentWeekLiveCount = 0;
 
             for (const game of currentWeekGames) {
-                const storedEasternTime = new Date(game.kickoff_timestamp);
+                const hasGameStarted = await this.hasGameStartedLikePickLocking(game.kickoff_timestamp);
 
-                if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
+                if (game.status === 'in_progress' || hasGameStarted) {
                     currentWeekLiveCount++;
                 }
             }
@@ -238,9 +238,9 @@ class LiveScoreScheduler {
 
                 let prevWeekLiveCount = 0;
                 for (const game of prevWeekGames) {
-                    const storedEasternTime = new Date(game.kickoff_timestamp);
+                    const hasGameStarted = await this.hasGameStartedLikePickLocking(game.kickoff_timestamp);
 
-                    if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
+                    if (game.status === 'in_progress' || hasGameStarted) {
                         prevWeekLiveCount++;
                     }
                 }
@@ -294,13 +294,12 @@ class LiveScoreScheduler {
                 )`;
 
             const activeGames = await database.execute(activeGamesQuery);
-            const currentEasternTime = this.getCurrentEasternTime();
             let activeCount = 0;
 
             for (const game of activeGames) {
-                const storedEasternTime = new Date(game.kickoff_timestamp);
+                const hasGameStarted = await this.hasGameStartedLikePickLocking(game.kickoff_timestamp);
 
-                if (game.status === 'in_progress' || currentEasternTime >= storedEasternTime) {
+                if (game.status === 'in_progress' || hasGameStarted) {
                     activeCount++;
                 }
             }
@@ -362,31 +361,54 @@ class LiveScoreScheduler {
     }
 
     /**
-     * Get current time in Eastern timezone (same as pick lock logic)
-     * @returns {Date} - Current time in Eastern timezone
+     * Check if a game should trigger live scoring using the same logic as PickLockingService
+     * @param {Date} kickoffTimestamp - Game kickoff time from database
+     * @returns {Promise<boolean>} - True if live scoring should start
      */
-    getCurrentEasternTime() {
-        const now = new Date();
-        // Convert UTC to Eastern Time (accounting for daylight saving)
-        const easternOffset = this.getEasternTimezoneOffset();
-        return new Date(now.getTime() + easternOffset);
+    async hasGameStartedLikePickLocking(kickoffTimestamp) {
+        try {
+            // Use exact same logic as PickLockingService with league deadline consideration
+            const result = await database.execute(`
+                SELECT
+                    -- Check if this specific game has started (for per_game leagues)
+                    CASE WHEN CONVERT_TZ(NOW(), "UTC", "America/New_York") >= ? THEN 1 ELSE 0 END as game_started,
+
+                    -- Check if any first_game league has been triggered (first game started)
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM games g2
+                        WHERE g2.week = (SELECT week FROM games WHERE kickoff_timestamp = ? LIMIT 1)
+                        AND g2.season_year = YEAR(CURDATE())
+                        AND CONVERT_TZ(NOW(), "UTC", "America/New_York") >= g2.kickoff_timestamp
+                        ORDER BY g2.kickoff_timestamp ASC
+                        LIMIT 1
+                    ) THEN 1 ELSE 0 END as first_game_started
+            `, [kickoffTimestamp, kickoffTimestamp]);
+
+            // Live scoring should start if:
+            // 1. This specific game has started (per_game logic), OR
+            // 2. The first game of the week has started (first_game logic)
+            return result[0].game_started === 1 || result[0].first_game_started === 1;
+
+        } catch (error) {
+            console.error('Error checking game start time:', error);
+            // Fallback to current method if database query fails
+            return this.getCurrentEasternTime() >= new Date(kickoffTimestamp);
+        }
     }
 
     /**
-     * Get Eastern timezone offset in milliseconds (handles DST)
-     * @returns {number} - Offset in milliseconds
+     * Get current time in Eastern timezone (fallback method)
+     * @returns {Date} - Current time in Eastern timezone
      */
-    getEasternTimezoneOffset() {
+    getCurrentEasternTime() {
+        // Simple fallback - use database conversion method
         const now = new Date();
-        const january = new Date(now.getFullYear(), 0, 1);
-        const july = new Date(now.getFullYear(), 6, 1);
-
-        // If we're in a timezone that observes DST, use appropriate offset
-        const isDST = now.getTimezoneOffset() < Math.max(january.getTimezoneOffset(), july.getTimezoneOffset());
-
-        // Eastern Time: UTC-5 (standard) or UTC-4 (daylight)
-        return isDST ? -4 * 60 * 60 * 1000 : -5 * 60 * 60 * 1000;
+        // Approximate Eastern time (this is only used for scheduling, not game start comparison)
+        const isDST = now.getMonth() >= 2 && now.getMonth() <= 10; // March-November roughly
+        const offset = isDST ? -4 : -5; // EDT or EST
+        return new Date(now.getTime() + (offset * 60 * 60 * 1000));
     }
+
 
     /**
      * Stop all scheduled tasks (for shutdown)

@@ -171,11 +171,11 @@
 
 /* Desktop: Ensure equal width team buttons */
 @media (min-width: 768px) {
-   .teams-container .d-flex > .team-option.flex-fill {
-       flex: 1 1 0;
-       min-width: 0;
-       width: calc(50% - 15px); /* 50% minus half the gap and @ symbol space */
-   }
+    .teams-container .d-flex > .team-option.flex-fill {
+        flex: 1 1 0;
+        min-width: 0;
+        width: calc(50% - 15px); /* 50% minus half the gap and @ symbol space */
+    }
 }
 
 .team-option:hover {

@@ -1,0 +1,139 @@
+/* Missing Picks Management Styles */
+
+.points-visualization {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 10px 0;
+}
+
+.point-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 12px;
+    border: 2px solid transparent;
+    cursor: default;
+}
+
+.point-badge.available {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+
+.point-badge.used-locked {
+    background-color: #dc3545;
+    color: white;
+    border-color: #b02a37;
+}
+
+.point-badge.used-editable {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0a58ca;
+}
+
+.point-badge.duplicate {
+    background-color: #dc3545;
+    color: white;
+    border-color: #b02a37;
+    animation: pulse-duplicate 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-duplicate {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 15px;
+    font-size: 14px;
+}
+
+.legend-item .point-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+}
+
+.game-row {
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.game-row:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.game-info strong {
+    color: #212529;
+    font-size: 16px;
+}
+
+.confidence-select {
+    max-width: 140px;
+}
+
+.games-grid {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: white;
+}
+
+#missingPicksAlert {
+    border-radius: 8px;
+    border: 1px solid #f0ad4e;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.modal-xl .modal-dialog {
+    max-width: 1200px;
+}
+
+.pick-management-interface .game-row {
+    transition: all 0.2s ease;
+}
+
+.pick-management-interface .game-row:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.confidence-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.badge.bg-danger {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}

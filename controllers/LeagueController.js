@@ -1957,9 +1957,196 @@ class LeagueController {
                 role: role
             });
         } catch (error) {
-            res.status(500).json({ 
-                success: false, 
-                message: error.message || 'Error updating member role' 
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error updating member role'
+            });
+        }
+    }
+
+    /**
+     * Get users with missing picks for a specific week
+     */
+    static async getMissingPicks(req, res) {
+        try {
+            const leagueId = parseInt(req.params.id);
+            const week = parseInt(req.params.week);
+            const userId = req.user.user_id || req.user.id;
+
+            // Verify commissioner access
+            const isCommissioner = await League.isUserCommissioner(leagueId, userId);
+            if (!isCommissioner) {
+                return res.status(403).json({ success: false, message: 'Commissioner access required' });
+            }
+
+            const ManualPickAssignmentService = require('../services/ManualPickAssignmentService');
+            const usersWithMissingPicks = await ManualPickAssignmentService.getUsersWithMissingPicks(leagueId, week);
+
+            res.json({
+                success: true,
+                data: {
+                    week: week,
+                    usersWithMissingPicks: usersWithMissingPicks
+                }
+            });
+
+        } catch (error) {
+            console.error('Error getting missing picks:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error retrieving missing picks'
+            });
+        }
+    }
+
+    /**
+     * Get detailed pick state for a specific entry/week
+     */
+    static async getEntryPickState(req, res) {
+        try {
+            const leagueId = parseInt(req.params.id);
+            const entryId = parseInt(req.params.entryId);
+            const week = parseInt(req.params.week);
+            const userId = req.user.user_id || req.user.id;
+
+            // Verify commissioner access
+            const isCommissioner = await League.isUserCommissioner(leagueId, userId);
+            if (!isCommissioner) {
+                return res.status(403).json({ success: false, message: 'Commissioner access required' });
+            }
+
+            const ManualPickAssignmentService = require('../services/ManualPickAssignmentService');
+            const entryPickState = await ManualPickAssignmentService.getEntryPickState(entryId, week);
+
+            // Verify the entry belongs to this league
+            if (entryPickState.leagueId !== leagueId) {
+                return res.status(403).json({ success: false, message: 'Entry does not belong to this league' });
+            }
+
+            res.json({
+                success: true,
+                data: entryPickState
+            });
+
+        } catch (error) {
+            console.error('Error getting entry pick state:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error retrieving entry pick state'
+            });
+        }
+    }
+
+    /**
+     * Assign confidence points to a missing pick
+     */
+    static async assignMissingPick(req, res) {
+        try {
+            const leagueId = parseInt(req.params.id);
+            const { entryId, gameId, week, confidencePoints, reason } = req.body;
+            const userId = req.user.user_id || req.user.id;
+
+            // Verify commissioner access
+            const isCommissioner = await League.isUserCommissioner(leagueId, userId);
+            if (!isCommissioner) {
+                return res.status(403).json({ success: false, message: 'Commissioner access required' });
+            }
+
+            // Validate required fields
+            if (!entryId || !gameId || !week || !confidencePoints) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Missing required fields: entryId, gameId, week, confidencePoints'
+                });
+            }
+
+            const ManualPickAssignmentService = require('../services/ManualPickAssignmentService');
+            const result = await ManualPickAssignmentService.assignPointsToMissingPick(
+                entryId, gameId, week, confidencePoints, userId, reason
+            );
+
+            res.json(result);
+
+        } catch (error) {
+            console.error('Error assigning missing pick:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error assigning missing pick'
+            });
+        }
+    }
+
+    /**
+     * Update confidence points for an existing pick
+     */
+    static async updatePickPoints(req, res) {
+        try {
+            const leagueId = parseInt(req.params.id);
+            const { pickId, newConfidencePoints, reason } = req.body;
+            const userId = req.user.user_id || req.user.id;
+
+            // Verify commissioner access
+            const isCommissioner = await League.isUserCommissioner(leagueId, userId);
+            if (!isCommissioner) {
+                return res.status(403).json({ success: false, message: 'Commissioner access required' });
+            }
+
+            // Validate required fields
+            if (!pickId || !newConfidencePoints) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Missing required fields: pickId, newConfidencePoints'
+                });
+            }
+
+            const ManualPickAssignmentService = require('../services/ManualPickAssignmentService');
+            const result = await ManualPickAssignmentService.updatePickConfidencePoints(
+                pickId, newConfidencePoints, userId, reason
+            );
+
+            res.json(result);
+
+        } catch (error) {
+            console.error('Error updating pick points:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error updating pick points'
+            });
+        }
+    }
+
+    /**
+     * Get pick audit trail for a league/week
+     */
+    static async getPickAudit(req, res) {
+        try {
+            const leagueId = parseInt(req.params.id);
+            const week = req.params.week ? parseInt(req.params.week) : null;
+            const userId = req.user.user_id || req.user.id;
+
+            // Verify commissioner access
+            const isCommissioner = await League.isUserCommissioner(leagueId, userId);
+            if (!isCommissioner) {
+                return res.status(403).json({ success: false, message: 'Commissioner access required' });
+            }
+
+            const PickAuditService = require('../services/PickAuditService');
+            const auditTrail = await PickAuditService.getLeagueAuditTrail(leagueId, week, 100);
+
+            res.json({
+                success: true,
+                data: {
+                    leagueId: leagueId,
+                    week: week,
+                    auditTrail: auditTrail
+                }
+            });
+
+        } catch (error) {
+            console.error('Error getting pick audit:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error retrieving pick audit trail'
             });
         }
     }

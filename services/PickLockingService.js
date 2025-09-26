@@ -138,55 +138,14 @@ class PickLockingService {
             // Log the locking action for audit trail
             await this.logLockingAction(leagueId, gameIds, result.affectedRows);
             
-            // Process missing picks fallbacks (non-blocking - won't affect pick locking)
-            try {
-                await this.processMissingPicksFallbacks(leagueId, gameIds);
-            } catch (fallbackError) {
-                // Fallback processing failed, but don't let it affect pick locking
-                console.error(`Missing picks fallback failed for league ${leagueId}:`, fallbackError.message);
-            }
+            // Note: Automatic missing pick processing has been removed
+            // Commissioners can now manually assign picks for users who missed the deadline
             
         } catch (error) {
             // Error locking picks for league
         }
     }
     
-    /**
-     * Process missing picks fallbacks for locked games
-     * @param {number} leagueId - League ID
-     * @param {Array} gameIds - Array of game IDs that were just locked
-     */
-    static async processMissingPicksFallbacks(leagueId, gameIds) {
-        try {
-            console.log(`🎯 Processing missing picks fallbacks for league ${leagueId}, games: ${gameIds.join(',')}`);
-            
-            const MissingPicksFallbackService = require('./MissingPicksFallbackService');
-            
-            let totalProcessed = 0;
-            
-            // Process each locked game for missing picks
-            for (const gameId of gameIds) {
-                try {
-                    const result = await MissingPicksFallbackService.applyFallbackForLockedGame(gameId);
-                    if (result.success && result.successCount > 0) {
-                        totalProcessed += result.successCount;
-                        console.log(`✅ Processed ${result.successCount} missing picks for game ${gameId}`);
-                    }
-                } catch (gameError) {
-                    console.error(`❌ Failed to process fallbacks for game ${gameId}:`, gameError.message);
-                    // Continue processing other games
-                }
-            }
-            
-            if (totalProcessed > 0) {
-                console.log(`📊 Missing picks fallback completed: ${totalProcessed} fallback picks applied for league ${leagueId}`);
-            }
-            
-        } catch (error) {
-            console.error(`❌ Error in processMissingPicksFallbacks for league ${leagueId}:`, error.message);
-            throw error;
-        }
-    }
     
     /**
      * Log locking actions to audit logs

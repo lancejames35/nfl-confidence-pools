@@ -27,6 +27,10 @@
                         <i class="fas fa-broadcast-tower me-2"></i>
                         Live Scores
                     </button>
+                    <button type="button" class="btn btn-outline-secondary" id="pickAuditBtn">
+                        <i class="fas fa-history me-2"></i>
+                        Pick Audit
+                    </button>
                 <% } else { %>
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#leaveModal">
                         <i class="fas fa-sign-out-alt me-2"></i>
@@ -37,6 +41,22 @@
         </div>
     </div>
 </div>
+
+<!-- Missing Picks Alert (Commissioner Only) -->
+<% if (isCommissioner) { %>
+<div class="alert alert-warning d-none" id="missingPicksAlert" role="alert">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong id="missingPicksCount">0</strong> <span id="missingPicksText">users have missing picks</span> for locked games that need attention.
+        </div>
+        <button type="button" class="btn btn-outline-dark btn-sm" id="manageMissingPicksBtn">
+            <i class="fas fa-tools me-1"></i>
+            Manage Missing Picks
+        </button>
+    </div>
+</div>
+<% } %>
 
 <!-- League Settings (Collapsible) -->
 <% if (isCommissioner) { %>
@@ -1155,7 +1175,200 @@
 </div>
 <% } %>
 
+<!-- Missing Picks Management Modal -->
+<% if (isCommissioner) { %>
+<div class="modal fade" id="missingPicksModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tools me-2"></i>
+                    Manage Missing Picks - Week <span id="modalCurrentWeek"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Week Selector -->
+                <div class="mb-4">
+                    <label class="form-label">Select Week:</label>
+                    <select class="form-select" id="weekSelector" style="width: auto; display: inline-block;">
+                        <!-- Populated by JavaScript -->
+                    </select>
+                </div>
+
+                <!-- Loading State -->
+                <div id="missingPicksLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading missing picks data...</p>
+                </div>
+
+                <!-- No Missing Picks -->
+                <div id="noMissingPicks" class="alert alert-success d-none">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Great!</strong> No users have missing picks for locked games this week.
+                </div>
+
+                <!-- Users with Missing Picks -->
+                <div id="missingPicksList" class="d-none">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<!-- Pick Management Modal -->
+<% if (isCommissioner) { %>
+<div class="modal fade" id="pickManagementModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Manage Picks: <span id="pickModalUserName"></span> - Week <span id="pickModalWeek"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Commissioner Note:</strong> You can only edit confidence points. Team selections are hidden to maintain fairness.
+                </div>
+
+                <!-- Pick Management Interface -->
+                <div id="pickManagementInterface">
+                    <!-- Populated by JavaScript -->
+                </div>
+
+                <!-- Confidence Points Summary -->
+                <div class="mt-4">
+                    <h6>Confidence Points Status (1-<span id="totalGamesCount"></span>):</h6>
+                    <div id="confidencePointsVisualization" class="points-visualization">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <div class="legend mt-2">
+                        <span class="legend-item me-3">
+                            <span class="point-badge used-locked"></span> Used (Locked)
+                        </span>
+                        <span class="legend-item me-3">
+                            <span class="point-badge used-editable"></span> Used (Editable)
+                        </span>
+                        <span class="legend-item">
+                            <span class="point-badge available"></span> Available
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="savePickChanges">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<!-- Pick Audit Viewer Modal -->
+<% if (isCommissioner) { %>
+<div class="modal fade" id="pickAuditModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history me-2"></i>
+                    Pick Audit Trail - <%= league.league_name %>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Filters -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Week Filter:</label>
+                        <select class="form-select" id="auditWeekFilter">
+                            <option value="">All Weeks</option>
+                            <!-- Populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Action Type:</label>
+                        <select class="form-select" id="auditActionFilter">
+                            <option value="">All Actions</option>
+                            <option value="create">User Created Pick</option>
+                            <option value="update">User Updated Pick</option>
+                            <option value="manual_assign">Commissioner Assignment</option>
+                            <option value="auto_lock">Automatic Lock</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Search User:</label>
+                        <input type="text" class="form-control" id="auditUserSearch" placeholder="Username...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-primary d-block w-100" id="refreshAuditBtn">
+                            <i class="fas fa-search me-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="auditLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading audit data...</p>
+                </div>
+
+                <!-- Audit Trail Table -->
+                <div id="auditTable" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Game</th>
+                                    <th>Changes</th>
+                                    <th>Changed By</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTableBody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- No Data -->
+                <div id="noAuditData" class="alert alert-info d-none">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No audit data found for the selected filters.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-primary" id="exportAuditBtn">
+                    <i class="fas fa-download me-2"></i>Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
 <link rel="stylesheet" href="/css/league-show.css">
+<link rel="stylesheet" href="/css/missing-picks.css">
 
 <!-- League-specific data attributes -->
 <div data-league-id="<%= league.league_id %>" style="display: none;"></div>

@@ -641,10 +641,6 @@
         /* Inherit prominent styling from base rule */
     }
     
-    .pick-item.locked .mobile-game-time {
-        /* Date/time stays centered, no transform needed */
-    }
-    
     .pick-item.locked .drag-indicator {
         cursor: not-allowed !important;
         opacity: 0.3 !important;

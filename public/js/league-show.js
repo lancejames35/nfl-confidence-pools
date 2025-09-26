@@ -1022,3 +1022,1082 @@ function toggleCommissionerStatus() {
         showToast('Error updating member role', 'error');
     });
 }
+
+// ===== MISSING PICKS MANAGEMENT =====
+
+// Global variables for missing picks management
+let currentMissingPicksWeek = null;
+let currentEntryBeingManaged = null;
+let currentEntryPickState = null;
+
+/**
+ * Check for missing picks and update alert
+ */
+async function checkForMissingPicks() {
+    if (!leagueData.isCommissioner) return;
+
+    try {
+        // Get current week (you may need to implement getCurrentWeek function)
+        const currentWeek = await getCurrentWeekForMissingPicks();
+
+        const response = await fetch(`/leagues/${leagueData.league_id}/missing-picks/${currentWeek}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const missingPicksCount = data.data.usersWithMissingPicks.length;
+            const alertElement = document.getElementById('missingPicksAlert');
+            const countElement = document.getElementById('missingPicksCount');
+            const textElement = document.getElementById('missingPicksText');
+
+            if (missingPicksCount > 0) {
+                if (countElement) countElement.textContent = missingPicksCount;
+                if (textElement) textElement.textContent = missingPicksCount === 1 ? 'user has missing picks' : 'users have missing picks';
+                if (alertElement) alertElement.classList.remove('d-none');
+            } else {
+                if (alertElement) alertElement.classList.add('d-none');
+            }
+        }
+    } catch (error) {
+        console.error('Error checking for missing picks:', error);
+    }
+}
+
+/**
+ * Get current NFL week (simple implementation for missing picks)
+ */
+async function getCurrentWeekForMissingPicks() {
+    try {
+        // Simple implementation - calculate based on current date
+        // NFL season typically starts first Thursday after Labor Day
+        const now = new Date();
+        const year = now.getFullYear();
+        const seasonStart = new Date(year, 8, 5); // September 5th as approximation
+
+        const diffTime = now - seasonStart;
+        const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+        // Ensure week is between 1 and 18
+        const week = Math.max(1, Math.min(18, diffWeeks + 1));
+        return week;
+    } catch (error) {
+        console.error('Error calculating current week:', error);
+        return 4; // Default to 4 for testing
+    }
+}
+
+/**
+ * Open the missing picks management modal
+ */
+async function openMissingPicksManager() {
+    console.log('openMissingPicksManager called');
+    try {
+        const currentWeek = await getCurrentWeekForMissingPicks();
+        console.log('Current week:', currentWeek);
+        currentMissingPicksWeek = currentWeek;
+
+        // Populate week selector
+        populateWeekSelector(currentWeek);
+
+        // Update modal title
+        document.getElementById('modalCurrentWeek').textContent = currentWeek;
+
+        // Load missing picks data
+        await loadMissingPicksData(currentWeek);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('missingPicksModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Error opening missing picks manager:', error);
+        showToast('Error loading missing picks data', 'error');
+    }
+}
+
+/**
+ * Populate the week selector dropdown
+ */
+function populateWeekSelector(currentWeek) {
+    const weekSelector = document.getElementById('weekSelector');
+    weekSelector.innerHTML = '';
+
+    // Add weeks 1-18 (NFL season)
+    for (let week = 1; week <= 18; week++) {
+        const option = document.createElement('option');
+        option.value = week;
+        option.textContent = `Week ${week}`;
+        if (week === currentWeek) {
+            option.selected = true;
+        }
+        weekSelector.appendChild(option);
+    }
+
+    // Add event listener for week changes
+    weekSelector.addEventListener('change', async (e) => {
+        const selectedWeek = parseInt(e.target.value);
+        currentMissingPicksWeek = selectedWeek;
+        document.getElementById('modalCurrentWeek').textContent = selectedWeek;
+        await loadMissingPicksData(selectedWeek);
+    });
+}
+
+/**
+ * Load missing picks data for a specific week
+ */
+async function loadMissingPicksData(week) {
+    try {
+        // Show loading state
+        const loadingElement = document.getElementById('missingPicksLoading');
+        const noPicksElement = document.getElementById('noMissingPicks');
+        const listElement = document.getElementById('missingPicksList');
+
+        if (loadingElement) loadingElement.classList.remove('d-none');
+        if (noPicksElement) noPicksElement.classList.add('d-none');
+        if (listElement) listElement.classList.add('d-none');
+
+        const response = await fetch(`/leagues/${leagueData.league_id}/missing-picks/${week}`);
+        const data = await response.json();
+
+        // Hide loading state
+        if (loadingElement) loadingElement.classList.add('d-none');
+
+        if (data.success) {
+            const usersWithMissingPicks = data.data.usersWithMissingPicks;
+
+            if (usersWithMissingPicks.length === 0) {
+                if (noPicksElement) noPicksElement.classList.remove('d-none');
+            } else {
+                renderMissingPicksList(usersWithMissingPicks);
+                if (listElement) listElement.classList.remove('d-none');
+            }
+        } else {
+            showToast(data.message || 'Error loading missing picks data', 'error');
+        }
+
+    } catch (error) {
+        console.error('Error loading missing picks data:', error);
+        const loadingElement = document.getElementById('missingPicksLoading');
+        if (loadingElement) loadingElement.classList.add('d-none');
+        showToast('Error loading missing picks data', 'error');
+    }
+}
+
+/**
+ * Render the list of users with missing picks
+ */
+function renderMissingPicksList(usersWithMissingPicks) {
+    const listContainer = document.getElementById('missingPicksList');
+
+    let html = '<div class="row">';
+
+    usersWithMissingPicks.forEach(user => {
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-user me-2"></i>
+                            ${user.username}
+                        </h6>
+                        <p class="card-text">
+                            <span class="badge bg-warning text-dark">
+                                ${user.missing_picks_count} missing pick${user.missing_picks_count !== 1 ? 's' : ''}
+                            </span>
+                        </p>
+                        <button class="btn btn-primary btn-sm manage-picks-btn" data-entry-id="${user.entry_id}" data-username="${user.username}">
+                            <i class="fas fa-edit me-1"></i>
+                            Manage Picks
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    listContainer.innerHTML = html;
+
+    // Add event listeners for the manage picks buttons
+    listContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.manage-picks-btn')) {
+            const btn = e.target.closest('.manage-picks-btn');
+            const entryId = parseInt(btn.dataset.entryId);
+            const username = btn.dataset.username;
+            openPickManager(entryId, username, currentMissingPicksWeek);
+        }
+    });
+}
+
+/**
+ * Open the pick management modal for a specific user
+ */
+async function openPickManager(entryId, username, week) {
+    try {
+        currentEntryBeingManaged = entryId;
+
+        // Update modal title
+        document.getElementById('pickModalUserName').textContent = username;
+        document.getElementById('pickModalWeek').textContent = week;
+
+        // Load pick state data
+        const response = await fetch(`/leagues/${leagueData.league_id}/entry/${entryId}/picks/${week}`);
+        const data = await response.json();
+
+        if (data.success) {
+            currentEntryPickState = data.data;
+            renderPickManagementInterface(data.data);
+
+            // Show pick management modal
+            const modal = new bootstrap.Modal(document.getElementById('pickManagementModal'));
+            modal.show();
+        } else {
+            showToast(data.message || 'Error loading pick data', 'error');
+        }
+
+    } catch (error) {
+        console.error('Error opening pick manager:', error);
+        showToast('Error loading pick data', 'error');
+    }
+}
+
+/**
+ * Render the pick management interface
+ */
+function renderPickManagementInterface(pickState) {
+    const interfaceContainer = document.getElementById('pickManagementInterface');
+    const pointsContainer = document.getElementById('confidencePointsVisualization');
+    const totalGamesElement = document.getElementById('totalGamesCount');
+
+    totalGamesElement.textContent = pickState.totalGames;
+
+    // Render games grid
+    let gamesHtml = '<div class="games-grid">';
+
+    pickState.games.forEach(game => {
+        const gameDateTime = new Date(game.kickoff_timestamp);
+        const formattedTime = gameDateTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        });
+
+        gamesHtml += `
+            <div class="game-row mb-3" data-game-id="${game.game_id}">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="game-info">
+                            <strong>${game.away_team} @ ${game.home_team}</strong><br>
+                            <small class="text-muted">${formattedTime}</small>
+                            <span class="badge ${game.game_is_locked ? 'bg-danger' : 'bg-success'} ms-2">
+                                ${game.game_is_locked ? 'LOCKED' : 'UNLOCKED'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        ${renderConfidencePointsSelector(game)}
+                    </div>
+                    <div class="col-md-2">
+                        ${renderPickStatus(game)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    gamesHtml += '</div>';
+    interfaceContainer.innerHTML = gamesHtml;
+
+    // Add event delegation for confidence point validation
+    addConfidencePointValidation();
+
+    // Render confidence points visualization
+    renderConfidencePointsVisualization(pickState);
+}
+
+/**
+ * Add validation for confidence point selections
+ */
+function addConfidencePointValidation() {
+    const interfaceContainer = document.getElementById('pickManagementInterface');
+
+    // Use event delegation to handle changes on confidence selectors
+    interfaceContainer.addEventListener('change', function(e) {
+        if (e.target.classList.contains('confidence-select')) {
+            validateConfidencePointSelection(e.target);
+            // Update visualization to reflect current state
+            renderConfidencePointsVisualization(currentEntryPickState);
+        }
+    });
+}
+
+/**
+ * Validate all confidence point selections and highlight conflicts
+ */
+function validateAllConfidencePointSelections() {
+    // Clear all existing validation styling
+    const allSelectors = document.querySelectorAll('.confidence-select');
+    allSelectors.forEach(selector => {
+        selector.classList.remove('is-invalid', 'border-danger');
+        const gameRow = selector.closest('.game-row');
+        gameRow.classList.remove('bg-danger-subtle');
+
+        const existingError = gameRow.querySelector('.confidence-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    });
+
+    // Find all duplicates
+    const duplicates = findDuplicateValues();
+
+    // Highlight all selectors with duplicate values
+    allSelectors.forEach(selector => {
+        const value = parseInt(selector.value);
+        if (duplicates.includes(value)) {
+            highlightDuplicateSelector(selector);
+        }
+    });
+}
+
+/**
+ * Validate a confidence point selection and highlight conflicts
+ */
+function validateConfidencePointSelection(selectElement) {
+    // Run full validation to catch all duplicates
+    validateAllConfidencePointSelections();
+}
+
+/**
+ * Highlight a selector with duplicate value
+ */
+function highlightDuplicateSelector(selectElement) {
+    const gameRow = selectElement.closest('.game-row');
+    const selectedValue = parseInt(selectElement.value);
+
+    selectElement.classList.add('is-invalid', 'border-danger');
+    gameRow.classList.add('bg-danger-subtle');
+
+    // Add error message with available suggestions
+    const availableNumbers = getAvailableConfidenceNumbers();
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'confidence-error alert alert-danger mt-2 py-2';
+
+    let availableSuggestion = '';
+    if (availableNumbers.length > 0) {
+        availableSuggestion = ` Available: ${availableNumbers.slice(0, 5).join(', ')}`;
+        if (availableNumbers.length > 5) {
+            availableSuggestion += `, +${availableNumbers.length - 5} more`;
+        }
+    }
+
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Duplicate Points:</strong> ${selectedValue} points is assigned to multiple games.${availableSuggestion}`;
+
+    gameRow.appendChild(errorDiv);
+}
+
+/**
+ * Get available confidence point numbers
+ */
+function getAvailableConfidenceNumbers() {
+    const totalGames = currentEntryPickState ? currentEntryPickState.totalGames : 16;
+    const usedNumbers = new Set();
+
+    // Get all currently assigned numbers (excluding duplicates for this calculation)
+    const selectors = document.querySelectorAll('.confidence-select');
+    selectors.forEach(selector => {
+        const value = parseInt(selector.value);
+        if (value && value > 0) {
+            usedNumbers.add(value);
+        }
+    });
+
+    // Find available numbers
+    const available = [];
+    for (let i = 1; i <= totalGames; i++) {
+        if (!usedNumbers.has(i)) {
+            available.push(i);
+        }
+    }
+
+    return available.sort((a, b) => a - b);
+}
+
+/**
+ * Find if a confidence point value conflicts with another unlocked game
+ */
+function findConflictingConfidencePoint(value, currentSelector) {
+    const allSelectors = document.querySelectorAll('.confidence-select');
+
+    for (const selector of allSelectors) {
+        if (selector === currentSelector) continue;
+
+        const selectorValue = parseInt(selector.value);
+        if (selectorValue === value) {
+            // Check if this is from an unlocked game (can be changed)
+            const gameRow = selector.closest('.game-row');
+            const lockBadge = gameRow.querySelector('.badge');
+            const isLocked = lockBadge && lockBadge.textContent.includes('LOCKED');
+
+            // Only return conflict if the other game is also unlocked or is a missing pick
+            if (!isLocked || selector.dataset.type === 'missing') {
+                return selector;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Render confidence points selector for a game
+ */
+function renderConfidencePointsSelector(game) {
+    const editable = game.commissioner_editable;
+
+    if (editable === 'missing_locked') {
+        // Missing pick on locked game - can assign points
+        let html = '<select class="form-select confidence-select" data-game-id="' + game.game_id + '" data-type="missing">';
+        html += '<option value="">No Points Assigned</option>';
+
+        // Show all points that aren't locked (allow reassignment of unlocked points)
+        for (let i = 1; i <= currentEntryPickState.totalGames; i++) {
+            if (!currentEntryPickState.lockedPoints.includes(i)) {
+                html += `<option value="${i}">${i} points</option>`;
+            }
+        }
+
+        html += '</select>';
+        return html;
+
+    } else if (editable === 'locked') {
+        // Existing pick on locked game - cannot edit
+        return `
+            <select class="form-select" disabled>
+                <option value="${game.confidence_points}" selected>${game.confidence_points} points</option>
+            </select>
+        `;
+
+    } else if (editable === 'editable') {
+        // Existing pick on unlocked game - can edit points
+        let html = '<select class="form-select confidence-select" data-pick-id="' + game.pick_id + '" data-type="update">';
+
+        // Add current selection
+        html += `<option value="${game.confidence_points}" selected>${game.confidence_points} points</option>`;
+
+        // Add all points that aren't locked (allow reassignment)
+        for (let i = 1; i <= currentEntryPickState.totalGames; i++) {
+            if (i !== game.confidence_points && !currentEntryPickState.lockedPoints.includes(i)) {
+                html += `<option value="${i}">${i} points</option>`;
+            }
+        }
+
+        html += '</select>';
+        return html;
+
+    } else {
+        // User hasn't picked yet - not commissioner's job
+        return `
+            <select class="form-select" disabled>
+                <option value="">User hasn't picked yet</option>
+            </select>
+        `;
+    }
+}
+
+/**
+ * Render pick status badge
+ */
+function renderPickStatus(game) {
+    const editable = game.commissioner_editable;
+
+    if (editable === 'missing_locked') {
+        return '<span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> MISSING</span>';
+    } else if (editable === 'locked') {
+        return '<span class="badge bg-secondary"><i class="fas fa-lock"></i> LOCKED</span>';
+    } else if (editable === 'editable') {
+        return '<span class="badge bg-primary"><i class="fas fa-edit"></i> EDITABLE</span>';
+    } else {
+        return '<span class="badge bg-light text-dark"><i class="fas fa-clock"></i> NOT PICKED</span>';
+    }
+}
+
+/**
+ * Render confidence points visualization
+ */
+function renderConfidencePointsVisualization(pickState) {
+    const container = document.getElementById('confidencePointsVisualization');
+    let html = '';
+
+    // Get current state from selectors to reflect real-time changes
+    const currentPointAssignments = getCurrentPointAssignments();
+    const duplicateValues = findDuplicateValues();
+
+    for (let i = 1; i <= pickState.totalGames; i++) {
+        let className = 'point-badge available';
+        let title = 'Available';
+
+        const assignment = currentPointAssignments[i];
+        if (assignment) {
+            // Check for duplicates first
+            if (duplicateValues.includes(i)) {
+                className = 'point-badge duplicate';
+                title = 'Duplicate - Fix Required!';
+            }
+            // Determine if this is locked or editable
+            else if (assignment.isLocked) {
+                className = 'point-badge used-locked';
+                title = 'Used (Locked)';
+            } else {
+                className = 'point-badge used-editable';
+                title = 'Used (Editable)';
+            }
+        }
+
+        html += `<span class="${className}" title="${title}">${i}</span>`;
+    }
+
+    container.innerHTML = html;
+}
+
+/**
+ * Get current point assignments from the interface selectors
+ */
+function getCurrentPointAssignments() {
+    const assignments = {};
+
+    // Get points from locked games (original state)
+    if (currentEntryPickState) {
+        currentEntryPickState.games.forEach(game => {
+            if (game.confidence_points && game.game_is_locked && game.pick_id) {
+                assignments[game.confidence_points] = {
+                    gameId: game.game_id,
+                    isLocked: true,
+                    source: 'locked'
+                };
+            }
+        });
+    }
+
+    // Get points from current selector values (may override locked for display)
+    const selectors = document.querySelectorAll('.confidence-select');
+    selectors.forEach(selector => {
+        const points = parseInt(selector.value);
+        if (points && points > 0) {
+            const gameRow = selector.closest('.game-row');
+
+            // Check if this is a locked game by looking at the selector's disabled state
+            // or if it's a missing pick (commissioner editable)
+            const isDisabled = selector.disabled;
+            const isMissingPick = selector.dataset.type === 'missing';
+            const isUpdateable = selector.dataset.type === 'update';
+
+            // If it's disabled, it's locked. If it's missing or updateable, it's editable
+            const isLocked = isDisabled && !isMissingPick;
+
+            assignments[points] = {
+                gameId: selector.dataset.gameId || selector.dataset.pickId,
+                isLocked: isLocked,
+                source: 'current'
+            };
+        }
+    });
+
+    return assignments;
+}
+
+/**
+ * Find duplicate confidence point values in current selectors
+ */
+function findDuplicateValues() {
+    const valueCount = {};
+    const duplicates = [];
+
+    // Count occurrences of each confidence point value
+    const selectors = document.querySelectorAll('.confidence-select');
+    selectors.forEach(selector => {
+        const value = parseInt(selector.value);
+        if (value && value > 0) {
+            valueCount[value] = (valueCount[value] || 0) + 1;
+        }
+    });
+
+    // Find values that appear more than once
+    Object.keys(valueCount).forEach(value => {
+        if (valueCount[value] > 1) {
+            duplicates.push(parseInt(value));
+        }
+    });
+
+    return duplicates;
+}
+
+/**
+ * Save pick changes
+ */
+async function savePickChanges() {
+    try {
+        const saveButton = document.getElementById('savePickChanges');
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+
+        // Check for validation errors before proceeding
+        // Commissioner can save with duplicates - the backend will handle resolution
+        const hasConflicts = document.querySelectorAll('.confidence-error').length > 0;
+        if (hasConflicts) {
+            console.log('Duplicates detected, but proceeding with commissioner save - backend will resolve');
+        }
+
+        const changes = collectPickChanges();
+
+        if (changes.length === 0) {
+            showToast('No changes to save', 'info');
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+            return;
+        }
+
+        // Process each change
+        for (const change of changes) {
+            if (change.type === 'missing') {
+                await assignMissingPick(change);
+            } else if (change.type === 'update') {
+                await updatePickPoints(change);
+            }
+        }
+
+        showToast('Pick changes saved successfully!', 'success');
+
+        // Refresh the pick management interface to show updated state
+        const username = document.getElementById('pickModalUserName').textContent;
+        await openPickManager(currentEntryBeingManaged, username, currentMissingPicksWeek);
+
+        // Also refresh missing picks data and main alert
+        await loadMissingPicksData(currentMissingPicksWeek);
+        await checkForMissingPicks(); // Update the main alert
+
+    } catch (error) {
+        console.error('Error saving pick changes:', error);
+        showToast('Error saving changes', 'error');
+    } finally {
+        const saveButton = document.getElementById('savePickChanges');
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+    }
+}
+
+/**
+ * Collect all pick changes from the interface
+ */
+function collectPickChanges() {
+    const changes = [];
+    const selects = document.querySelectorAll('.confidence-select');
+
+    selects.forEach(select => {
+        const newValue = parseInt(select.value);
+        if (newValue && newValue > 0) {
+            const gameId = select.dataset.gameId;
+            const pickId = select.dataset.pickId;
+            const type = select.dataset.type;
+
+            if (type === 'missing') {
+                changes.push({
+                    type: 'missing',
+                    gameId: parseInt(gameId),
+                    confidencePoints: newValue,
+                    entryId: currentEntryBeingManaged,
+                    week: currentMissingPicksWeek
+                });
+            } else if (type === 'update') {
+                // Check if value actually changed
+                const currentGame = currentEntryPickState.games.find(g => g.pick_id == pickId);
+                if (currentGame && currentGame.confidence_points !== newValue) {
+                    changes.push({
+                        type: 'update',
+                        pickId: parseInt(pickId),
+                        newConfidencePoints: newValue
+                    });
+                }
+            }
+        }
+    });
+
+    return changes;
+}
+
+/**
+ * Assign points to a missing pick
+ */
+async function assignMissingPick(change) {
+    const response = await fetch(`/leagues/${leagueData.league_id}/assign-missing-pick`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            entryId: change.entryId,
+            gameId: change.gameId,
+            week: change.week,
+            confidencePoints: change.confidencePoints,
+            reason: 'Commissioner manual assignment'
+        })
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to assign missing pick');
+    }
+}
+
+/**
+ * Update confidence points for existing pick
+ */
+async function updatePickPoints(change) {
+    const response = await fetch(`/leagues/${leagueData.league_id}/update-pick-points`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            pickId: change.pickId,
+            newConfidencePoints: change.newConfidencePoints,
+            reason: 'Commissioner points adjustment'
+        })
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to update pick points');
+    }
+}
+
+// ===== PICK AUDIT VIEWER =====
+
+// Global variables for audit viewer
+let currentAuditData = [];
+
+/**
+ * Open the pick audit viewer
+ */
+async function openPickAuditViewer() {
+    console.log('openPickAuditViewer called');
+    try {
+        // Check if audit modal exists (requires commissioner permissions)
+        const auditModal = document.getElementById('pickAuditModal');
+        if (!auditModal) {
+            console.error('Pick audit modal not found. User may not have commissioner permissions.');
+            showToast('You need commissioner permissions to view the audit trail', 'error');
+            return;
+        }
+
+        // Populate week filter
+        populateAuditWeekFilter();
+
+        // Load initial audit data
+        await loadAuditData();
+
+        // Show modal
+        const modal = new bootstrap.Modal(auditModal);
+        modal.show();
+
+    } catch (error) {
+        console.error('Error opening audit viewer:', error);
+        showToast('Error loading audit data', 'error');
+    }
+}
+
+/**
+ * Populate the week filter dropdown
+ */
+function populateAuditWeekFilter() {
+    const weekFilter = document.getElementById('auditWeekFilter');
+    weekFilter.innerHTML = '<option value="">All Weeks</option>';
+
+    // Add weeks 1-18
+    for (let week = 1; week <= 18; week++) {
+        const option = document.createElement('option');
+        option.value = week;
+        option.textContent = `Week ${week}`;
+        weekFilter.appendChild(option);
+    }
+}
+
+/**
+ * Load audit data from the server
+ */
+async function loadAuditData(week = null) {
+    try {
+        // Check if elements exist before accessing them
+        const auditLoading = document.getElementById('auditLoading');
+        const auditTable = document.getElementById('auditTable');
+        const noAuditData = document.getElementById('noAuditData');
+
+        console.log('Audit element check:', {
+            auditLoading: !!auditLoading,
+            auditTable: !!auditTable,
+            noAuditData: !!noAuditData,
+            pickAuditModal: !!document.getElementById('pickAuditModal')
+        });
+
+        if (!auditLoading || !auditTable || !noAuditData) {
+            console.error('Some audit modal elements missing:', {
+                auditLoading: !!auditLoading,
+                auditTable: !!auditTable,
+                noAuditData: !!noAuditData
+            });
+            showToast('Audit interface elements missing', 'error');
+            return;
+        }
+
+        // Show loading state
+        auditLoading.classList.remove('d-none');
+        auditTable.classList.add('d-none');
+        noAuditData.classList.add('d-none');
+
+        const url = week
+            ? `/leagues/${leagueData.league_id}/pick-audit/${week}`
+            : `/leagues/${leagueData.league_id}/pick-audit`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        // Hide loading state
+        auditLoading.classList.add('d-none');
+
+        if (data.success) {
+            currentAuditData = data.data.auditTrail;
+            renderAuditTable(currentAuditData);
+
+            if (currentAuditData.length === 0) {
+                noAuditData.classList.remove('d-none');
+            } else {
+                auditTable.classList.remove('d-none');
+            }
+        } else {
+            showToast(data.message || 'Error loading audit data', 'error');
+            noAuditData.classList.remove('d-none');
+        }
+
+    } catch (error) {
+        console.error('Error loading audit data:', error);
+        // Re-check if elements still exist before using them
+        const auditLoading = document.getElementById('auditLoading');
+        const noAuditData = document.getElementById('noAuditData');
+        if (auditLoading) auditLoading.classList.add('d-none');
+        if (noAuditData) noAuditData.classList.remove('d-none');
+        showToast('Error loading audit data', 'error');
+    }
+}
+
+/**
+ * Render the audit trail table
+ */
+function renderAuditTable(auditData) {
+    const tableBody = document.getElementById('auditTableBody');
+    let html = '';
+
+    auditData.forEach(entry => {
+        const date = new Date(entry.created_at);
+        const formattedDate = date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+
+        const actionBadge = getActionBadge(entry.action_type);
+        const gameInfo = (entry.away_team && entry.home_team)
+            ? `${entry.away_team} @ ${entry.home_team}`
+            : 'N/A';
+
+        const changes = formatChanges(entry.old_values, entry.new_values, entry.action_type);
+
+        html += `
+            <tr>
+                <td>${formattedDate}</td>
+                <td>${entry.entry_username || 'Unknown'}</td>
+                <td>${actionBadge}</td>
+                <td><small>${gameInfo}</small></td>
+                <td>${changes}</td>
+                <td>${entry.changed_by_username || 'System'}</td>
+                <td><small>${entry.change_reason || 'N/A'}</small></td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+}
+
+/**
+ * Get action badge HTML
+ */
+function getActionBadge(actionType) {
+    const badges = {
+        'create': '<span class="badge bg-success">Created</span>',
+        'update': '<span class="badge bg-primary">Updated</span>',
+        'manual_assign': '<span class="badge bg-warning text-dark">Commissioner</span>',
+        'auto_lock': '<span class="badge bg-secondary">Auto Lock</span>',
+        'delete': '<span class="badge bg-danger">Deleted</span>'
+    };
+
+    return badges[actionType] || `<span class="badge bg-light text-dark">${actionType}</span>`;
+}
+
+/**
+ * Format changes for display
+ */
+function formatChanges(oldValues, newValues, actionType) {
+    if (!newValues) return 'N/A';
+
+    try {
+        // Handle both string and object formats
+        const old = oldValues && typeof oldValues === 'object' ? oldValues :
+                   oldValues ? JSON.parse(oldValues) : null;
+        const newVals = typeof newValues === 'object' ? newValues :
+                       JSON.parse(newValues);
+
+        if (actionType === 'create' || actionType === 'manual_assign') {
+            return `
+                <small>
+                    Team: <strong>${newVals.selected_team || 'N/A'}</strong><br>
+                    Points: <strong>${newVals.confidence_points || 'N/A'}</strong>
+                </small>
+            `;
+        } else if (actionType === 'update') {
+            let changes = [];
+
+            if (old && old.selected_team !== newVals.selected_team) {
+                changes.push(`Team: ${old.selected_team} → ${newVals.selected_team}`);
+            }
+
+            if (old && old.confidence_points !== newVals.confidence_points) {
+                changes.push(`Points: ${old.confidence_points} → ${newVals.confidence_points}`);
+            }
+
+            return changes.length > 0
+                ? `<small>${changes.join('<br>')}</small>`
+                : '<small>No changes detected</small>';
+        }
+
+        return '<small>See details</small>';
+
+    } catch (error) {
+        return '<small>Invalid data</small>';
+    }
+}
+
+/**
+ * Refresh audit data with current filters
+ */
+async function refreshAuditData() {
+    const weekFilter = document.getElementById('auditWeekFilter').value;
+    const actionFilter = document.getElementById('auditActionFilter').value;
+    const userSearch = document.getElementById('auditUserSearch').value.toLowerCase();
+
+    // Load fresh data from server
+    await loadAuditData(weekFilter || null);
+
+    // Apply client-side filters
+    let filteredData = currentAuditData;
+
+    if (actionFilter) {
+        filteredData = filteredData.filter(entry => entry.action_type === actionFilter);
+    }
+
+    if (userSearch) {
+        filteredData = filteredData.filter(entry =>
+            (entry.entry_username && entry.entry_username.toLowerCase().includes(userSearch)) ||
+            (entry.changed_by_username && entry.changed_by_username.toLowerCase().includes(userSearch))
+        );
+    }
+
+    renderAuditTable(filteredData);
+
+    if (filteredData.length === 0) {
+        document.getElementById('auditTable').classList.add('d-none');
+        document.getElementById('noAuditData').classList.remove('d-none');
+    } else {
+        document.getElementById('auditTable').classList.remove('d-none');
+        document.getElementById('noAuditData').classList.add('d-none');
+    }
+}
+
+/**
+ * Export audit data to CSV
+ */
+function exportAuditData() {
+    if (currentAuditData.length === 0) {
+        showToast('No data to export', 'info');
+        return;
+    }
+
+    const headers = ['Date/Time', 'User', 'Action', 'Game', 'Old Values', 'New Values', 'Changed By', 'Reason'];
+
+    let csvContent = headers.join(',') + '\n';
+
+    currentAuditData.forEach(entry => {
+        const row = [
+            new Date(entry.created_at).toISOString(),
+            entry.entry_username || 'Unknown',
+            entry.action_type,
+            entry.game_matchup || 'N/A',
+            entry.old_values || '',
+            entry.new_values || '',
+            entry.changed_by_username || 'System',
+            entry.change_reason || ''
+        ].map(field => `"${String(field).replace(/"/g, '""')}"`);
+
+        csvContent += row.join(',') + '\n';
+    });
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pick-audit-${leagueData.league_name}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    showToast('Audit data exported successfully!', 'success');
+}
+
+// Initialize missing picks checking when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (leagueData.isCommissioner) {
+        checkForMissingPicks();
+
+        // Check every 5 minutes for new missing picks
+        setInterval(checkForMissingPicks, 5 * 60 * 1000);
+
+        // Add event listeners for the commissioner buttons
+        const manageMissingPicksBtn = document.getElementById('manageMissingPicksBtn');
+        if (manageMissingPicksBtn) {
+            manageMissingPicksBtn.addEventListener('click', openMissingPicksManager);
+        }
+
+        const pickAuditBtn = document.getElementById('pickAuditBtn');
+        if (pickAuditBtn) {
+            pickAuditBtn.addEventListener('click', openPickAuditViewer);
+        }
+
+        // Add event listeners for audit modal buttons
+        const refreshAuditBtn = document.getElementById('refreshAuditBtn');
+        if (refreshAuditBtn) {
+            refreshAuditBtn.addEventListener('click', refreshAuditData);
+        }
+
+        const exportAuditBtn = document.getElementById('exportAuditBtn');
+        if (exportAuditBtn) {
+            exportAuditBtn.addEventListener('click', exportAuditData);
+        }
+
+        // Add event listener for save pick changes button
+        const savePickChangesBtn = document.getElementById('savePickChanges');
+        if (savePickChangesBtn) {
+            savePickChangesBtn.addEventListener('click', savePickChanges);
+        }
+    }
+});

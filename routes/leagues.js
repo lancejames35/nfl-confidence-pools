@@ -145,4 +145,11 @@ router.get('/:id/payouts', LeagueController.getPayouts);
 router.post('/:id/payouts', LeagueController.updatePayouts);
 router.post('/:id/recalculate-purse', LeagueController.recalculatePurse);
 
+// Missing picks management routes
+router.get('/:id/missing-picks/:week', LeagueController.getMissingPicks);
+router.get('/:id/entry/:entryId/picks/:week', LeagueController.getEntryPickState);
+router.post('/:id/assign-missing-pick', LeagueController.assignMissingPick);
+router.post('/:id/update-pick-points', LeagueController.updatePickPoints);
+router.get('/:id/pick-audit/:week?', LeagueController.getPickAudit);
+
 module.exports = router;

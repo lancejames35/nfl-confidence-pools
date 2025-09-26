@@ -287,8 +287,8 @@ class PickController {
             // Lock any picks for games that have started (using proper league-aware logic)
             await Pick.lockStartedGames(entry_id, week);
             
-            // Save picks
-            const result = await Pick.savePicks(entry_id, week, picks);
+            // Save picks with audit logging
+            const result = await Pick.savePicks(entry_id, week, picks, req.user.user_id);
             
             // Save tiebreaker prediction if provided
             if (tiebreaker_prediction !== undefined && tiebreaker_prediction !== '') {
@@ -357,8 +357,8 @@ class PickController {
                 });
             }
             
-            // Save picks (even if partial)
-            const result = await Pick.savePicks(entry_id, week, picks || []);
+            // Save picks (even if partial) with audit logging
+            const result = await Pick.savePicks(entry_id, week, picks || [], req.user.user_id);
             
             // Save tiebreaker prediction if provided
             // Tiebreaker value received for processing

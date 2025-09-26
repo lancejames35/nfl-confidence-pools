@@ -37,9 +37,9 @@ class Pick {
     }
 
     /**
-     * Save or update picks for a week - OPTIMIZED
+     * Save or update picks for a week - OPTIMIZED with audit logging
      */
-    static async savePicks(entry_id, week, picks) {
+    static async savePicks(entry_id, week, picks, userId = null) {
         const connection = await database.getPool().getConnection();
         
         try {
@@ -61,27 +61,54 @@ class Pick {
             
             // Filter out picks for locked games
             const validPicks = picks.filter(pick => !lockedGameIds.has(pick.game_id));
-            
+
             if (validPicks.length === 0) {
                 await connection.commit();
                 return { success: true, message: 'No picks to update (all games locked)' };
             }
-            
+
+            // Get league_id for audit logging
+            let leagueId = null;
+            if (userId) {
+                const entryInfoResult = await connection.execute(`
+                    SELECT lu.league_id
+                    FROM league_entries le
+                    JOIN league_users lu ON le.league_user_id = lu.league_user_id
+                    WHERE le.entry_id = ?
+                `, [entry_id]);
+                const entryInfoRows = entryInfoResult[0]; // Get rows array (first element)
+                const entryInfo = entryInfoRows[0]; // Get first row object
+                leagueId = entryInfo?.league_id;
+            }
+
             // Use INSERT ... ON DUPLICATE KEY UPDATE for individual picks (preserves other unlocked picks)
             for (const pick of validPicks) {
+                // Get existing pick for audit logging
+                let existingPick = null;
+                if (userId) {
+                    const existingResult = await connection.execute(`
+                        SELECT pick_id, selected_team, confidence_points
+                        FROM picks
+                        WHERE entry_id = ? AND week = ? AND game_id = ?
+                    `, [entry_id, week, pick.game_id]);
+                    const existingRows = existingResult[0]; // Get rows array
+                    existingPick = existingRows[0]; // Get first row object
+                }
+
                 const query = `
                     INSERT INTO picks (
-                        entry_id, week, game_id, selected_team, 
+                        entry_id, week, game_id, selected_team,
                         confidence_points, pick_type, is_locked
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
                         selected_team = VALUES(selected_team),
                         confidence_points = VALUES(confidence_points),
                         pick_type = VALUES(pick_type),
-                        is_locked = VALUES(is_locked)
+                        is_locked = VALUES(is_locked),
+                        updated_at = NOW()
                 `;
-                
-                await connection.execute(query, [
+
+                const [result] = await connection.execute(query, [
                     entry_id,
                     week,
                     pick.game_id,
@@ -90,6 +117,57 @@ class Pick {
                     pick.pick_type || 'confidence',
                     pick.is_locked || false
                 ]);
+
+                // Log pick changes if userId provided
+                if (userId && leagueId) {
+                    const PickAuditService = require('../services/PickAuditService');
+
+
+                    if (existingPick) {
+                        // Check if anything actually changed before logging
+                        const teamChanged = existingPick.selected_team !== pick.selected_team;
+                        const pointsChanged = existingPick.confidence_points !== pick.confidence_points;
+
+                        if (teamChanged || pointsChanged) {
+                            // Update - log only actual changes
+                            await PickAuditService.logPickChange({
+                            pick_id: existingPick.pick_id,
+                            entry_id: entry_id,
+                            league_id: leagueId,
+                            game_id: pick.game_id,
+                            week: week,
+                            action_type: 'update',
+                            old_values: {
+                                selected_team: existingPick.selected_team,
+                                confidence_points: existingPick.confidence_points
+                            },
+                            new_values: {
+                                selected_team: pick.selected_team,
+                                confidence_points: pick.confidence_points
+                            },
+                            changed_by_user_id: userId,
+                            change_reason: 'User updated pick'
+                        });
+                        }
+                    } else {
+                        // New pick - log the creation
+                        await PickAuditService.logPickChange({
+                            pick_id: result.insertId,
+                            entry_id: entry_id,
+                            league_id: leagueId,
+                            game_id: pick.game_id,
+                            week: week,
+                            action_type: 'create',
+                            new_values: {
+                                selected_team: pick.selected_team,
+                                confidence_points: pick.confidence_points,
+                                pick_type: pick.pick_type || 'confidence'
+                            },
+                            changed_by_user_id: userId,
+                            change_reason: 'User created pick'
+                        });
+                    }
+                }
             }
             
             await connection.commit();

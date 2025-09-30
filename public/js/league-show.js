@@ -1460,9 +1460,24 @@ function renderConfidencePointsSelector(game) {
         let html = '<select class="form-select confidence-select" data-game-id="' + game.game_id + '" data-type="missing">';
         html += '<option value="">No Points Assigned</option>';
 
-        // Show all points that aren't locked (allow reassignment of unlocked points)
+        // Show all possible confidence point values - commissioner can assign any value
         for (let i = 1; i <= currentEntryPickState.totalGames; i++) {
-            if (!currentEntryPickState.lockedPoints.includes(i)) {
+            html += `<option value="${i}">${i} points</option>`;
+        }
+
+        html += '</select>';
+        return html;
+
+    } else if (editable === 'editable') {
+        // All existing picks are now editable (whether locked or unlocked originally)
+        let html = '<select class="form-select confidence-select" data-pick-id="' + game.pick_id + '" data-type="update">';
+
+        // Add current selection
+        html += `<option value="${game.confidence_points}" selected>${game.confidence_points} points</option>`;
+
+        // Add all other possible confidence point values - commissioner can assign any value
+        for (let i = 1; i <= currentEntryPickState.totalGames; i++) {
+            if (i !== game.confidence_points) {
                 html += `<option value="${i}">${i} points</option>`;
             }
         }
@@ -1471,29 +1486,12 @@ function renderConfidencePointsSelector(game) {
         return html;
 
     } else if (editable === 'locked') {
-        // Existing pick on locked game - cannot edit
+        // This should only occur when user has no missing picks and game is locked
         return `
             <select class="form-select" disabled>
                 <option value="${game.confidence_points}" selected>${game.confidence_points} points</option>
             </select>
         `;
-
-    } else if (editable === 'editable') {
-        // Existing pick on unlocked game - can edit points
-        let html = '<select class="form-select confidence-select" data-pick-id="' + game.pick_id + '" data-type="update">';
-
-        // Add current selection
-        html += `<option value="${game.confidence_points}" selected>${game.confidence_points} points</option>`;
-
-        // Add all points that aren't locked (allow reassignment)
-        for (let i = 1; i <= currentEntryPickState.totalGames; i++) {
-            if (i !== game.confidence_points && !currentEntryPickState.lockedPoints.includes(i)) {
-                html += `<option value="${i}">${i} points</option>`;
-            }
-        }
-
-        html += '</select>';
-        return html;
 
     } else {
         // User hasn't picked yet - not commissioner's job
@@ -1513,10 +1511,15 @@ function renderPickStatus(game) {
 
     if (editable === 'missing_locked') {
         return '<span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> MISSING</span>';
+    } else if (editable === 'editable') {
+        // Show different badge based on whether game was originally locked
+        if (game.game_is_locked) {
+            return '<span class="badge bg-warning text-dark"><i class="fas fa-edit"></i> EDITABLE (WAS LOCKED)</span>';
+        } else {
+            return '<span class="badge bg-primary"><i class="fas fa-edit"></i> EDITABLE</span>';
+        }
     } else if (editable === 'locked') {
         return '<span class="badge bg-secondary"><i class="fas fa-lock"></i> LOCKED</span>';
-    } else if (editable === 'editable') {
-        return '<span class="badge bg-primary"><i class="fas fa-edit"></i> EDITABLE</span>';
     } else {
         return '<span class="badge bg-light text-dark"><i class="fas fa-clock"></i> NOT PICKED</span>';
     }
@@ -1566,8 +1569,12 @@ function renderConfidencePointsVisualization(pickState) {
 function getCurrentPointAssignments() {
     const assignments = {};
 
-    // Get points from locked games (original state)
-    if (currentEntryPickState) {
+    // If user has missing picks, all points are editable
+    // Otherwise, use the locked points from the backend
+    const userHasMissingPicks = currentEntryPickState && currentEntryPickState.hasMissingPicks;
+
+    // Get points from locked games (original state) - only if user has no missing picks
+    if (currentEntryPickState && !userHasMissingPicks) {
         currentEntryPickState.games.forEach(game => {
             if (game.confidence_points && game.game_is_locked && game.pick_id) {
                 assignments[game.confidence_points] = {
@@ -1592,8 +1599,9 @@ function getCurrentPointAssignments() {
             const isMissingPick = selector.dataset.type === 'missing';
             const isUpdateable = selector.dataset.type === 'update';
 
+            // If user has missing picks, nothing is truly locked from commissioner perspective
             // If it's disabled, it's locked. If it's missing or updateable, it's editable
-            const isLocked = isDisabled && !isMissingPick;
+            const isLocked = !userHasMissingPicks && isDisabled && !isMissingPick;
 
             assignments[points] = {
                 gameId: selector.dataset.gameId || selector.dataset.pickId,
@@ -1780,29 +1788,47 @@ let currentAuditData = [];
  * Open the pick audit viewer
  */
 async function openPickAuditViewer() {
-    console.log('openPickAuditViewer called');
+    console.log('========== openPickAuditViewer called ==========');
+    console.log('Current URL:', window.location.href);
+    console.log('leagueData available:', !!leagueData);
+    if (leagueData) {
+        console.log('League ID:', leagueData.league_id);
+        console.log('Is Commissioner:', leagueData.isCommissioner);
+    }
+
     try {
         // Check if audit modal exists (requires commissioner permissions)
         const auditModal = document.getElementById('pickAuditModal');
+        console.log('pickAuditModal found:', !!auditModal);
+
         if (!auditModal) {
             console.error('Pick audit modal not found. User may not have commissioner permissions.');
+            console.log('Available modal elements:',
+                Array.from(document.querySelectorAll('[id*="modal"]')).map(el => el.id)
+            );
             showToast('You need commissioner permissions to view the audit trail', 'error');
             return;
         }
 
+        console.log('Calling populateAuditWeekFilter...');
         // Populate week filter
         populateAuditWeekFilter();
 
+        console.log('Calling loadAuditData...');
         // Load initial audit data
         await loadAuditData();
 
+        console.log('Creating and showing Bootstrap modal...');
         // Show modal
         const modal = new bootstrap.Modal(auditModal);
         modal.show();
+        console.log('Modal.show() called successfully');
 
     } catch (error) {
-        console.error('Error opening audit viewer:', error);
-        showToast('Error loading audit data', 'error');
+        console.error('========== Error in openPickAuditViewer ==========');
+        console.error('Error details:', error);
+        console.error('Error stack:', error.stack);
+        showToast('Error loading audit data: ' + error.message, 'error');
     }
 }
 
@@ -1810,7 +1836,15 @@ async function openPickAuditViewer() {
  * Populate the week filter dropdown
  */
 function populateAuditWeekFilter() {
+    console.log('========== populateAuditWeekFilter called ==========');
     const weekFilter = document.getElementById('auditWeekFilter');
+    console.log('auditWeekFilter element found:', !!weekFilter);
+
+    if (!weekFilter) {
+        console.error('auditWeekFilter element not found');
+        return;
+    }
+
     weekFilter.innerHTML = '<option value="">All Weeks</option>';
 
     // Add weeks 1-18
@@ -1820,12 +1854,17 @@ function populateAuditWeekFilter() {
         option.textContent = `Week ${week}`;
         weekFilter.appendChild(option);
     }
+    console.log('Populated week filter with 18 weeks');
 }
 
 /**
  * Load audit data from the server
  */
 async function loadAuditData(week = null) {
+    console.log('========== loadAuditData called ==========');
+    console.log('Week parameter:', week);
+    console.log('leagueData:', leagueData);
+
     try {
         // Check if elements exist before accessing them
         const auditLoading = document.getElementById('auditLoading');
@@ -1845,10 +1884,14 @@ async function loadAuditData(week = null) {
                 auditTable: !!auditTable,
                 noAuditData: !!noAuditData
             });
+            console.log('All elements with "audit" in ID:',
+                Array.from(document.querySelectorAll('[id*="audit"]')).map(el => el.id)
+            );
             showToast('Audit interface elements missing', 'error');
             return;
         }
 
+        console.log('Setting loading state...');
         // Show loading state
         auditLoading.classList.remove('d-none');
         auditTable.classList.add('d-none');
@@ -1858,8 +1901,13 @@ async function loadAuditData(week = null) {
             ? `/leagues/${leagueData.league_id}/pick-audit/${week}`
             : `/leagues/${leagueData.league_id}/pick-audit`;
 
+        console.log('Fetching audit data from URL:', url);
         const response = await fetch(url);
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+
         const data = await response.json();
+        console.log('Audit API response:', data);
 
         // Hide loading state
         auditLoading.classList.add('d-none');
@@ -2079,8 +2127,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const pickAuditBtn = document.getElementById('pickAuditBtn');
+        console.log('Pick Audit Button setup - element found:', !!pickAuditBtn);
         if (pickAuditBtn) {
-            pickAuditBtn.addEventListener('click', openPickAuditViewer);
+            console.log('Adding click event listener to Pick Audit button');
+            pickAuditBtn.addEventListener('click', function(event) {
+                console.log('========== Pick Audit Button Clicked ==========');
+                console.log('Event:', event);
+                event.preventDefault();
+                openPickAuditViewer();
+            });
+        } else {
+            console.log('Pick Audit button not found during setup');
         }
 
         // Add event listeners for audit modal buttons

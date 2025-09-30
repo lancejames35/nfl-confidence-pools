@@ -64,6 +64,18 @@ class ManualPickAssignmentService {
 
             const leagueId = entryInfo.league_id;
 
+            // Check if this user has ANY missing picks for locked games in this week
+            const missingPicksQuery = `
+                SELECT COUNT(*) as missing_count
+                FROM games g
+                LEFT JOIN picks p ON g.game_id = p.game_id AND p.entry_id = ? AND p.week = ?
+                WHERE g.week = ? AND g.season_year = YEAR(CURDATE())
+                AND (g.status IN ('in_progress', 'completed') OR g.kickoff_timestamp <= NOW())
+                AND p.pick_id IS NULL
+            `;
+            const [missingPicksResult] = await database.execute(missingPicksQuery, [entryId, week, week]);
+            const hasMissingPicks = missingPicksResult.missing_count > 0;
+
             // Get all games for the week with pick status
             const query = `
                 SELECT
@@ -91,17 +103,23 @@ class ManualPickAssignmentService {
 
             const games = await database.execute(query, [entryId, week, week]);
 
-            // Get confidence points that are locked (can't be changed)
-            const lockedPointsQuery = `
-                SELECT p.confidence_points
-                FROM picks p
-                JOIN games g ON p.game_id = g.game_id
-                WHERE p.entry_id = ? AND p.week = ?
-                AND p.confidence_points IS NOT NULL
-                AND (p.is_locked = 1 OR g.status IN ('in_progress', 'completed') OR g.kickoff_timestamp <= NOW())
-            `;
-            const lockedPointsResult = await database.execute(lockedPointsQuery, [entryId, week]);
-            const lockedPoints = lockedPointsResult.map(row => row.confidence_points);
+            // If user has missing picks, make all points available for editing
+            // Otherwise, only unlocked points are available for editing
+            let lockedPoints = [];
+            if (!hasMissingPicks) {
+                // Normal behavior - only locked points are unavailable
+                const lockedPointsQuery = `
+                    SELECT p.confidence_points
+                    FROM picks p
+                    JOIN games g ON p.game_id = g.game_id
+                    WHERE p.entry_id = ? AND p.week = ?
+                    AND p.confidence_points IS NOT NULL
+                    AND (p.is_locked = 1 OR g.status IN ('in_progress', 'completed') OR g.kickoff_timestamp <= NOW())
+                `;
+                const lockedPointsResult = await database.execute(lockedPointsQuery, [entryId, week]);
+                lockedPoints = lockedPointsResult.map(row => row.confidence_points);
+            }
+            // If hasMissingPicks is true, lockedPoints stays empty array, making all points available
 
             // Get all used points for display purposes
             const usedPointsQuery = `
@@ -121,10 +139,11 @@ class ManualPickAssignmentService {
                 leagueId,
                 entryId,
                 week,
+                hasMissingPicks,
                 games: games.map(game => ({
                     ...game,
                     // Determine if commissioner can edit this game's pick
-                    commissioner_editable: this.determineEditableState(game)
+                    commissioner_editable: this.determineEditableState(game, hasMissingPicks)
                 })),
                 usedPoints,
                 lockedPoints,
@@ -140,13 +159,18 @@ class ManualPickAssignmentService {
     /**
      * Determine if commissioner can edit a pick for a game
      */
-    static determineEditableState(game) {
+    static determineEditableState(game, hasMissingPicks = false) {
+        // If user has missing picks, make ALL their games editable (except completely missing ones)
+        if (hasMissingPicks && game.pick_id) {
+            return 'editable'; // All existing picks become editable
+        }
+
         if (game.game_is_locked && !game.pick_id) {
-            return 'missing_locked'; // Can assign points
-        } else if (game.game_is_locked && game.pick_id) {
-            return 'locked'; // Cannot edit
+            return 'missing_locked'; // Can assign points to missing picks
+        } else if (game.game_is_locked && game.pick_id && !hasMissingPicks) {
+            return 'locked'; // Cannot edit (only when user has no missing picks)
         } else if (!game.game_is_locked && game.pick_id) {
-            return 'editable'; // Can edit points
+            return 'editable'; // Can edit points on unlocked games
         } else {
             return 'not_picked'; // User hasn't picked yet, not commissioner's job
         }
@@ -319,12 +343,14 @@ class ManualPickAssignmentService {
             }
 
             // Validate confidence points are available (excluding current pick)
+            // Allow duplicates for commissioner actions - they can resolve conflicts by reassigning
             await this.validateConfidencePoints(
                 currentPick.entry_id,
                 currentPick.week,
                 newConfidencePoints,
                 pickId,
-                connection
+                connection,
+                true // allowDuplicates = true for commissioner actions
             );
 
             // Store old values for audit

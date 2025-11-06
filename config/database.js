@@ -12,6 +12,27 @@ class Database {
 
     async initialize() {
         try {
+            // Determine Eastern Time offset based on DST
+            // DST: Second Sunday in March (2 AM) to First Sunday in November (2 AM)
+            const now = new Date();
+            const year = now.getFullYear();
+
+            // Calculate second Sunday in March
+            const marchSecondSunday = new Date(year, 2, 1); // March 1
+            marchSecondSunday.setDate(1 + (7 - marchSecondSunday.getDay()) % 7 + 7); // Second Sunday
+            marchSecondSunday.setHours(2, 0, 0, 0); // DST starts at 2 AM
+
+            // Calculate first Sunday in November
+            const novFirstSunday = new Date(year, 10, 1); // November 1
+            novFirstSunday.setDate(1 + (7 - novFirstSunday.getDay()) % 7); // First Sunday
+            novFirstSunday.setHours(2, 0, 0, 0); // DST ends at 2 AM
+
+            // Determine if we're in DST
+            const isDST = now >= marchSecondSunday && now < novFirstSunday;
+            const easternOffset = isDST ? '-04:00' : '-05:00';
+
+            console.log(`🕐 Database connection timezone: ${easternOffset} (${isDST ? 'EDT' : 'EST'}) - Auto-detected for current date`);
+
             // Create connection pool
             this.pool = mysql.createPool({
                 host: process.env.DATABASE_HOST || 'localhost',
@@ -23,7 +44,7 @@ class Database {
                 connectionLimit: parseInt(process.env.DATABASE_CONNECTION_LIMIT) || 10,
                 queueLimit: 0,
                 charset: 'utf8mb4',
-                timezone: '-04:00'  // EDT (Eastern Daylight Time) - Use -05:00 for EST in winter
+                timezone: easternOffset  // Automatically adjusts for EDT/EST based on current date
             });
 
             // Test connection with retry logic

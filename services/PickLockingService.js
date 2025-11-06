@@ -92,13 +92,12 @@ class PickLockingService {
      * @returns {boolean} - True if game has started
      */
     static hasGameStarted(kickoffTimestamp) {
-        // Convert database timestamp (CDT format representing ET) to actual Eastern Time
-        // Database stores ET times but server interprets as CDT, so add 1 hour
-        const easternKickoff = new Date(kickoffTimestamp.getTime() + (60 * 60 * 1000));
+        // Database timestamps are correctly interpreted as ET via connection timezone setting
+        // No adjustment needed - the database connection timezone handles EDT/EST automatically
         const currentTime = new Date();
-        
+
         // Lock picks exactly at kickoff time
-        return currentTime >= easternKickoff;
+        return currentTime >= kickoffTimestamp;
     }
     
     /**

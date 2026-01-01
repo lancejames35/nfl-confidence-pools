@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PickController = require('../controllers/PickController');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 // Direct to pick-making interface - IMMEDIATE page render
 router.get('/', async (req, res, next) => {
@@ -175,11 +176,11 @@ router.get('/debug', async (req, res) => {
         // Get some games too
         const games = await database.execute(`
             SELECT game_id, week, home_team, away_team, kickoff_timestamp, status
-            FROM games 
-            WHERE season_year = 2025 AND week = 1
+            FROM games
+            WHERE season_year = ? AND week = 1
             ORDER BY kickoff_timestamp
             LIMIT 5
-        `);
+        `, [getNFLSeasonYear()]);
         
         res.json({
             user: user,

@@ -1,6 +1,7 @@
 const GameResultsProcessor = require('../services/GameResultsProcessor');
 const database = require('../config/database');
 const { validationResult } = require('express-validator');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class GameController {
     /**
@@ -9,7 +10,7 @@ class GameController {
     static async index(req, res) {
         try {
             const currentWeek = req.query.week || getCurrentNFLWeek();
-            const seasonYear = req.query.season || new Date().getFullYear();
+            const seasonYear = req.query.season || getNFLSeasonYear();
             
             // Get games for the week
             const gamesQuery = `
@@ -248,7 +249,7 @@ class GameController {
     static async autoProcessWeek(req, res) {
         try {
             const week = parseInt(req.params.week);
-            const seasonYear = req.query.season || new Date().getFullYear();
+            const seasonYear = req.query.season || getNFLSeasonYear();
             
             const result = await GameResultsProcessor.autoProcessWeekResults(week, seasonYear);
             
@@ -270,7 +271,7 @@ class GameController {
  * Helper function to get current NFL week
  */
 function getCurrentNFLWeek() {
-    const seasonStart = new Date(new Date().getFullYear(), 8, 5); // Sept 5
+    const seasonStart = new Date(getNFLSeasonYear(), 8, 5); // Sept 5 of the NFL season year
     const now = new Date();
     const diffTime = Math.abs(now - seasonStart);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

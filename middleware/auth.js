@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const database = require('../config/database');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class AuthMiddleware {
     // Middleware to check if user is authenticated
@@ -175,7 +176,7 @@ class AuthMiddleware {
             // Get games for this week
             const games = await database.executeMany(
                 'SELECT game_id, kickoff_timestamp FROM games WHERE season_year = ? AND week = ? ORDER BY kickoff_timestamp ASC',
-                [new Date().getFullYear(), week]
+                [getNFLSeasonYear(), week]
             );
 
             if (games.length === 0) {

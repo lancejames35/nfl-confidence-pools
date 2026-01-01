@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const database = require('../config/database');
 const ESPNApiService = require('./ESPNApiService');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class LiveScoreScheduler {
     constructor() {
@@ -195,7 +196,7 @@ class LiveScoreScheduler {
             // Get current week from database (use same logic as picks/results pages)
             const { getDefaultWeekForUI } = require('../utils/getCurrentWeek');
             let currentWeek = await getDefaultWeekForUI(database);
-            const seasonYear = new Date().getFullYear();
+            const seasonYear = getNFLSeasonYear();
 
             // Check if we have any active games for the calculated week
             const currentWeekGames = await database.execute(`

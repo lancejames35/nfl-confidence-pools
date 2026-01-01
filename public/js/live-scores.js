@@ -3,11 +3,19 @@
  * Handles WebSocket updates and AJAX polling for live NFL scores
  */
 
+// Helper function to get NFL season year (Jan-July = previous year, Aug-Dec = current year)
+function getNFLSeasonYearClient() {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11
+    const year = now.getFullYear();
+    return month <= 6 ? year - 1 : year;
+}
+
 class LiveScoresManager {
     constructor(options = {}) {
         this.socket = null;
         this.currentWeek = options.week || 1;
-        this.currentSeason = options.season || new Date().getFullYear();
+        this.currentSeason = options.season || getNFLSeasonYearClient();
         this.leagueId = options.leagueId || null;
         this.pollInterval = options.pollInterval || 60000; // 1 minute fallback polling
         this.pollTimer = null;
@@ -406,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Extract configuration from page
         const config = {
             week: parseInt(document.querySelector('[data-current-week]')?.dataset.currentWeek) || 1,
-            season: parseInt(document.querySelector('[data-current-season]')?.dataset.currentSeason) || new Date().getFullYear(),
+            season: parseInt(document.querySelector('[data-current-season]')?.dataset.currentSeason) || getNFLSeasonYearClient(),
             leagueId: parseInt(document.querySelector('[data-league-id]')?.dataset.leagueId) || null
         };
         

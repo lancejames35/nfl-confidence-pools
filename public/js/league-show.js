@@ -1070,7 +1070,14 @@ async function getCurrentWeekForMissingPicks() {
         // Simple implementation - calculate based on current date
         // NFL season typically starts first Thursday after Labor Day
         const now = new Date();
-        const year = now.getFullYear();
+        const month = now.getMonth(); // 0-11
+        let year = now.getFullYear();
+
+        // NFL season year: Jan-July = previous year's season, Aug-Dec = current year's season
+        if (month <= 6) {
+            year = year - 1;
+        }
+
         const seasonStart = new Date(year, 8, 5); // September 5th as approximation
 
         const diffTime = now - seasonStart;

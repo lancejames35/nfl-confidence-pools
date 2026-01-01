@@ -32,6 +32,9 @@ console.log('🎨 Loading themes...');
 const { themeMiddleware } = require('./config/themes');
 console.log('✅ Themes loaded');
 
+// NFL season utilities
+const { getNFLSeasonYear } = require('./utils/getCurrentWeek');
+
 // Defer loading services until after basic setup to prevent database cascade
 let scheduledTasks;
 let liveScoreScheduler;
@@ -385,18 +388,18 @@ class Application {
                          JOIN league_entries le2 ON p.entry_id = le2.entry_id 
                          JOIN league_users lu2 ON le2.league_user_id = lu2.league_user_id 
                          WHERE lu2.user_id = ? AND lu2.league_id = l.league_id) as user_weeks_played,
-                        (SELECT COUNT(DISTINCT p.week) FROM picks p 
-                         JOIN league_entries le2 ON p.entry_id = le2.entry_id 
-                         JOIN league_users lu2 ON le2.league_user_id = lu2.league_user_id 
-                         WHERE lu2.user_id = ? AND lu2.league_id = l.league_id 
+                        (SELECT COUNT(DISTINCT p.week) FROM picks p
+                         JOIN league_entries le2 ON p.entry_id = le2.entry_id
+                         JOIN league_users lu2 ON le2.league_user_id = lu2.league_user_id
+                         WHERE lu2.user_id = ? AND lu2.league_id = l.league_id
                          AND p.week IN (
                              SELECT completed_weeks.week FROM (
-                                 SELECT g.week 
-                                 FROM games g 
-                                 LEFT JOIN results r ON g.game_id = r.game_id 
-                                 WHERE g.season_year = 2025 
-                                 GROUP BY g.week 
-                                 HAVING COUNT(g.game_id) = COUNT(r.result_id) 
+                                 SELECT g.week
+                                 FROM games g
+                                 LEFT JOIN results r ON g.game_id = r.game_id
+                                 WHERE g.season_year = ?
+                                 GROUP BY g.week
+                                 HAVING COUNT(g.game_id) = COUNT(r.result_id)
                                  AND COUNT(g.game_id) = SUM(CASE WHEN g.status = 'completed' THEN 1 ELSE 0 END)
                              ) completed_weeks
                          )) as user_completed_weeks
@@ -406,7 +409,7 @@ class Application {
                      WHERE lu.user_id = ? AND lu.status = 'active' AND l.status = 'active'
                      ORDER BY l.league_name ASC
                      LIMIT 10`,
-                    [req.user.user_id, req.user.user_id, req.user.user_id, req.user.user_id, req.user.user_id]
+                    [req.user.user_id, req.user.user_id, req.user.user_id, req.user.user_id, getNFLSeasonYear(), req.user.user_id]
                 );
                 
                 // If user has no leagues and isn't coming from a specific action, redirect to start page

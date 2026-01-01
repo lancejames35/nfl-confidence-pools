@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ResultsController = require('../controllers/ResultsController');
 const WeeklyWinnersService = require('../services/WeeklyWinnersService');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 // Direct to results view - IMMEDIATE page render
 router.get('/', async (req, res, next) => {
@@ -87,7 +88,7 @@ router.post('/api/calculate-winners/:league_id/:week', async (req, res) => {
     try {
         const leagueId = parseInt(req.params.league_id);
         const week = parseInt(req.params.week);
-        const seasonYear = req.body.season_year || new Date().getFullYear();
+        const seasonYear = req.body.season_year || getNFLSeasonYear();
 
         // Check if user is commissioner of this league
         const database = require('../config/database');
@@ -120,7 +121,7 @@ router.get('/api/winners/:league_id/:week', async (req, res) => {
     try {
         const leagueId = parseInt(req.params.league_id);
         const week = parseInt(req.params.week);
-        const seasonYear = req.query.season_year || new Date().getFullYear();
+        const seasonYear = req.query.season_year || getNFLSeasonYear();
 
         const winners = await WeeklyWinnersService.getWeeklyWinners(leagueId, week, seasonYear);
         res.json({

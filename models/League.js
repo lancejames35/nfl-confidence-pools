@@ -1,5 +1,6 @@
 const database = require('../config/database');
 const crypto = require('crypto');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class League {
     static async create(leagueData) {
@@ -10,7 +11,7 @@ class League {
             max_entries = 1,
             max_participants = 50,
             unlimited_participants = false,
-            season_year = new Date().getFullYear(),
+            season_year = getNFLSeasonYear(),
             pool_type = 'confidence',
             pick_method = 'straight_up',
             privacy = 'private',

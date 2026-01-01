@@ -1,5 +1,6 @@
 const database = require('../config/database');
 const socketManager = require('../config/socket');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class GameResultsProcessor {
     /**
@@ -176,7 +177,7 @@ class GameResultsProcessor {
     /**
      * Get week summary after results are processed
      */
-    static async getWeekSummary(week, seasonYear = new Date().getFullYear()) {
+    static async getWeekSummary(week, seasonYear = getNFLSeasonYear()) {
         try {
             const query = `
                 SELECT 
@@ -243,7 +244,7 @@ class GameResultsProcessor {
     /**
      * Auto-process results from external API or manual input
      */
-    static async autoProcessWeekResults(week, seasonYear = new Date().getFullYear()) {
+    static async autoProcessWeekResults(week, seasonYear = getNFLSeasonYear()) {
         try {
             // Get all completed games for the week that haven't been processed yet
             const gamesQuery = `

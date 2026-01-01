@@ -3,6 +3,7 @@ const GameResultsProcessor = require('./GameResultsProcessor');
 const WeeklyWinnersService = require('./WeeklyWinnersService');
 const database = require('../config/database');
 const getCurrentWeek = require('../utils/getCurrentWeek');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 /**
  * Scheduled task runner for automated system processes
@@ -120,7 +121,7 @@ class ScheduledTasks {
      * Get current NFL week
      */
     getCurrentNFLWeek() {
-        const seasonStart = new Date(new Date().getFullYear(), 8, 5); // Sept 5
+        const seasonStart = new Date(getNFLSeasonYear(), 8, 5); // Sept 5 of the NFL season year
         const now = new Date();
         const diffTime = Math.abs(now - seasonStart);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -146,7 +147,7 @@ class ScheduledTasks {
      * Manually trigger weekly winner calculation for a specific week and league (for testing)
      * Note: This is now the primary way to test weekly winner calculation since it's event-driven
      */
-    async triggerWeeklyWinnerCalculation(leagueId, week, seasonYear = new Date().getFullYear()) {
+    async triggerWeeklyWinnerCalculation(leagueId, week, seasonYear = getNFLSeasonYear()) {
         console.log(`Manual trigger: Weekly winner calculation for League ${leagueId}, Week ${week}, Season ${seasonYear}`);
         try {
             const result = await WeeklyWinnersService.calculateWeeklyWinners(leagueId, week, seasonYear);

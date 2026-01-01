@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ESPNApiService = require('../../services/ESPNApiService');
 const liveScoreScheduler = require('../../services/LiveScoreScheduler');
-const { getCurrentNFLWeek } = require('../../utils/getCurrentWeek');
+const { getCurrentNFLWeek, getNFLSeasonYear } = require('../../utils/getCurrentWeek');
 const database = require('../../config/database');
 
 /**
@@ -12,7 +12,7 @@ const database = require('../../config/database');
 router.get('/status', async (req, res) => {
     try {
         const week = parseInt(req.query.week) || await getCurrentNFLWeek(database);
-        const seasonYear = parseInt(req.query.season) || new Date().getFullYear();
+        const seasonYear = parseInt(req.query.season) || getNFLSeasonYear();
         
         const gameStatus = await ESPNApiService.getLiveGameStatus(week, seasonYear);
         
@@ -39,7 +39,7 @@ router.post('/manual-update', async (req, res) => {
     try {
         const { getDefaultWeekForUI } = require('../../utils/getCurrentWeek');
         const currentWeek = await getDefaultWeekForUI(database);
-        const seasonYear = new Date().getFullYear();
+        const seasonYear = getNFLSeasonYear();
         
         console.log(`🔧 Manual ESPN API update triggered for Week ${currentWeek}, Season ${seasonYear}`);
         
@@ -72,7 +72,7 @@ router.get('/user-totals/:leagueId', async (req, res) => {
     try {
         const leagueId = parseInt(req.params.leagueId);
         const week = parseInt(req.query.week) || await getCurrentNFLWeek(database);
-        const seasonYear = parseInt(req.query.season) || new Date().getFullYear();
+        const seasonYear = parseInt(req.query.season) || getNFLSeasonYear();
         
         // Get user totals for the league
         const totalsQuery = `

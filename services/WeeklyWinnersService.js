@@ -1,12 +1,13 @@
 const database = require('../config/database');
 const PickScoringService = require('./PickScoringService');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class WeeklyWinnersService {
     /**
      * Main method: Calculate weekly scores and determine winners
      * Clean 3-step process: calculate scores → find winners → store results
      */
-    static async calculateWeeklyWinners(leagueId, week, seasonYear = new Date().getFullYear()) {
+    static async calculateWeeklyWinners(leagueId, week, seasonYear = getNFLSeasonYear()) {
         const connection = await database.getConnection();
         
         try {
@@ -358,7 +359,7 @@ class WeeklyWinnersService {
     /**
      * Get weekly winners for a specific league and week
      */
-    static async getWeeklyWinners(leagueId, week, seasonYear = new Date().getFullYear()) {
+    static async getWeeklyWinners(leagueId, week, seasonYear = getNFLSeasonYear()) {
         try {
             const results = await database.execute(`
                 SELECT 
@@ -384,7 +385,7 @@ class WeeklyWinnersService {
     /**
      * Get weekly winner entry IDs for a specific league and week
      */
-    static async getWeeklyWinnerEntryIds(leagueId, week, seasonYear = new Date().getFullYear()) {
+    static async getWeeklyWinnerEntryIds(leagueId, week, seasonYear = getNFLSeasonYear()) {
         try {
             const results = await database.execute(`
                 SELECT entry_id
@@ -404,7 +405,7 @@ class WeeklyWinnersService {
     /**
      * Get all weekly wins for a user in a specific league (for dashboard)
      */
-    static async getUserWeeklyWinsInLeague(userId, leagueId, seasonYear = new Date().getFullYear()) {
+    static async getUserWeeklyWinsInLeague(userId, leagueId, seasonYear = getNFLSeasonYear()) {
         try {
             const results = await database.execute(`
                 SELECT 
@@ -430,7 +431,7 @@ class WeeklyWinnersService {
     /**
      * Get all weekly wins for a user across all leagues (for dashboard)
      */
-    static async getUserWeeklyWins(userId, seasonYear = new Date().getFullYear()) {
+    static async getUserWeeklyWins(userId, seasonYear = getNFLSeasonYear()) {
         try {
             const results = await database.execute(`
                 SELECT 

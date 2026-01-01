@@ -1,6 +1,7 @@
 const axios = require('axios');
 const database = require('../config/database');
 const APICallTracker = require('./APICallTracker');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class ESPNApiService {
     constructor() {
@@ -250,7 +251,7 @@ class ESPNApiService {
             }
 
             const currentWeek = espnData.week.number;
-            const currentSeason = seasonYear || new Date().getFullYear();
+            const currentSeason = seasonYear || getNFLSeasonYear();
             
             let gamesUpdated = 0;
             let gamesProcessed = 0;

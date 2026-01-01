@@ -2,6 +2,7 @@ const database = require('../config/database');
 const League = require('../models/League');
 const GameResultsProcessor = require('../services/GameResultsProcessor');
 const WeeklyWinnersService = require('../services/WeeklyWinnersService');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class StandingsController {
     /**
@@ -608,7 +609,7 @@ class StandingsController {
  * Helper function to get current NFL week
  */
 function getCurrentNFLWeek() {
-    const seasonStart = new Date(new Date().getFullYear(), 8, 5); // Sept 5
+    const seasonStart = new Date(getNFLSeasonYear(), 8, 5); // Sept 5 of the NFL season year
     const now = new Date();
     const diffTime = Math.abs(now - seasonStart);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

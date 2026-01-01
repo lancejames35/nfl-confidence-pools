@@ -20,17 +20,18 @@ function getNFLSeasonYear() {
 // Get the current NFL week based on actual game dates in database
 async function getCurrentNFLWeek(database) {
     try {
+        const seasonYear = getNFLSeasonYear();
         // Get all weeks with their max game dates
         const [weeks] = await database.execute(`
-            SELECT 
+            SELECT
                 week,
                 MAX(kickoff_timestamp) as last_game,
                 MIN(kickoff_timestamp) as first_game
             FROM games
-            WHERE season_year = 2025
+            WHERE season_year = ?
             GROUP BY week
             ORDER BY week ASC
-        `);
+        `, [seasonYear]);
         
         if (!weeks || weeks.length === 0) {
             return 1; // Default to week 1 if no games
@@ -69,11 +70,12 @@ async function getCurrentNFLWeek(database) {
 // Get the deadline for picks (first game of the week)
 async function getWeekDeadline(database, week) {
     try {
+        const seasonYear = getNFLSeasonYear();
         const [games] = await database.execute(`
             SELECT MIN(kickoff_timestamp) as first_game
             FROM games
-            WHERE season_year = 2025 AND week = ?
-        `, [week]);
+            WHERE season_year = ? AND week = ?
+        `, [seasonYear, week]);
         
         if (games && games[0] && games[0].first_game) {
             return new Date(games[0].first_game);
@@ -117,16 +119,17 @@ let lastProcessedWeek = null;
 // Logic: Move to next week the day after the max kickoff date for current week
 async function getDefaultWeekForUI(database) {
     try {
+        const seasonYear = getNFLSeasonYear();
         // Get all weeks with their max game dates (stored as UTC in database)
         const weeks = await database.execute(`
-            SELECT 
+            SELECT
                 week,
                 MAX(kickoff_timestamp) as last_game_utc
             FROM games
-            WHERE season_year = 2025
+            WHERE season_year = ?
             GROUP BY week
             ORDER BY week ASC
-        `);
+        `, [seasonYear]);
         
         if (!weeks || weeks.length === 0) {
             return 1; // Default to week 1 if no games
@@ -156,10 +159,10 @@ async function getDefaultWeekForUI(database) {
         // This handles the case where we're in early season
         for (let week = 1; week <= 18; week++) {
             const weekGames = await database.execute(`
-                SELECT COUNT(*) as game_count 
-                FROM games 
-                WHERE week = ? AND season_year = 2025
-            `, [week]);
+                SELECT COUNT(*) as game_count
+                FROM games
+                WHERE week = ? AND season_year = ?
+            `, [week, seasonYear]);
             
             if (weekGames && weekGames[0] && weekGames[0].game_count > 0) {
                 return week;

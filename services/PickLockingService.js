@@ -1,4 +1,5 @@
 const database = require('../config/database');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 /**
  * Service for automatically locking picks based on game kickoff times and league deadline settings
@@ -183,7 +184,8 @@ class PickLockingService {
      * @returns {number} - Current NFL week (1-18)
      */
     static getCurrentNFLWeek() {
-        const seasonStart = new Date(new Date().getFullYear(), 8, 5); // Sept 5
+        const seasonYear = getNFLSeasonYear();
+        const seasonStart = new Date(seasonYear, 8, 5); // Sept 5 of the season year
         const now = new Date();
         const diffTime = Math.abs(now - seasonStart);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -214,7 +216,7 @@ class PickLockingService {
             
             // Get games for current week
             const games = await database.execute(`
-                SELECT 
+                SELECT
                     g.game_id,
                     g.kickoff_timestamp,
                     ht.abbreviation as home_team,
@@ -224,7 +226,7 @@ class PickLockingService {
                 JOIN teams at ON g.away_team_id = at.team_id
                 WHERE g.week = ? AND g.season_year = ?
                 ORDER BY g.kickoff_timestamp ASC
-            `, [currentWeek, new Date().getFullYear()]);
+            `, [currentWeek, getNFLSeasonYear()]);
             
             // Check pick status for each game
             const gameStatus = games.map(game => {

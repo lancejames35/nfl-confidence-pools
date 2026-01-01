@@ -1,4 +1,5 @@
 const database = require('../config/database');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 class Pick {
     /**
@@ -267,7 +268,7 @@ class Pick {
         }
         
         // Check all games have picks
-        const availableGames = await this.getAvailableGames(week, new Date().getFullYear());
+        const availableGames = await this.getAvailableGames(week, getNFLSeasonYear());
         if (picks.length !== availableGames.length) {
             errors.push('You must make a pick for every game');
         }
@@ -294,7 +295,7 @@ class Pick {
             }
             
             // Check confidence points are in valid range (based on total games, not picks made)
-            const availableGames = await this.getAvailableGames(week, new Date().getFullYear());
+            const availableGames = await this.getAvailableGames(week, getNFLSeasonYear());
             const maxPoints = availableGames.length;
             
             for (const pick of picks) {
@@ -409,8 +410,9 @@ class Pick {
      */
     static async canEditPicks(entry_id, week) {
         try {
+            const seasonYear = getNFLSeasonYear();
             const query = `
-                SELECT 
+                SELECT
                     cps.pick_deadline_type,
                     cps.custom_deadline_minutes,
                     MIN(g.kickoff_timestamp) as earliest_kickoff,
@@ -420,12 +422,12 @@ class Pick {
                 FROM league_entries le
                 JOIN league_users lu ON le.league_user_id = lu.league_user_id
                 JOIN confidence_pool_settings cps ON lu.league_id = cps.league_id
-                JOIN games g ON g.week = ? AND g.season_year = YEAR(NOW())
+                JOIN games g ON g.week = ? AND g.season_year = ?
                 WHERE le.entry_id = ?
                 GROUP BY cps.pick_deadline_type, cps.custom_deadline_minutes
             `;
-            
-            const results = await database.execute(query, [week, entry_id]);
+
+            const results = await database.execute(query, [week, seasonYear, entry_id]);
             if (results.length === 0) {
                 return false; // No league found or no games
             }
@@ -506,6 +508,7 @@ class Pick {
      */
     static async lockStartedGames(entry_id, week) {
         try {
+            const seasonYear = getNFLSeasonYear();
             // Get league deadline settings for this entry
             const settingsQuery = `
                 SELECT cps.pick_deadline_type, cps.custom_deadline_minutes,
@@ -513,12 +516,12 @@ class Pick {
                 FROM league_entries le
                 JOIN league_users lu ON le.league_user_id = lu.league_user_id
                 JOIN confidence_pool_settings cps ON lu.league_id = cps.league_id
-                JOIN games g ON g.week = ? AND g.season_year = YEAR(NOW())
+                JOIN games g ON g.week = ? AND g.season_year = ?
                 WHERE le.entry_id = ?
                 GROUP BY cps.pick_deadline_type, cps.custom_deadline_minutes
             `;
-            
-            const [settings] = await database.execute(settingsQuery, [week, entry_id]);
+
+            const [settings] = await database.execute(settingsQuery, [week, seasonYear, entry_id]);
             if (!settings) return false;
             
             let lockQuery;

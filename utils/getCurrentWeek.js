@@ -1,3 +1,22 @@
+/**
+ * Get the current NFL season year.
+ * NFL season runs September-February, so:
+ * - Jan-July: season year = current year - 1 (e.g., Jan 2026 = 2025 season)
+ * - Aug-Dec: season year = current year (e.g., Sept 2025 = 2025 season)
+ */
+function getNFLSeasonYear() {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11
+    const year = now.getFullYear();
+
+    // If January (0) through July (6), we're in the previous year's season
+    if (month <= 6) {
+        return year - 1;
+    }
+    // August (7) through December (11), we're in the current year's season
+    return year;
+}
+
 // Get the current NFL week based on actual game dates in database
 async function getCurrentNFLWeek(database) {
     try {
@@ -209,7 +228,7 @@ async function triggerWeeklyWinnerCalculation(week) {
         const WeeklyWinnersService = require('../services/WeeklyWinnersService');
         const database = require('../config/database');
         
-        const seasonYear = new Date().getFullYear();
+        const seasonYear = getNFLSeasonYear();
         console.log(`Starting weekly winner calculation for week ${week}, season ${seasonYear}`);
         
         // Get all active leagues
@@ -290,8 +309,8 @@ async function checkAndCalculateMissedWeeks(currentWeek) {
             console.log('No active leagues found for missed week check');
             return;
         }
-        
-        const seasonYear = new Date().getFullYear();
+
+        const seasonYear = getNFLSeasonYear();
         
         // Check each week from 1 to currentWeek-1 (closed weeks)
         for (let week = 1; week < currentWeek; week++) {
@@ -356,6 +375,7 @@ async function checkAndCalculateMissedWeeks(currentWeek) {
 }
 
 module.exports = {
+    getNFLSeasonYear,
     getCurrentNFLWeek,
     getWeekDeadline,
     arePicksLocked,

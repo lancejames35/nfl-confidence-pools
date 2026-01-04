@@ -368,6 +368,7 @@ class LiveScoreScheduler {
      */
     async hasGameStartedLikePickLocking(kickoffTimestamp) {
         try {
+            const seasonYear = getNFLSeasonYear();
             // Use exact same logic as PickLockingService with league deadline consideration
             const result = await database.execute(`
                 SELECT
@@ -378,12 +379,12 @@ class LiveScoreScheduler {
                     CASE WHEN EXISTS (
                         SELECT 1 FROM games g2
                         WHERE g2.week = (SELECT week FROM games WHERE kickoff_timestamp = ? LIMIT 1)
-                        AND g2.season_year = YEAR(CURDATE())
+                        AND g2.season_year = ?
                         AND CONVERT_TZ(NOW(), "UTC", "America/New_York") >= g2.kickoff_timestamp
                         ORDER BY g2.kickoff_timestamp ASC
                         LIMIT 1
                     ) THEN 1 ELSE 0 END as first_game_started
-            `, [kickoffTimestamp, kickoffTimestamp]);
+            `, [kickoffTimestamp, kickoffTimestamp, seasonYear]);
 
             // Live scoring should start if:
             // 1. This specific game has started (per_game logic), OR

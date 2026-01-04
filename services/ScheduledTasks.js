@@ -90,6 +90,7 @@ class ScheduledTasks {
         try {
             // Get current NFL week
             const currentWeek = this.getCurrentNFLWeek();
+            const seasonYear = getNFLSeasonYear();
             const database = require('../config/database');
 
             // First check if there are any games starting soon or in progress
@@ -97,10 +98,10 @@ class ScheduledTasks {
                 SELECT COUNT(*) as count
                 FROM games
                 WHERE week = ?
-                AND season_year = YEAR(CURDATE())
+                AND season_year = ?
                 AND status IN ('scheduled', 'in_progress')
                 AND kickoff_timestamp <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
-            `, [currentWeek]);
+            `, [currentWeek, seasonYear]);
 
             if (upcomingGames[0].count === 0) {
                 // No games starting soon, skip processing

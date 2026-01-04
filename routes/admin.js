@@ -85,4 +85,54 @@ router.get('/pick-locking/league/:id', async (req, res) => {
     }
 });
 
+// ESPN Score Sync
+router.post('/espn/sync-week/:week', async (req, res) => {
+    try {
+        const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
+        const week = parseInt(req.params.week);
+        const seasonYear = req.body.season_year || getNFLSeasonYear();
+
+        const ESPNApiService = require('../services/ESPNApiService');
+        const result = await ESPNApiService.updateLiveScores(week, seasonYear);
+
+        res.json({
+            success: true,
+            message: `Week ${week} sync completed`,
+            result
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Fix specific game
+router.post('/games/:id/fix-from-espn', async (req, res) => {
+    try {
+        const gameId = parseInt(req.params.id);
+        const database = require('../config/database');
+
+        // Get game details
+        const [game] = await database.execute(
+            `SELECT week, season_year FROM games WHERE game_id = ?`,
+            [gameId]
+        );
+
+        if (!game) {
+            return res.status(404).json({ success: false, error: 'Game not found' });
+        }
+
+        // Sync the entire week
+        const ESPNApiService = require('../services/ESPNApiService');
+        const result = await ESPNApiService.updateLiveScores(game.week, game.season_year);
+
+        res.json({
+            success: true,
+            message: `Game ${gameId} synced via week ${game.week} sync`,
+            result
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;

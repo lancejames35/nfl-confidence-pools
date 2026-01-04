@@ -1,5 +1,6 @@
 const database = require('../config/database');
 const PickAuditService = require('./PickAuditService');
+const { getNFLSeasonYear } = require('../utils/getCurrentWeek');
 
 /**
  * Service for commissioner manual pick assignments
@@ -10,6 +11,7 @@ class ManualPickAssignmentService {
      */
     static async getUsersWithMissingPicks(leagueId, week) {
         try {
+            const seasonYear = getNFLSeasonYear();
             const query = `
                 SELECT DISTINCT
                     le.entry_id,
@@ -23,7 +25,7 @@ class ManualPickAssignmentService {
                     SELECT g.game_id
                     FROM games g
                     WHERE g.week = ?
-                    AND g.season_year = YEAR(CURDATE())
+                    AND g.season_year = ?
                     AND (g.status IN ('in_progress', 'completed') OR g.kickoff_timestamp <= NOW())
                 ) missing_games
                 LEFT JOIN picks p ON le.entry_id = p.entry_id
@@ -38,7 +40,7 @@ class ManualPickAssignmentService {
                 ORDER BY u.username
             `;
 
-            return await database.execute(query, [week, week, leagueId]);
+            return await database.execute(query, [week, seasonYear, week, leagueId]);
         } catch (error) {
             console.error('Error getting users with missing picks:', error);
             return [];
@@ -63,17 +65,18 @@ class ManualPickAssignmentService {
             }
 
             const leagueId = entryInfo.league_id;
+            const seasonYear = getNFLSeasonYear();
 
             // Check if this user has ANY missing picks for locked games in this week
             const missingPicksQuery = `
                 SELECT COUNT(*) as missing_count
                 FROM games g
                 LEFT JOIN picks p ON g.game_id = p.game_id AND p.entry_id = ? AND p.week = ?
-                WHERE g.week = ? AND g.season_year = YEAR(CURDATE())
+                WHERE g.week = ? AND g.season_year = ?
                 AND (g.status IN ('in_progress', 'completed') OR g.kickoff_timestamp <= NOW())
                 AND p.pick_id IS NULL
             `;
-            const [missingPicksResult] = await database.execute(missingPicksQuery, [entryId, week, week]);
+            const [missingPicksResult] = await database.execute(missingPicksQuery, [entryId, week, week, seasonYear]);
             const hasMissingPicks = missingPicksResult.missing_count > 0;
 
             // Get all games for the week with pick status
@@ -97,11 +100,11 @@ class ManualPickAssignmentService {
                 JOIN teams at ON g.away_team_id = at.team_id
                 JOIN teams ht ON g.home_team_id = ht.team_id
                 LEFT JOIN picks p ON g.game_id = p.game_id AND p.entry_id = ? AND p.week = ?
-                WHERE g.week = ? AND g.season_year = YEAR(CURDATE())
+                WHERE g.week = ? AND g.season_year = ?
                 ORDER BY g.kickoff_timestamp ASC
             `;
 
-            const games = await database.execute(query, [entryId, week, week]);
+            const games = await database.execute(query, [entryId, week, week, seasonYear]);
 
             // If user has missing picks, make all points available for editing
             // Otherwise, only unlocked points are available for editing
@@ -201,6 +204,7 @@ class ManualPickAssignmentService {
             }
 
             const leagueId = entryInfo.league_id;
+            const seasonYear = getNFLSeasonYear();
 
             // Validate the game is locked and no pick exists
             const gameResult = await connection.execute(`
@@ -213,8 +217,8 @@ class ManualPickAssignmentService {
                     p.pick_id
                 FROM games g
                 LEFT JOIN picks p ON g.game_id = p.game_id AND p.entry_id = ? AND p.week = ?
-                WHERE g.game_id = ? AND g.week = ? AND g.season_year = YEAR(CURDATE())
-            `, [entryId, week, gameId, week]);
+                WHERE g.game_id = ? AND g.week = ? AND g.season_year = ?
+            `, [entryId, week, gameId, week, seasonYear]);
 
             const [gameRows] = gameResult;
             const gameCheck = gameRows[0];
@@ -477,11 +481,12 @@ class ManualPickAssignmentService {
         }
 
         // Validate points are within valid range
+        const seasonYear = getNFLSeasonYear();
         const gameCountResult = await db.execute(`
             SELECT COUNT(*) as total_games
             FROM games
-            WHERE week = ? AND season_year = YEAR(CURDATE())
-        `, [week]);
+            WHERE week = ? AND season_year = ?
+        `, [week, seasonYear]);
 
         const [gameCountRows] = gameCountResult;
         const gameCount = gameCountRows[0];
